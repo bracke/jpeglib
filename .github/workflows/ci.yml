@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux-release-check:
+    name: Linux release checklist
+    runs-on: ubuntu-latest
+    env:
+      ALIRE_NONINTERACTIVE: "true"
+    steps:
+      - name: Check out jpeglib
+        uses: actions/checkout@v7
+        with:
+          path: jpeglib
+
+      - name: Check out sibling crates (transitive pin closure)
+        uses: bracke/project_tools/.github/actions/checkout-ada-siblings@main
+        with:
+          root: jpeglib
+
+      - name: Set up Alire
+        uses: alire-project/setup-alire@v6
+        with:
+          toolchain: gnat_native=15.2.1 gprbuild
+
+      - name: Raise Alire solver timeout so slow runners get a complete solution
+        shell: bash
+        run: alr settings --global --set solver.timeout 600
+
+      - name: Install GNATprove
+        run: |
+          alr install gnatprove
+          echo "$HOME/.alire/bin" >> "$GITHUB_PATH"
+
+      - name: Install workflow dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick libaunit-dev \
+            || sudo apt-get install -y ffmpeg imagemagick libaunit22-dev \
+            || sudo apt-get install -y ffmpeg imagemagick libaunit24-dev
+
+      - name: Build library
+        working-directory: jpeglib
+        run: alr --non-interactive build
+
+      - name: Build tests and tools
+        working-directory: jpeglib/tests
+        run: alr --non-interactive build
+
+      - name: Run release readiness checks
+        working-directory: jpeglib
+        run: alr exec -- tests/bin/jpeglib_release
