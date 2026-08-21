@@ -1,0 +1,21 @@
+name = "jpeglib"
+description = "Native Ada JPEG decoding and encoding library"
+version = "0.1.0-dev"
+
+authors = ["Bent Bracke"]
+maintainers = ["Bent Bracke <bent@bracke.dk>"]
+maintainers-logins = ["bracke"]
+licenses = "MIT"
+website = ""
+long-description = "jpeglib is a native Ada 2022 JPEG codec: decoding and encoding of general-purpose 8-bit JPEG, covering baseline and progressive images, metadata preservation, resource limits and streaming interfaces, with no binding to libjpeg or any other C library."
+tags = ["jpeg", "codec", "image"]
+
+[[depends-on]]
+gnat_native = "^15"
+
+[build-profiles]
+"*" = "development"
+
+[[actions]]
+type = "test"
+command = ["alr", "--chdir", "tests", "build"]

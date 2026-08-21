@@ -1,0 +1,6 @@
+# jpeglib coefficient fixtures
+baseline-gray-16x8.jpg bytes= 72 blocks= 2 kind=VALID_COEFFICIENTS error=NO_ERROR
+baseline-gray-16x8-restart.jpg bytes= 81 blocks= 2 kind=VALID_COEFFICIENTS error=NO_ERROR
+baseline-ycbcr-17x9-420.jpg bytes= 131 blocks= 12 kind=VALID_COEFFICIENTS error=NO_ERROR
+invalid-gray-wrong-restart.jpg bytes= 81 blocks= 2 kind=INVALID_COEFFICIENTS error=RESTART_INVALID_STATE
+invalid-ycbcr-incomplete-scans.jpg bytes= 124 blocks= 12 kind=INVALID_COEFFICIENTS error=SCAN_INVALID_DEFINITION

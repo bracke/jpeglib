@@ -1,0 +1,10 @@
+last_build_profile = "aunit=DEVELOPMENT,cryptolib=DEVELOPMENT,gnat_native=DEVELOPMENT,hostkit=DEVELOPMENT,jpeglib=DEVELOPMENT,project_tools=DEVELOPMENT,tests=DEVELOPMENT,zlib=DEVELOPMENT"
+[toolchain]
+assistant = false
+[toolchain.external]
+gnat = false
+gprbuild = false
+[toolchain.use]
+gnat = "gnat_native=15.2.1"
+gprbuild = "gprbuild=25.0.1"
+

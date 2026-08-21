@@ -1,0 +1,57 @@
+name = "tests"
+description = "AUnit tests and Ada tooling for jpeglib"
+version = "0.1.0-dev"
+executables = [
+  "jpeglib_tests",
+  "jpeglib_check",
+  "jpeglib_generate",
+  "jpeglib_fixtures",
+  "jpeglib_conformance",
+  "jpeglib_fuzz",
+  "jpeglib_benchmark",
+  "jpeglib_docs",
+  "jpeglib_prove",
+  "jpeglib_release"
+]
+
+authors = ["Bent Bracke"]
+maintainers = ["Bent Bracke <bent@bracke.dk>"]
+maintainers-logins = ["bracke"]
+licenses = "MIT"
+tags = ["jpeg", "tests", "aunit", "tooling"]
+
+[[depends-on]]
+jpeglib = "*"
+
+[[depends-on]]
+aunit = "^26.0.0"
+
+[[depends-on]]
+project_tools = "*"
+
+[[depends-on]]
+cryptolib = "*"
+
+[[depends-on]]
+zlib = "*"
+
+[[depends-on]]
+hostkit = "*"
+
+[[pins]]
+jpeglib = { path = ".." }
+
+[[pins]]
+project_tools = { path = "../../project_tools" }
+
+[[pins]]
+cryptolib = { path = "../../cryptolib" }
+
+[[pins]]
+zlib = { path = "../../zlib" }
+
+[[pins]]
+hostkit = { path = "../../hostkit" }
+
+[build-profiles]
+"*" = "development"

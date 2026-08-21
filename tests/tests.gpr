@@ -1,0 +1,40 @@
+with "../jpeglib.gpr";
+with "aunit";
+with "project_tools";
+with "cryptolib";
+with "zlib";
+with "hostkit";
+
+project Tests is
+   for Source_Dirs use ("src", "src/mains");
+   for Main use
+     ("jpeglib_tests.adb",
+      "jpeglib_decode_raw.adb",
+      "jpeglib_check.adb",
+      "jpeglib_generate.adb",
+      "jpeglib_fixtures.adb",
+      "jpeglib_conformance.adb",
+      "jpeglib_fuzz.adb",
+      "jpeglib_benchmark.adb",
+      "jpeglib_docs.adb",
+      "jpeglib_prove.adb",
+      "jpeglib_release.adb");
+   for Object_Dir use "obj/tests";
+   for Exec_Dir use "bin";
+   for Create_Missing_Dirs use "True";
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        ("-gnat2022", "-gnatyM120", "-gnatX", "-gnata", "-gnato", "-gnatVa", "-gnatwa");
+   end Compiler;
+   --  Bytes out as bytes in. Alire's generated switches carry -gnatW8 and the
+   --  binder takes its run-time encoding from the same place, which makes
+   --  Ada.Text_IO encode every byte above 127 a second time on the way out:
+   --  text that was already UTF-8 -- an accented path, an internationalized
+   --  domain name, a translated message -- came out doubled. -Wb is the
+   --  compiler default and leaves the bytes alone.
+   package Binder is
+      for Switches ("Ada") use ("-Wb");
+   end Binder;
+
+end Tests;

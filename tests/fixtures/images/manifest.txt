@@ -1,0 +1,20 @@
+# jpeglib image decode fixtures
+baseline-gray-16x8.jpg bytes= 141 width= 16 height= 8 format=RGB_24 first= 128 last= 128 sha256=f83545d43c6939ec393b6b8310959b6174fd764b08a12fc22d908408a7e6a43e
+baseline-gray-16x8-restart.jpg bytes= 150 width= 16 height= 8 format=GRAY_8 first= 128 last= 128 sha256=b7effd43ee5016021d067dd32ade04f37a347efe942297070e5cc56f47fddfbb
+baseline-ycbcr-17x9-420.jpg bytes= 265 width= 17 height= 9 format=RGBA_32 first= 128 last= 130 sha256=70873e8f831982bab4c21ec2ccbedf5093181a148443d1071970632cf991f127
+baseline-ycbcr-17x9-420-restart.jpg bytes= 273 width= 17 height= 9 format=RGBA_32 first= 128 last= 129 sha256=094e455d884c00d1e969b473c5e20a06824cc2baaa2eb87a51e9a2c2f7c8df4b
+baseline-ycbcr-17x9-420-separate.jpg bytes= 280 width= 17 height= 9 format=RGB_24 first= 128 last= 129 sha256=0fddadf075543913e0916859904b2db40c624044ff8ab59dff51b01d0a024288
+baseline-rgb-8x8.jpg bytes= 152 width= 8 height= 8 format=BGRA_32 first= 128 last= 128 sha256=7e00761e78b3d0cac49878d18966921b0ab15589ef84425511fc7e1980e7c119
+baseline-cmyk-8x8.jpg bytes= 157 width= 8 height= 8 format=RGBA_32 first= 0 last= 0 sha256=d9442e00401281d3cfabd20e8c860fcc9c63b294699eaf1591c6ef6718a42ba7
+baseline-cmyk-8x8-separate.jpg bytes= 183 width= 8 height= 8 format=RGB_24 first= 0 last= 0 sha256=5d89f056865052bcb89c910d2d62872e029fb273c3db03f8968a52a41593c1b5
+encoded-progressive-rgb-2x2.jpg bytes= 973 width= 2 height= 2 format=RGB_24 first= 0 last= 255 sha256=8e77dd72063fcafbe4c3f1866521977adb9b4e28d13c52cd7c96f586a34be6f6
+encoded-arithmetic-progressive-rgb-2x2.jpg bytes= 584 width= 2 height= 2 format=RGB_24 first= 131 last= 203 sha256=96aa1d1a7e036826194954d0ec665bc2a8cb17a3a957429fd5e5f4f4a68c1567
+encoded-differential-dct-rgb-2x2.jpg bytes= 843 width= 2 height= 2 format=RGB_24 first= 0 last= 255 sha256=8e77dd72063fcafbe4c3f1866521977adb9b4e28d13c52cd7c96f586a34be6f6
+encoded-hierarchical-dct-rgb-2x2.jpg bytes= 884 width= 2 height= 2 format=RGB_24 first= 0 last= 255 sha256=8e77dd72063fcafbe4c3f1866521977adb9b4e28d13c52cd7c96f586a34be6f6
+encoded-arithmetic-lossless-rgb-2x2.jpg bytes= 82 width= 2 height= 2 format=RGB_24 first= 0 last= 255 sha256=80992d99f55f6928526c55a9a05314a712d86a56207daf8413793484904f1d4e
+encoded-differential-lossless-rgb-2x2.jpg bytes= 113 width= 2 height= 2 format=RGB_24 first= 0 last= 255 sha256=80992d99f55f6928526c55a9a05314a712d86a56207daf8413793484904f1d4e
+encoded-hierarchical-lossless-rgb-2x2.jpg bytes= 155 width= 2 height= 2 format=RGB_24 first= 0 last= 255 sha256=80992d99f55f6928526c55a9a05314a712d86a56207daf8413793484904f1d4e
+encoded-arithmetic-progressive-cmyk-2x2.jpg bytes= 579 width= 2 height= 2 format=CMYK_32 first= 6 last= 83 sha256=8c45d93af4db7993fb4e7ea9af84241171c6ffb36a466b7615b57370b18444de
+encoded-arithmetic-progressive-ycck-2x2.jpg bytes= 595 width= 2 height= 2 format=YCCK_32 first= 6 last= 83 sha256=8c45d93af4db7993fb4e7ea9af84241171c6ffb36a466b7615b57370b18444de
+encoded-arithmetic-lossless-cmyk-2x2.jpg bytes= 90 width= 2 height= 2 format=CMYK_32 first= 0 last= 80 sha256=b1f01163a0b3c0f051efc97247169352425bd90da9cadfa20e9a0835d4f811fd
+encoded-arithmetic-lossless-ycck-2x2.jpg bytes= 106 width= 2 height= 2 format=YCCK_32 first= 0 last= 80 sha256=b1f01163a0b3c0f051efc97247169352425bd90da9cadfa20e9a0835d4f811fd

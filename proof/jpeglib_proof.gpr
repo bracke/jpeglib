@@ -1,0 +1,15 @@
+project Jpeglib_Proof is
+   for Source_Dirs use ("../src");
+   for Object_Dir use "../obj/proof";
+   for Create_Missing_Dirs use "True";
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        ("-gnat2022", "-gnatX", "-gnata", "-gnato", "-gnatVa", "-gnatwa");
+   end Compiler;
+
+   package Prove is
+      for Proof_Switches ("Ada") use
+        ("--level=0");
+   end Prove;
+end Jpeglib_Proof;
