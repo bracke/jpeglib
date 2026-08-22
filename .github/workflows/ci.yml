@@ -39,6 +39,13 @@ jobs:
         shell: bash
         run: alr settings --global --set solver.timeout 600
 
+      - name: Refresh platform-local Alire locks
+        shell: bash
+        run: |
+          alr --non-interactive update gnat_native
+          cd tests
+          alr --non-interactive update gnat_native
+
       - name: Install Linux workflow dependencies
         if: runner.os == 'Linux'
         shell: bash
