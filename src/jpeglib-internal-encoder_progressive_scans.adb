@@ -301,6 +301,104 @@ package body Jpeglib.Internal.Encoder_Progressive_Scans is
       end;
    end Encode_Progressive_Component_Scan;
 
+   function Encode_Progressive_Component_Scan_With_Header
+     (Output : in out Streams.Destination'Class;
+      Definition : Huffman.Huffman_Definition;
+      Component : Component_Identifier;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval;
+      DC_Scan : Boolean;
+      Refinement : Boolean;
+      Al : Successive_Approximation_Value;
+      DC_Table : Huffman_Table_Index := 0;
+      AC_Table : Huffman_Table_Index := 0) return Results.Result
+   is
+      Outcome : Results.Result;
+   begin
+      Outcome :=
+        Writers.Write_SOS_Component_Progressive
+          (Output,
+           Component => Component,
+           Spectral_Start => (if DC_Scan then 0 else 1),
+           Spectral_End => (if DC_Scan then 0 else 63),
+           Ah => (if Refinement then Al + 1 else 0),
+           Al => Al,
+           DC_Table => DC_Table,
+           AC_Table => AC_Table);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      return
+        Encode_Progressive_Component_Scan
+          (Output,
+           Definition,
+           Blocks,
+           Restart,
+           DC_Scan => DC_Scan,
+           Refinement => Refinement,
+           Al => Al);
+   end Encode_Progressive_Component_Scan_With_Header;
+
+   function Encode_Progressive_Component_Blocks
+     (Output : in out Streams.Destination'Class;
+      DC_Definition : Huffman.Huffman_Definition;
+      AC_Definition : Huffman.Huffman_Definition;
+      Component : Component_Identifier;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval;
+      Refine : Boolean;
+      DC_Table : Huffman_Table_Index := 0;
+      AC_Table : Huffman_Table_Index := 0) return Results.Result
+   is
+      First_Al : constant Successive_Approximation_Value := (if Refine then 2 else 0);
+      Outcome : Results.Result;
+
+      function Write_Component_Scan
+        (DC_Scan : Boolean;
+         Refinement : Boolean;
+         Al : Successive_Approximation_Value) return Results.Result
+      is
+      begin
+         return
+           Encode_Progressive_Component_Scan_With_Header
+             (Output,
+              (if DC_Scan then DC_Definition else AC_Definition),
+              Component,
+              Blocks,
+              Restart,
+              DC_Scan => DC_Scan,
+              Refinement => Refinement,
+              Al => Al,
+              DC_Table => DC_Table,
+              AC_Table => AC_Table);
+      end Write_Component_Scan;
+   begin
+      Outcome := Write_Component_Scan (DC_Scan => True, Refinement => False, Al => First_Al);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Write_Component_Scan (DC_Scan => False, Refinement => False, Al => First_Al);
+      if not Results.Succeeded (Outcome) or else not Refine then
+         return Outcome;
+      end if;
+
+      for Refinement_Al in reverse Successive_Approximation_Value range 0 .. First_Al - 1 loop
+         Outcome := Write_Component_Scan (DC_Scan => True, Refinement => True, Al => Refinement_Al);
+         if not Results.Succeeded (Outcome) then
+            return Outcome;
+         end if;
+
+         Outcome := Write_Component_Scan (DC_Scan => False, Refinement => True, Al => Refinement_Al);
+         if not Results.Succeeded (Outcome) then
+            return Outcome;
+         end if;
+      end loop;
+
+      return Results.Success;
+   end Encode_Progressive_Component_Blocks;
+
    function Encode_Progressive_Component_Grid
      (Output : in out Streams.Destination'Class;
       Definition : Huffman.Huffman_Definition;

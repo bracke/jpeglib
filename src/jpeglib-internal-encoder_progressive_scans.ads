@@ -24,6 +24,29 @@ package Jpeglib.Internal.Encoder_Progressive_Scans is
       Refinement : Boolean;
       Al : Successive_Approximation_Value) return Results.Result;
 
+   function Encode_Progressive_Component_Scan_With_Header
+     (Output : in out Streams.Destination'Class;
+      Definition : Huffman.Huffman_Definition;
+      Component : Component_Identifier;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval;
+      DC_Scan : Boolean;
+      Refinement : Boolean;
+      Al : Successive_Approximation_Value;
+      DC_Table : Huffman_Table_Index := 0;
+      AC_Table : Huffman_Table_Index := 0) return Results.Result;
+
+   function Encode_Progressive_Component_Blocks
+     (Output : in out Streams.Destination'Class;
+      DC_Definition : Huffman.Huffman_Definition;
+      AC_Definition : Huffman.Huffman_Definition;
+      Component : Component_Identifier;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval;
+      Refine : Boolean;
+      DC_Table : Huffman_Table_Index := 0;
+      AC_Table : Huffman_Table_Index := 0) return Results.Result;
+
    function Encode_Progressive_Component_Grid
      (Output : in out Streams.Destination'Class;
       Definition : Huffman.Huffman_Definition;

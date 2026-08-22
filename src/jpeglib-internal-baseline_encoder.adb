@@ -2740,77 +2740,9 @@ package body Jpeglib.Internal.Baseline_Encoder is
       AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
       Luma_Quantization : constant Quantization.Quantization_Table :=
         Quantization.Luma_Table_For_Quality (Quality);
-      First_Al : constant Successive_Approximation_Value := (if Refine then 2 else 0);
       Needed : Block_Count;
       Samples_Needed : Byte_Count;
       Outcome : Results.Result;
-
-      function Write_Component_DC
-        (Component : Component_Identifier;
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array;
-         Refinement : Boolean;
-         Al : Successive_Approximation_Value) return Results.Result
-      is
-         Scan_Outcome : Results.Result;
-      begin
-         Scan_Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output,
-              Component => Component,
-              Spectral_Start => 0,
-              Spectral_End => 0,
-              Ah => (if Refinement then Al + 1 else 0),
-              Al => Al,
-              DC_Table => 0,
-              AC_Table => 0);
-         if not Results.Succeeded (Scan_Outcome) then
-            return Scan_Outcome;
-         end if;
-
-         return
-           Encode_Progressive_Component_Scan
-             (Output,
-              DC_Definition,
-              Blocks,
-              Restart,
-              DC_Scan => True,
-              Refinement => Refinement,
-              Al => Al);
-      end Write_Component_DC;
-
-      function Write_Component_AC
-        (Component : Component_Identifier;
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array;
-         Refinement : Boolean;
-         Al : Successive_Approximation_Value) return Results.Result
-      is
-         Scan_Outcome : Results.Result;
-      begin
-         Scan_Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output,
-              Component => Component,
-              Spectral_Start => 1,
-              Spectral_End => 63,
-              Ah => (if Refinement then Al + 1 else 0),
-              Al => Al,
-              DC_Table => 0,
-              AC_Table => 0);
-         if not Results.Succeeded (Scan_Outcome) then
-            return Scan_Outcome;
-         end if;
-
-         return
-           Encode_Progressive_Component_Scan
-             (Output,
-              AC_Definition,
-              Blocks,
-              Restart,
-              DC_Scan => False,
-              Refinement => Refinement,
-              Al => Al);
-      end Write_Component_AC;
-
    begin
       Needed := Image_Blocks.Required_Block_Count (Input.Descriptor);
       if Needed > Block_Count (Positive'Last) then
@@ -2875,44 +2807,116 @@ package body Jpeglib.Internal.Baseline_Encoder is
             return Outcome;
          end if;
 
-         Outcome := Write_Component_DC (1, Gray_Blocks, Refinement => False, Al => First_Al);
+         Outcome :=
+           Encode_Progressive_Component_Scan_With_Header
+             (Output,
+              DC_Definition,
+              Component => 1,
+              Blocks => Gray_Blocks,
+              Restart => Restart,
+              DC_Scan => True,
+              Refinement => False,
+              Al => (if Refine then 2 else 0));
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
-         Outcome := Write_Component_DC (2, Alpha_Blocks, Refinement => False, Al => First_Al);
+         Outcome :=
+           Encode_Progressive_Component_Scan_With_Header
+             (Output,
+              DC_Definition,
+              Component => 2,
+              Blocks => Alpha_Blocks,
+              Restart => Restart,
+              DC_Scan => True,
+              Refinement => False,
+              Al => (if Refine then 2 else 0));
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
-         Outcome := Write_Component_AC (1, Gray_Blocks, Refinement => False, Al => First_Al);
+         Outcome :=
+           Encode_Progressive_Component_Scan_With_Header
+             (Output,
+              AC_Definition,
+              Component => 1,
+              Blocks => Gray_Blocks,
+              Restart => Restart,
+              DC_Scan => False,
+              Refinement => False,
+              Al => (if Refine then 2 else 0));
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
-         Outcome := Write_Component_AC (2, Alpha_Blocks, Refinement => False, Al => First_Al);
+         Outcome :=
+           Encode_Progressive_Component_Scan_With_Header
+             (Output,
+              AC_Definition,
+              Component => 2,
+              Blocks => Alpha_Blocks,
+              Restart => Restart,
+              DC_Scan => False,
+              Refinement => False,
+              Al => (if Refine then 2 else 0));
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
          if Refine then
-            for Refinement_Al in reverse Successive_Approximation_Value range 0 .. First_Al - 1 loop
-               Outcome := Write_Component_DC (1, Gray_Blocks, Refinement => True, Al => Refinement_Al);
+            for Refinement_Al in reverse Successive_Approximation_Value range 0 .. 1 loop
+               Outcome :=
+                 Encode_Progressive_Component_Scan_With_Header
+                   (Output,
+                    DC_Definition,
+                    Component => 1,
+                    Blocks => Gray_Blocks,
+                    Restart => Restart,
+                    DC_Scan => True,
+                    Refinement => True,
+                    Al => Refinement_Al);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
 
-               Outcome := Write_Component_DC (2, Alpha_Blocks, Refinement => True, Al => Refinement_Al);
+               Outcome :=
+                 Encode_Progressive_Component_Scan_With_Header
+                   (Output,
+                    DC_Definition,
+                    Component => 2,
+                    Blocks => Alpha_Blocks,
+                    Restart => Restart,
+                    DC_Scan => True,
+                    Refinement => True,
+                    Al => Refinement_Al);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
 
-               Outcome := Write_Component_AC (1, Gray_Blocks, Refinement => True, Al => Refinement_Al);
+               Outcome :=
+                 Encode_Progressive_Component_Scan_With_Header
+                   (Output,
+                    AC_Definition,
+                    Component => 1,
+                    Blocks => Gray_Blocks,
+                    Restart => Restart,
+                    DC_Scan => False,
+                    Refinement => True,
+                    Al => Refinement_Al);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
 
-               Outcome := Write_Component_AC (2, Alpha_Blocks, Refinement => True, Al => Refinement_Al);
+               Outcome :=
+                 Encode_Progressive_Component_Scan_With_Header
+                   (Output,
+                    AC_Definition,
+                    Component => 2,
+                    Blocks => Alpha_Blocks,
+                    Restart => Restart,
+                    DC_Scan => False,
+                    Refinement => True,
+                    Al => Refinement_Al);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
@@ -3573,85 +3577,7 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Padded_Count : constant Byte_Count := Plane_Sample_Count (Padded_Width, Padded_Height);
       Block_Total : constant Block_Count :=
         Block_Count (Positive (Natural (Padded_Width) / 8)) * Block_Count (Positive (Natural (Padded_Height) / 8));
-      First_Al : constant Successive_Approximation_Value := (if Refine then 2 else 0);
       Outcome : Results.Result;
-
-      function Encode_Component
-        (Component : Component_Identifier;
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array) return Results.Result
-      is
-         Component_Outcome : Results.Result;
-      begin
-         Component_Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output, Component, Spectral_Start => 0, Spectral_End => 0, Al => First_Al);
-         if not Results.Succeeded (Component_Outcome) then
-            return Component_Outcome;
-         end if;
-
-         Component_Outcome :=
-           Encode_Progressive_Component_Scan
-             (Output, DC_Definition, Blocks, Restart, DC_Scan => True, Refinement => False, Al => First_Al);
-         if not Results.Succeeded (Component_Outcome) then
-            return Component_Outcome;
-         end if;
-
-         Component_Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output, Component, Spectral_Start => 1, Spectral_End => 63, Al => First_Al);
-         if not Results.Succeeded (Component_Outcome) then
-            return Component_Outcome;
-         end if;
-
-         Component_Outcome :=
-           Encode_Progressive_Component_Scan
-             (Output, AC_Definition, Blocks, Restart, DC_Scan => False, Refinement => False, Al => First_Al);
-         if not Results.Succeeded (Component_Outcome) or else not Refine then
-            return Component_Outcome;
-         end if;
-
-         for Refinement_Al in reverse Successive_Approximation_Value range 0 .. First_Al - 1 loop
-            Component_Outcome :=
-              Writers.Write_SOS_Component_Progressive
-                (Output,
-                 Component,
-                 Spectral_Start => 0,
-                 Spectral_End => 0,
-                 Ah => Refinement_Al + 1,
-                 Al => Refinement_Al);
-            if not Results.Succeeded (Component_Outcome) then
-               return Component_Outcome;
-            end if;
-
-            Component_Outcome :=
-              Encode_Progressive_Component_Scan
-                (Output, DC_Definition, Blocks, Restart, DC_Scan => True, Refinement => True, Al => Refinement_Al);
-            if not Results.Succeeded (Component_Outcome) then
-               return Component_Outcome;
-            end if;
-
-            Component_Outcome :=
-              Writers.Write_SOS_Component_Progressive
-                (Output,
-                 Component,
-                 Spectral_Start => 1,
-                 Spectral_End => 63,
-                 Ah => Refinement_Al + 1,
-                 Al => Refinement_Al);
-            if not Results.Succeeded (Component_Outcome) then
-               return Component_Outcome;
-            end if;
-
-            Component_Outcome :=
-              Encode_Progressive_Component_Scan
-                (Output, AC_Definition, Blocks, Restart, DC_Scan => False, Refinement => True, Al => Refinement_Al);
-            if not Results.Succeeded (Component_Outcome) then
-               return Component_Outcome;
-            end if;
-         end loop;
-
-         return Results.Success;
-      end Encode_Component;
    begin
       if Huffman.Symbol_Total (DC_Definition) = 0 or else Huffman.Symbol_Total (AC_Definition) = 0 then
          return Results.Failure (Errors.Internal_Invariant_Failed);
@@ -3741,19 +3667,51 @@ package body Jpeglib.Internal.Baseline_Encoder is
             return Outcome;
          end if;
 
-         Outcome := Encode_Component (Component_Identifier (Character'Pos ('C')), C_Blocks);
+         Outcome :=
+           Encode_Progressive_Component_Blocks
+             (Output,
+              DC_Definition,
+              AC_Definition,
+              Component_Identifier (Character'Pos ('C')),
+              C_Blocks,
+              Restart,
+              Refine);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
-         Outcome := Encode_Component (Component_Identifier (Character'Pos ('M')), M_Blocks);
+         Outcome :=
+           Encode_Progressive_Component_Blocks
+             (Output,
+              DC_Definition,
+              AC_Definition,
+              Component_Identifier (Character'Pos ('M')),
+              M_Blocks,
+              Restart,
+              Refine);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
-         Outcome := Encode_Component (Component_Identifier (Character'Pos ('Y')), Y_Blocks);
+         Outcome :=
+           Encode_Progressive_Component_Blocks
+             (Output,
+              DC_Definition,
+              AC_Definition,
+              Component_Identifier (Character'Pos ('Y')),
+              Y_Blocks,
+              Restart,
+              Refine);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
-         Outcome := Encode_Component (Component_Identifier (Character'Pos ('K')), K_Blocks);
+         Outcome :=
+           Encode_Progressive_Component_Blocks
+             (Output,
+              DC_Definition,
+              AC_Definition,
+              Component_Identifier (Character'Pos ('K')),
+              K_Blocks,
+              Restart,
+              Refine);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
