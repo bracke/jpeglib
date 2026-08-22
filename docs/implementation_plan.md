@@ -565,8 +565,9 @@ and compares them against the source samples with bounded tolerances.
 ImageMagick stays as a diagnostic third-party oracle where this host rejects an
 advanced JPEG family or uses a different CMYK/YCCK channel convention. The
 baseline/progressive CMYK/YCCK rows additionally require `ffmpeg` as a
-third-party RGB-conversion oracle, and the lossless Huffman grayscale/RGB rows
-require `ffmpeg` as a third-party raw-byte oracle on this host. The
+third-party RGB-conversion oracle, and the lossless Huffman grayscale/RGB rows,
+including restarted artifacts with emitted restart markers, require `ffmpeg` as
+a third-party raw-byte oracle on this host. The
 required versus diagnostic external coverage is documented in
 `docs/external_reference_matrix.md`. `jpeglib_check` runs these conformance
 checks after fixture verification.
@@ -623,8 +624,9 @@ Completed:
   hierarchical encode probes are required to pass the `jpeglib_decode_raw`
   native process oracle, baseline/progressive CMYK/YCCK rows require `ffmpeg`
   RGB-conversion decode, while ImageMagick results remain
-  optional external-support diagnostics and lossless Huffman grayscale/RGB rows
-  also require `ffmpeg` raw-byte decode. `docs/external_reference_matrix.md`
+  optional external-support diagnostics and lossless Huffman grayscale/RGB rows,
+  including restarted artifacts, also require `ffmpeg` raw-byte decode.
+  `docs/external_reference_matrix.md`
   records which checks are required native process oracles versus diagnostic
   third-party probes.
 - Implement `jpeglib_fuzz` for parser and entropy-input robustness. The
@@ -794,5 +796,6 @@ RGB decode artifacts including RGB 4x3/5x2/17x9/9x17 and grayscale
 required native process oracle for advanced encode
 families, require `ffmpeg` for baseline/progressive CMYK/YCCK RGB-conversion
 third-party decode and lossless Huffman grayscale/RGB raw-byte third-party
-decode, and keep ImageMagick diagnostics for host reference decoder support without
+decode, including restarted artifacts with emitted restart markers, and keep
+ImageMagick diagnostics for host reference decoder support without
 requiring ImageMagick builds to support every advanced JPEG mode.

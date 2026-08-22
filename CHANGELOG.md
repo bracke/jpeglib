@@ -123,6 +123,8 @@
 - Require `ffmpeg` raw gray/RGB decode for lossless Huffman grayscale/RGB
   conformance artifacts, promoting the installed third-party oracle where the
   host can decode the advanced JPEG family.
+- Extend that required `ffmpeg` lossless Huffman oracle to restarted grayscale
+  and RGB conformance artifacts that must contain emitted restart markers.
 - Require `ffmpeg` RGB-conversion decode for baseline/progressive CMYK and YCCK
   conformance artifacts, while keeping ImageMagick raw-CMYK output diagnostic
   because its channel convention differs on this host.

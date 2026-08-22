@@ -130,7 +130,8 @@ begin
    Require_Text ("CHANGELOG.md", "runtime-checked access-bearing views");
    Require_Text ("CHANGELOG.md", "Photoshop_APP13");
    Require_Text ("CHANGELOG.md", "YCCK");
-   Require_Text ("docs/external_reference_matrix.md", "Lossless Huffman grayscale/RGB encode");
+   Require_Text ("docs/external_reference_matrix.md", "including restarted artifacts");
+   Require_Text ("docs/external_reference_matrix.md", "emitted restart markers");
    Require_Text
      ("docs/external_reference_matrix.md",
       "Differential DCT, hierarchical DCT, and hierarchical lossless encode");
@@ -161,7 +162,8 @@ begin
    Require_Text ("docs/implementation_plan.md", "native process oracle");
    Require_Text ("docs/implementation_plan.md", "ffmpeg");
    Require_Text ("docs/implementation_plan.md", "baseline/progressive CMYK/YCCK rows require `ffmpeg`");
-   Require_Text ("docs/implementation_plan.md", "lossless Huffman grayscale/RGB");
+   Require_Text ("docs/implementation_plan.md", "lossless Huffman grayscale/RGB rows");
+   Require_Text ("docs/implementation_plan.md", "including restarted artifacts");
    Require_Text ("docs/implementation_plan.md", "ImageMagick-generated baseline/progressive");
    Require_Text ("docs/implementation_plan.md", "RGB 4x3/5x2/17x9/9x17");
    Require_Text ("docs/implementation_plan.md", "grayscale 5x3/4x4/17x1/2x17");

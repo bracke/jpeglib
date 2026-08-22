@@ -16,7 +16,9 @@ with Project_Tools.Files;
 with Project_Tools.Processes;
 
 procedure Jpeglib_Conformance is
+   use type Jpeglib.Byte;
    use type Jpeglib.Images.Pixel_Format;
+   use type Jpeglib.Streams.Byte_Array;
 
    function To_String (Data : Jpeglib.Streams.Byte_Array; Last : Natural) return String is
       Result : String (1 .. Last);
@@ -30,6 +32,25 @@ procedure Jpeglib_Conformance is
 
    function Byte_At (Data : String; Index : Positive) return Natural is
      (Character'Pos (Data (Index)));
+
+   function Restart_Marker_Count
+     (Data : Jpeglib.Streams.Byte_Array;
+      Last : Natural) return Natural
+   is
+      Count : Natural := 0;
+   begin
+      if Last < Data'First + 1 then
+         return 0;
+      end if;
+
+      for Index in Data'First .. Last - 1 loop
+         if Data (Index) = 16#FF# and then Data (Index + 1) in 16#D0# .. 16#D7# then
+            Count := Count + 1;
+         end if;
+      end loop;
+
+      return Count;
+   end Restart_Marker_Count;
 
    procedure Fail (Message : String; Detail : String := "") is
    begin
@@ -86,6 +107,38 @@ procedure Jpeglib_Conformance is
 
       return Result;
    end Generated_Gray_Input;
+
+   procedure Fill_Generated_RGB_Input
+     (Storage : in out Jpeglib.Streams.Byte_Array;
+      Width   : Jpeglib.Image_Width;
+      Height  : Jpeglib.Image_Height)
+   is
+      Cursor : Positive := Storage'First;
+   begin
+      for Y in 0 .. Natural (Height) - 1 loop
+         for X in 0 .. Natural (Width) - 1 loop
+            Storage (Cursor) := Jpeglib.Byte (24 + X * 5 + Y * 3);
+            Storage (Cursor + 1) := Jpeglib.Byte (48 + X * 4 + Y * 6);
+            Storage (Cursor + 2) := Jpeglib.Byte (72 + X * 3 + Y * 2);
+            Cursor := Cursor + 3;
+         end loop;
+      end loop;
+   end Fill_Generated_RGB_Input;
+
+   procedure Fill_Generated_Gray_Input
+     (Storage : in out Jpeglib.Streams.Byte_Array;
+      Width   : Jpeglib.Image_Width;
+      Height  : Jpeglib.Image_Height)
+   is
+      Cursor : Positive := Storage'First;
+   begin
+      for Y in 0 .. Natural (Height) - 1 loop
+         for X in 0 .. Natural (Width) - 1 loop
+            Storage (Cursor) := Jpeglib.Byte (20 + X * 7 + Y * 5);
+            Cursor := Cursor + 1;
+         end loop;
+      end loop;
+   end Fill_Generated_Gray_Input;
 
    procedure Run_Process_Raw_Oracle
      (Label         : String;
@@ -1066,6 +1119,226 @@ procedure Jpeglib_Conformance is
               " passed native process and external decode checks"));
    end Run_Gray_Encode_Case;
 
+   procedure Run_Restarted_Lossless_RGB_Case
+     (Label         : String;
+      Artifact_Name : String;
+      Options       : Jpeglib.Encoding.Options;
+      Magick        : String;
+      Failed        : in out Boolean)
+   is
+      Width : constant Jpeglib.Image_Width := 5;
+      Height : constant Jpeglib.Image_Height := 5;
+      Input_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 75 => 0];
+      Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 16384 => 0];
+      Jpeglib_Decoded : aliased Jpeglib.Streams.Byte_Array := [1 .. 75 => 0];
+      Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+      Source : aliased Jpeglib.Streams.Memory_Source;
+      Encoder : Jpeglib.Encoding.Encoder;
+      Decoder : Jpeglib.Decoding.Decoder;
+      Input : constant Jpeglib.Images.Image_View :=
+        (Descriptor =>
+           (Width => Width,
+            Height => Height,
+            Format => Jpeglib.Images.RGB_24,
+            Stride => Jpeglib.Row_Stride (Natural (Width) * 3),
+            Accessible_Bytes => Jpeglib.Byte_Count (Input_Storage'Length)),
+         Storage => Input_Storage'Unchecked_Access);
+      Output : Jpeglib.Images.Mutable_Image_View :=
+        (Descriptor =>
+           (Width => Width,
+            Height => Height,
+            Format => Jpeglib.Images.RGB_24,
+            Stride => Jpeglib.Row_Stride (Natural (Width) * 3),
+            Accessible_Bytes => Jpeglib.Byte_Count (Jpeglib_Decoded'Length)),
+         Storage => Jpeglib_Decoded'Unchecked_Access);
+      Outcome : Jpeglib.Results.Result;
+      Artifact_Path : constant String :=
+        Project_Tools.Files.Join (Project_Tools.Files.Temp_Dir, Artifact_Name);
+      Magick_Status : aliased Integer := -1;
+      Encoded_Last : Natural;
+   begin
+      Fill_Generated_RGB_Input (Input_Storage, Width, Height);
+
+      Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+      Jpeglib.Encoding.Initialize (Encoder, Destination'Access, Options);
+      Outcome := Jpeglib.Encoding.Encode_Image (Encoder, Input);
+      if not Jpeglib.Results.Succeeded (Outcome) then
+         Failed := True;
+         Fail (Label & " encode failed", Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+         return;
+      end if;
+
+      Encoded_Last := Natural (Jpeglib.Streams.Offset (Destination));
+      if Restart_Marker_Count (Encoded_Storage, Encoded_Last) = 0 then
+         Failed := True;
+         Fail (Label & " encoded artifact did not contain restart markers", "artifact: " & Artifact_Path);
+         return;
+      end if;
+
+      Project_Tools.Files.Write_Raw_File (Artifact_Path, To_String (Encoded_Storage, Encoded_Last));
+
+      Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
+      Jpeglib.Decoding.Initialize
+        (Decoder,
+         Source'Access,
+         (Output_Format => Jpeglib.Images.RGB_24, others => <>));
+      Outcome := Jpeglib.Decoding.Decode_Image (Decoder, Output);
+      if not Jpeglib.Results.Succeeded (Outcome) then
+         Failed := True;
+         Fail (Label & " self-decode failed", "artifact: " & Artifact_Path);
+         return;
+      elsif Jpeglib_Decoded /= Input_Storage then
+         Failed := True;
+         Fail (Label & " self-decode pixel mismatch", "artifact: " & Artifact_Path);
+         return;
+      end if;
+
+      Run_Process_Raw_Oracle (Label, Artifact_Path, "rgb", Width, Height, Input_Storage, 0, Failed);
+      if Failed then
+         return;
+      end if;
+
+      Run_FFMPEG_RGB_Oracle (Label, Artifact_Path, Input_Storage, 0, Failed);
+      if Failed then
+         return;
+      end if;
+
+      declare
+         Magick_Output : constant String :=
+           Project_Tools.Processes.Command_Output
+             (Magick,
+              Project_Tools.Processes.Arguments
+                ([Project_Tools.Processes.Argument ("jpeg:-"),
+                  Project_Tools.Processes.Argument ("-depth"),
+                  Project_Tools.Processes.Argument ("8"),
+                  Project_Tools.Processes.Argument ("rgb:-")]),
+              Input => To_String (Encoded_Storage, Encoded_Last),
+              Status => Magick_Status'Access,
+              Err_To_Out => True);
+         pragma Unreferenced (Magick_Output);
+      begin
+         if Magick_Status = 0 then
+            Ada.Text_IO.Put_Line
+              ("jpeglib_conformance: " & Label
+               & " passed native process, ffmpeg, and optional ImageMagick decode checks");
+         else
+            Ada.Text_IO.Put_Line
+              ("jpeglib_conformance: " & Label
+               & " passed native process and ffmpeg oracles; ImageMagick rejected optional external decode");
+         end if;
+      end;
+   end Run_Restarted_Lossless_RGB_Case;
+
+   procedure Run_Restarted_Lossless_Gray_Case
+     (Label         : String;
+      Artifact_Name : String;
+      Options       : Jpeglib.Encoding.Options;
+      Magick        : String;
+      Failed        : in out Boolean)
+   is
+      Width : constant Jpeglib.Image_Width := 9;
+      Height : constant Jpeglib.Image_Height := 9;
+      Input_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 81 => 0];
+      Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 8192 => 0];
+      Jpeglib_Decoded : aliased Jpeglib.Streams.Byte_Array := [1 .. 81 => 0];
+      Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+      Source : aliased Jpeglib.Streams.Memory_Source;
+      Encoder : Jpeglib.Encoding.Encoder;
+      Decoder : Jpeglib.Decoding.Decoder;
+      Input : constant Jpeglib.Images.Image_View :=
+        (Descriptor =>
+           (Width => Width,
+            Height => Height,
+            Format => Jpeglib.Images.Gray_8,
+            Stride => Jpeglib.Row_Stride (Width),
+            Accessible_Bytes => Jpeglib.Byte_Count (Input_Storage'Length)),
+         Storage => Input_Storage'Unchecked_Access);
+      Output : Jpeglib.Images.Mutable_Image_View :=
+        (Descriptor =>
+           (Width => Width,
+            Height => Height,
+            Format => Jpeglib.Images.Gray_8,
+            Stride => Jpeglib.Row_Stride (Width),
+            Accessible_Bytes => Jpeglib.Byte_Count (Jpeglib_Decoded'Length)),
+         Storage => Jpeglib_Decoded'Unchecked_Access);
+      Outcome : Jpeglib.Results.Result;
+      Artifact_Path : constant String :=
+        Project_Tools.Files.Join (Project_Tools.Files.Temp_Dir, Artifact_Name);
+      Magick_Status : aliased Integer := -1;
+      Encoded_Last : Natural;
+   begin
+      Fill_Generated_Gray_Input (Input_Storage, Width, Height);
+
+      Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+      Jpeglib.Encoding.Initialize (Encoder, Destination'Access, Options);
+      Outcome := Jpeglib.Encoding.Encode_Image (Encoder, Input);
+      if not Jpeglib.Results.Succeeded (Outcome) then
+         Failed := True;
+         Fail (Label & " encode failed", Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+         return;
+      end if;
+
+      Encoded_Last := Natural (Jpeglib.Streams.Offset (Destination));
+      if Restart_Marker_Count (Encoded_Storage, Encoded_Last) = 0 then
+         Failed := True;
+         Fail (Label & " encoded artifact did not contain restart markers", "artifact: " & Artifact_Path);
+         return;
+      end if;
+
+      Project_Tools.Files.Write_Raw_File (Artifact_Path, To_String (Encoded_Storage, Encoded_Last));
+
+      Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
+      Jpeglib.Decoding.Initialize
+        (Decoder,
+         Source'Access,
+         (Output_Format => Jpeglib.Images.Gray_8, others => <>));
+      Outcome := Jpeglib.Decoding.Decode_Image (Decoder, Output);
+      if not Jpeglib.Results.Succeeded (Outcome) then
+         Failed := True;
+         Fail (Label & " self-decode failed", "artifact: " & Artifact_Path);
+         return;
+      elsif Jpeglib_Decoded /= Input_Storage then
+         Failed := True;
+         Fail (Label & " self-decode sample mismatch", "artifact: " & Artifact_Path);
+         return;
+      end if;
+
+      Run_Process_Raw_Oracle (Label, Artifact_Path, "gray", Width, Height, Input_Storage, 0, Failed);
+      if Failed then
+         return;
+      end if;
+
+      Run_FFMPEG_Gray_Oracle (Label, Artifact_Path, Input_Storage, 0, Failed);
+      if Failed then
+         return;
+      end if;
+
+      declare
+         Magick_Output : constant String :=
+           Project_Tools.Processes.Command_Output
+             (Magick,
+              Project_Tools.Processes.Arguments
+                ([Project_Tools.Processes.Argument ("jpeg:-"),
+                  Project_Tools.Processes.Argument ("-depth"),
+                  Project_Tools.Processes.Argument ("8"),
+                  Project_Tools.Processes.Argument ("gray:-")]),
+              Input => To_String (Encoded_Storage, Encoded_Last),
+              Status => Magick_Status'Access,
+              Err_To_Out => True);
+         pragma Unreferenced (Magick_Output);
+      begin
+         if Magick_Status = 0 then
+            Ada.Text_IO.Put_Line
+              ("jpeglib_conformance: " & Label
+               & " passed native process, ffmpeg, and optional ImageMagick decode checks");
+         else
+            Ada.Text_IO.Put_Line
+              ("jpeglib_conformance: " & Label
+               & " passed native process and ffmpeg oracles; ImageMagick rejected optional external decode");
+         end if;
+      end;
+   end Run_Restarted_Lossless_Gray_Case;
+
    procedure Run_Four_Channel_Encode_Case
      (Label         : String;
       Artifact_Name : String;
@@ -1519,6 +1792,26 @@ begin
       Failed,
       Require_External_Decode => False,
       Require_FFMPEG_Decode => True);
+
+   Run_Restarted_Lossless_RGB_Case
+     ("restarted lossless Huffman RGB encode",
+      "jpeglib-conformance-lossless-rgb-restart-5x5.jpg",
+      (Mode => Jpeglib.Encoding.Lossless_Huffman,
+       Lossless_Predictor => 1,
+       Restart => 2,
+       others => <>),
+      Magick,
+      Failed);
+
+   Run_Restarted_Lossless_Gray_Case
+     ("restarted lossless Huffman grayscale encode",
+      "jpeglib-conformance-lossless-gray-restart-9x9.jpg",
+      (Mode => Jpeglib.Encoding.Lossless_Huffman,
+       Lossless_Predictor => 1,
+       Restart => 9,
+       others => <>),
+      Magick,
+      Failed);
 
    Run_RGB_Encode_Case
      ("hierarchical lossless RGB encode",
