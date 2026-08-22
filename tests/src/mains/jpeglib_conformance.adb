@@ -154,41 +154,50 @@ procedure Jpeglib_Conformance is
       Failed        : in out Boolean)
    is
       Status : aliased Integer := -1;
-      Output : constant String :=
+      Oracle_Path : constant String := Artifact_Path & ".oracle.raw";
+      Process_Output : constant String :=
         Project_Tools.Processes.Command_Output
           (Decode_Raw,
            Project_Tools.Processes.Arguments
              ([Project_Tools.Processes.Argument (Format),
                Project_Tools.Processes.Argument (Image (Natural (Width))),
                Project_Tools.Processes.Argument (Image (Natural (Height))),
-               Project_Tools.Processes.Argument (Artifact_Path)]),
+               Project_Tools.Processes.Argument (Artifact_Path),
+               Project_Tools.Processes.Argument (Oracle_Path)]),
            Status => Status'Access,
            Err_To_Out => False);
+      pragma Unreferenced (Process_Output);
       Difference : Natural;
    begin
       if Status /= 0 then
          Failed := True;
          Fail (Label & " jpeglib_decode_raw oracle failed", "artifact: " & Artifact_Path);
          return;
-      elsif Output'Length /= Expected'Length then
-         Failed := True;
-         Fail (Label & " jpeglib_decode_raw oracle length mismatch", "artifact: " & Artifact_Path);
-         return;
       end if;
 
-      for Index in Expected'Range loop
-         if Byte_At (Output, Index - Expected'First + Output'First) > Natural (Expected (Index)) then
-            Difference := Byte_At (Output, Index - Expected'First + Output'First) - Natural (Expected (Index));
-         else
-            Difference := Natural (Expected (Index)) - Byte_At (Output, Index - Expected'First + Output'First);
-         end if;
-
-         if Difference > Tolerance then
+      declare
+         Output : constant String := Project_Tools.Files.Read_Raw_File (Oracle_Path);
+      begin
+         if Output'Length /= Expected'Length then
             Failed := True;
-            Fail (Label & " jpeglib_decode_raw oracle sample mismatch", "artifact: " & Artifact_Path);
+            Fail (Label & " jpeglib_decode_raw oracle length mismatch", "artifact: " & Artifact_Path);
             return;
          end if;
-      end loop;
+
+         for Index in Expected'Range loop
+            if Byte_At (Output, Index - Expected'First + Output'First) > Natural (Expected (Index)) then
+               Difference := Byte_At (Output, Index - Expected'First + Output'First) - Natural (Expected (Index));
+            else
+               Difference := Natural (Expected (Index)) - Byte_At (Output, Index - Expected'First + Output'First);
+            end if;
+
+            if Difference > Tolerance then
+               Failed := True;
+               Fail (Label & " jpeglib_decode_raw oracle sample mismatch", "artifact: " & Artifact_Path);
+               return;
+            end if;
+         end loop;
+      end;
    end Run_Process_Raw_Oracle;
 
    procedure Run_FFMPEG_RGB_Oracle

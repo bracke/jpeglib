@@ -49,10 +49,10 @@ procedure Jpeglib_Decode_Raw is
       return Result;
    end To_String;
 begin
-   if Ada.Command_Line.Argument_Count /= 4 then
+   if Ada.Command_Line.Argument_Count not in 4 .. 5 then
       Ada.Text_IO.Put_Line
         (Ada.Text_IO.Standard_Error,
-         "usage: jpeglib_decode_raw FORMAT WIDTH HEIGHT JPEG_PATH");
+         "usage: jpeglib_decode_raw FORMAT WIDTH HEIGHT JPEG_PATH [RAW_OUTPUT_PATH]");
       Ada.Command_Line.Set_Exit_Status
         (Ada.Command_Line.Exit_Status (Jpeglib_Tools.Code (Jpeglib_Tools.Invalid_Command)));
       return;
@@ -62,8 +62,10 @@ begin
       Format : constant Jpeglib.Images.Pixel_Format := Format_Of (Ada.Command_Line.Argument (1));
       Width  : constant Jpeglib.Image_Width := Jpeglib.Image_Width'Value (Ada.Command_Line.Argument (2));
       Height : constant Jpeglib.Image_Height := Jpeglib.Image_Height'Value (Ada.Command_Line.Argument (3));
-      Path   : constant String := Ada.Command_Line.Argument (4);
-      Raw    : constant String := Project_Tools.Files.Read_Raw_File (Path);
+      Path        : constant String := Ada.Command_Line.Argument (4);
+      Output_Path : constant String :=
+        (if Ada.Command_Line.Argument_Count = 5 then Ada.Command_Line.Argument (5) else "");
+      Raw         : constant String := Project_Tools.Files.Read_Raw_File (Path);
    begin
       if Raw = "" then
          Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "jpeglib_decode_raw: empty or unreadable input");
@@ -103,7 +105,12 @@ begin
             return;
          end if;
 
-         Ada.Text_IO.Put (To_String (Output_Storage));
+         if Output_Path = "" then
+            Ada.Text_IO.Put (To_String (Output_Storage));
+         else
+            Project_Tools.Files.Write_Raw_File (Output_Path, To_String (Output_Storage));
+         end if;
+
          Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Success);
       end;
    end;
