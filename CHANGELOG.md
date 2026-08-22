@@ -2,6 +2,8 @@
 
 ## 0.1.0-dev
 
+- Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
+  request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,
   adding the SPARK-proved `Jpeglib.Internal.Library_Policy` boundary for LC4,
   and updating documentation/release checks so `jpeglib_complete` passes with

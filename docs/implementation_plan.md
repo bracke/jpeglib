@@ -953,14 +953,14 @@ Work:
 - Maintain `jpeglib_complete` as the library-complete mode that runs external
   oracle closure, real-world corpus, public API matrix, proof expansion,
   streaming stress, docs, benchmarks, and packaging checks.
-- Keep CI running the release gate; enable the library-complete gate for normal
-  pull requests when runtime cost is acceptable.
+- Keep CI running the library-complete gate for pushes, pull requests, and
+  manual dispatches.
 - Update `README.md`, `docs/external_reference_matrix.md`, `docs/proof_profile.md`,
   and `docs/invariants.md` so "complete" has one enforceable meaning.
 
 Exit criteria:
 
-- `alr exec -- tests/bin/jpeglib_complete` succeeds locally.
+- `alr exec -- tests/bin/jpeglib_complete` succeeds locally and in CI.
 - There are no diagnostic-only compatibility rows, untracked public API policy
   combinations, undocumented proof/runtime boundaries, or unmanifested
   real-world corpus expectations.

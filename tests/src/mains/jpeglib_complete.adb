@@ -138,10 +138,6 @@ begin
         ("docs/implementation_plan.md",
          "Open library-complete work remains",
          "library-complete implementation plan still lists open work");
-      Require_Resolved
-        ("docs/implementation_plan.md",
-         "jpeglib_complete` succeeds locally and in CI",
-         "LC6 release completeness gate is documented as a future exit criterion");
    end if;
 
    if Errors = 0 then

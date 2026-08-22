@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  linux-release-check:
-    name: Linux release checklist
+  linux-complete-check:
+    name: Linux library-complete checklist
     runs-on: ubuntu-latest
     env:
       ALIRE_NONINTERACTIVE: "true"
@@ -57,6 +57,6 @@ jobs:
         working-directory: jpeglib/tests
         run: alr --non-interactive build
 
-      - name: Run release readiness checks
+      - name: Run library-complete checks
         working-directory: jpeglib
-        run: alr exec -- tests/bin/jpeglib_release
+        run: alr exec -- tests/bin/jpeglib_complete
