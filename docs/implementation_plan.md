@@ -1044,16 +1044,18 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
 ### Phase CP6: Performance Architecture
 
 - Status: closed. `Jpeglib.Internal.Colors` exposes compiler-vectorized
-  RGB-to-YCbCr row kernels and YCbCr-to-RGB-family row output kernels. The
-  encoder plane-filling path uses the input kernels for RGB-family DCT input,
-  and direct full-size lossless YCbCr image decode writes rows through the
-  output kernel while reduced-IDCT and EXIF-oriented output keep the scalar
-  coordinate-mapping path.
+  RGB-to-YCbCr row kernels, YCbCr-to-RGB-family row output kernels, and direct
+  RGB row output kernels. The encoder plane-filling path uses the input kernels
+  for RGB-family DCT input, and direct full-size lossless plus 4:4:4 DCT
+  YCbCr/RGB image decode writes rows through output kernels while reduced-IDCT,
+  subsampled chroma, and EXIF-oriented output keep the scalar coordinate-mapping
+  path.
   `Jpeglib.Capabilities.SIMD_Acceleration` advertises the acceleration surface.
 - `jpeglib_simd_matrix` uses `../hostkit` to report the host and verifies
   bit-exact row-kernel equivalence against scalar `Read_RGB` plus
-  `Convert_RGB_To_YCbCr` input conversion and scalar `Write_YCbCr` output
-  packing across RGB, BGR, RGBA, and BGRA storage layouts.
+  `Convert_RGB_To_YCbCr` input conversion, scalar `Write_YCbCr` output packing,
+  and scalar `Write_RGB` output packing across RGB, BGR, RGBA, and BGRA input
+  storage plus every public output format.
 - `jpeglib_performance_matrix` reports the active acceleration profile and runs
   baseline, optimized progressive, and arithmetic encode/decode loops that
   exercise FDCT/IDCT, color conversion, sampling, entropy, and pixel packing

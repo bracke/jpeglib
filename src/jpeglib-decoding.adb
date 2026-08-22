@@ -5314,43 +5314,65 @@ package body Jpeglib.Decoding is
             end if;
          end;
 
-         if Header_Color_Model = YCbCr and then Can_Write_Direct_Output_Rows (Width, Height) then
+         if Header_Color_Model in YCbCr | RGB and then Can_Write_Direct_Output_Rows (Width, Height) then
             for Row in Natural range 0 .. Height - 1 loop
                declare
-                  Y_Row : Streams.Byte_Array (1 .. Width);
-                  Cb_Row : Streams.Byte_Array (1 .. Width);
-                  Cr_Row : Streams.Byte_Array (1 .. Width);
+                  C1_Row : Streams.Byte_Array (1 .. Width);
+                  C2_Row : Streams.Byte_Array (1 .. Width);
+                  C3_Row : Streams.Byte_Array (1 .. Width);
                   Written : Natural;
                begin
                   for Column in Natural range 0 .. Width - 1 loop
                      declare
                         Index : constant Natural := Samples'First (2) + Row * Width + Column;
                      begin
-                        Y_Row (Y_Row'First + Column) := Output_Byte (Samples (1, Index));
-                        Cb_Row (Cb_Row'First + Column) := Output_Byte (Samples (2, Index));
-                        Cr_Row (Cr_Row'First + Column) := Output_Byte (Samples (3, Index));
+                        C1_Row (C1_Row'First + Column) := Output_Byte (Samples (1, Index));
+                        C2_Row (C2_Row'First + Column) := Output_Byte (Samples (2, Index));
+                        C3_Row (C3_Row'First + Column) := Output_Byte (Samples (3, Index));
                      end;
                   end loop;
 
-                  Internal.Colors.Write_YCbCr_Row
-                    (Output,
-                     Row,
-                     Y_Row,
-                     Cb_Row,
-                     Cr_Row,
-                     0,
-                     Width,
-                     Object.Decode_Options.Alpha_Fill,
-                     Written);
+                  if Header_Color_Model = YCbCr then
+                     Internal.Colors.Write_YCbCr_Row
+                       (Output,
+                        Row,
+                        C1_Row,
+                        C2_Row,
+                        C3_Row,
+                        0,
+                        Width,
+                        Object.Decode_Options.Alpha_Fill,
+                        Written);
+                  else
+                     Internal.Colors.Write_RGB_Row
+                       (Output,
+                        Row,
+                        C1_Row,
+                        C2_Row,
+                        C3_Row,
+                        0,
+                        Width,
+                        Object.Decode_Options.Alpha_Fill,
+                        Written);
+                  end if;
 
                   if Written /= Width then
                      for Column in Natural range 0 .. Width - 1 loop
-                        Write_YCbCr_Pixel
-                          (Column,
-                           Row,
-                           Y_Row (Y_Row'First + Column),
-                           Cb_Row (Cb_Row'First + Column),
-                           Cr_Row (Cr_Row'First + Column));
+                        if Header_Color_Model = YCbCr then
+                           Write_YCbCr_Pixel
+                             (Column,
+                              Row,
+                              C1_Row (C1_Row'First + Column),
+                              C2_Row (C2_Row'First + Column),
+                              C3_Row (C3_Row'First + Column));
+                        else
+                           Write_RGB_Pixel
+                             (Column,
+                              Row,
+                              C1_Row (C1_Row'First + Column),
+                              C2_Row (C2_Row'First + Column),
+                              C3_Row (C3_Row'First + Column));
+                        end if;
                      end loop;
                   end if;
                end;
@@ -6487,6 +6509,8 @@ package body Jpeglib.Decoding is
          C1_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 1);
          C2_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 2);
          C3_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 3);
+         Width : constant Natural := Natural (Internal.Frames.Width (Header.Frame));
+         Height : constant Natural := Natural (Internal.Frames.Height (Header.Frame));
          Component : Internal.Frames.Frame_Component;
          Dequantized : Internal.Transforms.Dequantized_Block;
          Samples : Internal.Transforms.Sample_Block;
@@ -6544,6 +6568,16 @@ package body Jpeglib.Decoding is
                end loop;
             end loop;
          end Store_Separate_Component;
+
+         function Can_Write_Direct_Color_Rows return Boolean is
+           (Header_Color_Model in YCbCr | RGB
+            and then Can_Write_Direct_Output_Rows (Width, Height)
+            and then Natural (C1_Component.Component_Width) = Width
+            and then Natural (C1_Component.Component_Height) = Height
+            and then Natural (C2_Component.Component_Width) = Width
+            and then Natural (C2_Component.Component_Height) = Height
+            and then Natural (C3_Component.Component_Width) = Width
+            and then Natural (C3_Component.Component_Height) = Height);
       begin
          if Separate_Order then
             Store_Separate_Component (1, C1_Component, C1_Plane);
@@ -6588,52 +6622,105 @@ package body Jpeglib.Decoding is
             end loop;
          end if;
 
-         for Row in Natural range 0 .. Natural (Internal.Frames.Height (Header.Frame)) - 1 loop
-            for Column in Natural range 0 .. Natural (Internal.Frames.Width (Header.Frame)) - 1 loop
+         if Can_Write_Direct_Color_Rows then
+            for Row in Natural range 0 .. Height - 1 loop
                declare
-                  C1_C : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Column_For_Image
-                         (Header.Frame, 1, Internal.Sampling.Sample_Column (Column)));
-                  C1_R : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Row_For_Image
-                         (Header.Frame, 1, Internal.Sampling.Sample_Row (Row)));
-                  C2_C : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Column_For_Image
-                         (Header.Frame, 2, Internal.Sampling.Sample_Column (Column)));
-                  C2_R : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Row_For_Image
-                         (Header.Frame, 2, Internal.Sampling.Sample_Row (Row)));
-                  C3_C : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Column_For_Image
-                         (Header.Frame, 3, Internal.Sampling.Sample_Column (Column)));
-                  C3_R : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Row_For_Image
-                         (Header.Frame, 3, Internal.Sampling.Sample_Row (Row)));
+                  Row_Offset : constant Natural := Row * Width;
+                  Written : Natural;
                begin
                   if Header_Color_Model = YCbCr then
-                     Write_YCbCr_Pixel
-                       (Column,
+                     Internal.Colors.Write_YCbCr_Row
+                       (Output,
                         Row,
-                        C1_Plane (C1_Plane'First + C1_R * Natural (C1_Component.Component_Width) + C1_C),
-                        C2_Plane (C2_Plane'First + C2_R * Natural (C2_Component.Component_Width) + C2_C),
-                        C3_Plane (C3_Plane'First + C3_R * Natural (C3_Component.Component_Width) + C3_C));
+                        C1_Plane,
+                        C2_Plane,
+                        C3_Plane,
+                        Row_Offset,
+                        Width,
+                        Object.Decode_Options.Alpha_Fill,
+                        Written);
                   else
-                     Write_RGB_Pixel
-                       (Column,
+                     Internal.Colors.Write_RGB_Row
+                       (Output,
                         Row,
-                        C1_Plane (C1_Plane'First + C1_R * Natural (C1_Component.Component_Width) + C1_C),
-                        C2_Plane (C2_Plane'First + C2_R * Natural (C2_Component.Component_Width) + C2_C),
-                        C3_Plane (C3_Plane'First + C3_R * Natural (C3_Component.Component_Width) + C3_C));
+                        C1_Plane,
+                        C2_Plane,
+                        C3_Plane,
+                        Row_Offset,
+                        Width,
+                        Object.Decode_Options.Alpha_Fill,
+                        Written);
+                  end if;
+
+                  if Written /= Width then
+                     for Column in Natural range 0 .. Width - 1 loop
+                        if Header_Color_Model = YCbCr then
+                           Write_YCbCr_Pixel
+                             (Column,
+                              Row,
+                              C1_Plane (C1_Plane'First + Row_Offset + Column),
+                              C2_Plane (C2_Plane'First + Row_Offset + Column),
+                              C3_Plane (C3_Plane'First + Row_Offset + Column));
+                        else
+                           Write_RGB_Pixel
+                             (Column,
+                              Row,
+                              C1_Plane (C1_Plane'First + Row_Offset + Column),
+                              C2_Plane (C2_Plane'First + Row_Offset + Column),
+                              C3_Plane (C3_Plane'First + Row_Offset + Column));
+                        end if;
+                     end loop;
                   end if;
                end;
             end loop;
-         end loop;
+         else
+            for Row in Natural range 0 .. Height - 1 loop
+               for Column in Natural range 0 .. Width - 1 loop
+                  declare
+                     C1_C : constant Natural :=
+                       Natural
+                         (Internal.Sampling.Component_Column_For_Image
+                            (Header.Frame, 1, Internal.Sampling.Sample_Column (Column)));
+                     C1_R : constant Natural :=
+                       Natural
+                         (Internal.Sampling.Component_Row_For_Image
+                            (Header.Frame, 1, Internal.Sampling.Sample_Row (Row)));
+                     C2_C : constant Natural :=
+                       Natural
+                         (Internal.Sampling.Component_Column_For_Image
+                            (Header.Frame, 2, Internal.Sampling.Sample_Column (Column)));
+                     C2_R : constant Natural :=
+                       Natural
+                         (Internal.Sampling.Component_Row_For_Image
+                            (Header.Frame, 2, Internal.Sampling.Sample_Row (Row)));
+                     C3_C : constant Natural :=
+                       Natural
+                         (Internal.Sampling.Component_Column_For_Image
+                            (Header.Frame, 3, Internal.Sampling.Sample_Column (Column)));
+                     C3_R : constant Natural :=
+                       Natural
+                         (Internal.Sampling.Component_Row_For_Image
+                            (Header.Frame, 3, Internal.Sampling.Sample_Row (Row)));
+                  begin
+                     if Header_Color_Model = YCbCr then
+                        Write_YCbCr_Pixel
+                          (Column,
+                           Row,
+                           C1_Plane (C1_Plane'First + C1_R * Natural (C1_Component.Component_Width) + C1_C),
+                           C2_Plane (C2_Plane'First + C2_R * Natural (C2_Component.Component_Width) + C2_C),
+                           C3_Plane (C3_Plane'First + C3_R * Natural (C3_Component.Component_Width) + C3_C));
+                     else
+                        Write_RGB_Pixel
+                          (Column,
+                           Row,
+                           C1_Plane (C1_Plane'First + C1_R * Natural (C1_Component.Component_Width) + C1_C),
+                           C2_Plane (C2_Plane'First + C2_R * Natural (C2_Component.Component_Width) + C2_C),
+                           C3_Plane (C3_Plane'First + C3_R * Natural (C3_Component.Component_Width) + C3_C));
+                     end if;
+                  end;
+               end loop;
+            end loop;
+         end if;
       end Write_Three_Component_Blocks;
 
       function Decode_Lossless_Image_From_Raw return Results.Result is

@@ -504,6 +504,137 @@ package body Jpeglib.Internal.Colors is
       Write_RGB_Channels (Output, Column, Row, R, G, B, Alpha);
    end Write_RGB;
 
+   procedure Write_RGB_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      R_Plane : Streams.Byte_Array;
+      G_Plane : Streams.Byte_Array;
+      B_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Alpha : Byte := Byte'Last;
+      Written : out Natural)
+   is
+      Descriptor : constant Images.Image_Descriptor := Output.Descriptor;
+      Output_Row_Base : constant Positive :=
+        Output.Storage'First + Natural (Row_Stride (Row) * Descriptor.Stride);
+      R_Input_Base : constant Positive := R_Plane'First + Input_Offset;
+      G_Input_Base : constant Positive := G_Plane'First + Input_Offset;
+      B_Input_Base : constant Positive := B_Plane'First + Input_Offset;
+      Output_Index : Positive;
+      R_Index : Positive;
+      G_Index : Positive;
+      B_Index : Positive;
+      YCbCr : YCbCr_Sample;
+   begin
+      Written := 0;
+      if Pixels = 0
+        or else Row >= Natural (Descriptor.Height)
+        or else Pixels > Natural (Descriptor.Width)
+        or else Input_Offset + Pixels > Natural (R_Plane'Length)
+        or else Input_Offset + Pixels > Natural (G_Plane'Length)
+        or else Input_Offset + Pixels > Natural (B_Plane'Length)
+      then
+         return;
+      end if;
+
+      case Descriptor.Format is
+         when Images.RGB_24 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               R_Index := R_Input_Base + Column;
+               G_Index := G_Input_Base + Column;
+               B_Index := B_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 3;
+               Output.Storage (Output_Index) := R_Plane (R_Index);
+               Output.Storage (Output_Index + 1) := G_Plane (G_Index);
+               Output.Storage (Output_Index + 2) := B_Plane (B_Index);
+            end loop;
+         when Images.BGR_24 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               R_Index := R_Input_Base + Column;
+               G_Index := G_Input_Base + Column;
+               B_Index := B_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 3;
+               Output.Storage (Output_Index) := B_Plane (B_Index);
+               Output.Storage (Output_Index + 1) := G_Plane (G_Index);
+               Output.Storage (Output_Index + 2) := R_Plane (R_Index);
+            end loop;
+         when Images.RGBA_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               R_Index := R_Input_Base + Column;
+               G_Index := G_Input_Base + Column;
+               B_Index := B_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 4;
+               Output.Storage (Output_Index) := R_Plane (R_Index);
+               Output.Storage (Output_Index + 1) := G_Plane (G_Index);
+               Output.Storage (Output_Index + 2) := B_Plane (B_Index);
+               Output.Storage (Output_Index + 3) := Alpha;
+            end loop;
+         when Images.BGRA_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               R_Index := R_Input_Base + Column;
+               G_Index := G_Input_Base + Column;
+               B_Index := B_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 4;
+               Output.Storage (Output_Index) := B_Plane (B_Index);
+               Output.Storage (Output_Index + 1) := G_Plane (G_Index);
+               Output.Storage (Output_Index + 2) := R_Plane (R_Index);
+               Output.Storage (Output_Index + 3) := Alpha;
+            end loop;
+         when Images.CMYK_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               R_Index := R_Input_Base + Column;
+               G_Index := G_Input_Base + Column;
+               B_Index := B_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 4;
+               Output.Storage (Output_Index) := Byte'Last - R_Plane (R_Index);
+               Output.Storage (Output_Index + 1) := Byte'Last - G_Plane (G_Index);
+               Output.Storage (Output_Index + 2) := Byte'Last - B_Plane (B_Index);
+               Output.Storage (Output_Index + 3) := 0;
+            end loop;
+         when Images.YCCK_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               R_Index := R_Input_Base + Column;
+               G_Index := G_Input_Base + Column;
+               B_Index := B_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 4;
+               YCbCr :=
+                 Convert_RGB_To_YCbCr
+                   ((R => R_Plane (R_Index), G => G_Plane (G_Index), B => B_Plane (B_Index)));
+               Output.Storage (Output_Index) := YCbCr.Y;
+               Output.Storage (Output_Index + 1) := YCbCr.Cb;
+               Output.Storage (Output_Index + 2) := YCbCr.Cr;
+               Output.Storage (Output_Index + 3) := 0;
+            end loop;
+         when others =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               R_Index := R_Input_Base + Column;
+               G_Index := G_Input_Base + Column;
+               B_Index := B_Input_Base + Column;
+               Write_RGB_Channels
+                 (Output,
+                  Column,
+                  Row,
+                  R_Plane (R_Index),
+                  G_Plane (G_Index),
+                  B_Plane (B_Index),
+                  Alpha);
+            end loop;
+      end case;
+
+      Written := Pixels;
+   exception
+      when Constraint_Error =>
+         Written := 0;
+   end Write_RGB_Row;
+
    function Subtractive_Channel (Ink : Byte; Black : Byte) return Byte is
       Sum : constant Natural := Natural (Ink) + Natural (Black);
    begin

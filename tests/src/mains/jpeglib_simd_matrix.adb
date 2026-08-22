@@ -200,6 +200,24 @@ procedure Jpeglib_SIMD_Matrix is
       end loop;
    end Build_Expected_Output;
 
+   procedure Build_Expected_RGB_Output (Output : in out Jpeglib.Images.Mutable_Image_View) is
+      Offset : Natural := 0;
+   begin
+      for Row in 0 .. Natural (Height) - 1 loop
+         for Column in 0 .. Natural (Width) - 1 loop
+            Jpeglib.Internal.Colors.Write_RGB
+              (Output,
+               Column,
+               Row,
+               Y_Plane (Y_Plane'First + Offset),
+               Cb_Plane (Cb_Plane'First + Offset),
+               Cr_Plane (Cr_Plane'First + Offset),
+               Alpha => 213);
+            Offset := Offset + 1;
+         end loop;
+      end loop;
+   end Build_Expected_RGB_Output;
+
    procedure Run_Output_Format (Format : Jpeglib.Images.Pixel_Format) is
       Output : Jpeglib.Images.Mutable_Image_View := Output_View (Format, Output_Storage'Unchecked_Access);
       Expected : Jpeglib.Images.Mutable_Image_View := Output_View (Format, Expected_Output'Unchecked_Access);
@@ -233,6 +251,40 @@ procedure Jpeglib_SIMD_Matrix is
          Fail (Jpeglib.Images.Pixel_Format'Image (Format) & " output row differs from scalar reference");
       end if;
    end Run_Output_Format;
+
+   procedure Run_RGB_Output_Format (Format : Jpeglib.Images.Pixel_Format) is
+      Output : Jpeglib.Images.Mutable_Image_View := Output_View (Format, Output_Storage'Unchecked_Access);
+      Expected : Jpeglib.Images.Mutable_Image_View := Output_View (Format, Expected_Output'Unchecked_Access);
+      Written : Natural;
+      Offset : Natural := 0;
+      Used_Bytes : constant Natural := Natural (Width) * Natural (Height) * Bytes_Per_Pixel (Format);
+   begin
+      Fill_YCbCr_Planes;
+      Output_Storage := [others => 0];
+      Expected_Output := [others => 0];
+      Build_Expected_RGB_Output (Expected);
+
+      for Row in 0 .. Natural (Height) - 1 loop
+         Jpeglib.Internal.Colors.Write_RGB_Row
+           (Output,
+            Row,
+            Y_Plane,
+            Cb_Plane,
+            Cr_Plane,
+            Offset,
+            Natural (Width),
+            Alpha => 213,
+            Written => Written);
+         if Written /= Natural (Width) then
+            Fail (Jpeglib.Images.Pixel_Format'Image (Format) & " RGB output row wrote wrong count");
+         end if;
+         Offset := Offset + Written;
+      end loop;
+
+      if Output_Storage (1 .. Used_Bytes) /= Expected_Output (1 .. Used_Bytes) then
+         Fail (Jpeglib.Images.Pixel_Format'Image (Format) & " RGB output row differs from scalar reference");
+      end if;
+   end Run_RGB_Output_Format;
 begin
    if not Jpeglib.Capabilities.SIMD_Acceleration then
       Fail ("SIMD acceleration capability is not advertised");
@@ -246,10 +298,22 @@ begin
    Run_Format (Jpeglib.Images.BGR_24);
    Run_Format (Jpeglib.Images.RGBA_32);
    Run_Format (Jpeglib.Images.BGRA_32);
+   Run_Output_Format (Jpeglib.Images.Gray_8);
+   Run_Output_Format (Jpeglib.Images.Gray_Alpha_16);
    Run_Output_Format (Jpeglib.Images.RGB_24);
    Run_Output_Format (Jpeglib.Images.BGR_24);
    Run_Output_Format (Jpeglib.Images.RGBA_32);
    Run_Output_Format (Jpeglib.Images.BGRA_32);
+   Run_Output_Format (Jpeglib.Images.CMYK_32);
+   Run_Output_Format (Jpeglib.Images.YCCK_32);
+   Run_RGB_Output_Format (Jpeglib.Images.Gray_8);
+   Run_RGB_Output_Format (Jpeglib.Images.Gray_Alpha_16);
+   Run_RGB_Output_Format (Jpeglib.Images.RGB_24);
+   Run_RGB_Output_Format (Jpeglib.Images.BGR_24);
+   Run_RGB_Output_Format (Jpeglib.Images.RGBA_32);
+   Run_RGB_Output_Format (Jpeglib.Images.BGRA_32);
+   Run_RGB_Output_Format (Jpeglib.Images.CMYK_32);
+   Run_RGB_Output_Format (Jpeglib.Images.YCCK_32);
 
    Ada.Text_IO.Put_Line
      ("jpeglib_simd_matrix: host="

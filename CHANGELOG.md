@@ -44,6 +44,9 @@
 - Route direct full-size lossless YCbCr image decode output through the
   YCbCr-to-RGB-family row output path, with the existing scalar pixel path kept
   for reduced-IDCT and EXIF-oriented outputs.
+- Add compiler-vectorized direct RGB row output packing, route direct full-size
+  RGB-labelled lossless and 4:4:4 DCT decode output through row writers, and
+  expand `jpeglib_simd_matrix` to cover every public output format.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

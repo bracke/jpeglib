@@ -97,6 +97,17 @@ package Jpeglib.Internal.Colors is
       B : Byte;
       Alpha : Byte := Byte'Last);
 
+   procedure Write_RGB_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      R_Plane : Streams.Byte_Array;
+      G_Plane : Streams.Byte_Array;
+      B_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Alpha : Byte := Byte'Last;
+      Written : out Natural);
+
    procedure Write_CMYK
      (Output : in out Images.Mutable_Image_View;
       Column : Natural;
