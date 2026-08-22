@@ -33,7 +33,7 @@ jobs:
       - name: Set up Alire
         uses: alire-project/setup-alire@v6
         with:
-          toolchain: gnat_native=15.2.1 gprbuild
+          toolchain: gnat_native=15.2.1 gprbuild=25.0.1
 
       - name: Raise Alire solver timeout so slow runners get a complete solution
         shell: bash
