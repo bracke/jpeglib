@@ -4450,12 +4450,13 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Input : Images.Image_View;
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
       Differential : Boolean := False;
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
-      DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
-      AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
+      DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
+      AC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
       Luma_Quantization : constant Quantization.Quantization_Table :=
         Quantization.Luma_Table_For_Quality (Quality);
       Needed : Block_Count;
@@ -4478,6 +4479,10 @@ package body Jpeglib.Internal.Baseline_Encoder is
       begin
          if not Results.Succeeded (Image_Result.Outcome) then
             return Image_Result.Outcome;
+         end if;
+
+         if Optimize_Huffman then
+            Optimized_Definitions_For_Blocks (Blocks, Restart, DC_Definition, AC_Definition);
          end if;
 
          Outcome :=
@@ -7412,12 +7417,13 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Refine : Boolean := False;
+      Optimize_Huffman : Boolean := False;
       Differential : Boolean := False;
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
-      DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
-      AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
+      DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
+      AC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
       Luma_Quantization : constant Quantization.Quantization_Table :=
         Quantization.Luma_Table_For_Quality (Quality);
       Needed : Block_Count;
@@ -7440,6 +7446,10 @@ package body Jpeglib.Internal.Baseline_Encoder is
       begin
          if not Results.Succeeded (Image_Result.Outcome) then
             return Image_Result.Outcome;
+         end if;
+
+         if Optimize_Huffman and then not Refine then
+            Optimized_Definitions_For_Blocks (Blocks, Restart, DC_Definition, AC_Definition);
          end if;
 
          Outcome :=
@@ -8132,14 +8142,15 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Layout : Image_Blocks.Subsampling_Layout := Image_Blocks.Subsampling_420;
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
       Differential : Boolean := False;
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
-      Luma_DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
-      Luma_AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
-      Chroma_DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Chrominance_DC;
-      Chroma_AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Chrominance_AC;
+      Luma_DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
+      Luma_AC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
+      Chroma_DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Chrominance_DC;
+      Chroma_AC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Chrominance_AC;
       Luma_Quantization : constant Quantization.Quantization_Table :=
         Quantization.Luma_Table_For_Quality (Quality);
       Chroma_Quantization : constant Quantization.Quantization_Table :=
@@ -8285,6 +8296,23 @@ package body Jpeglib.Internal.Baseline_Encoder is
               Image_Blocks.Full_Forward);
          if not Results.Succeeded (Block_Result.Outcome) then
             return Block_Result.Outcome;
+         end if;
+
+         if Optimize_Huffman then
+            Optimized_Definitions_For_YCbCr_Blocks
+              (Y_Blocks,
+               Cb_Blocks,
+               Cr_Blocks,
+               Y_Block_Columns,
+               Chroma_Block_Columns,
+               MCU_Columns_N,
+               MCU_Rows_N,
+               Layout,
+               Restart,
+               Luma_DC_Definition,
+               Luma_AC_Definition,
+               Chroma_DC_Definition,
+               Chroma_AC_Definition);
          end if;
 
          Outcome :=
@@ -8810,14 +8838,15 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Refine : Boolean := False;
+      Optimize_Huffman : Boolean := False;
       Differential : Boolean := False;
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
-      Luma_DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
-      Luma_AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
-      Chroma_DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Chrominance_DC;
-      Chroma_AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Chrominance_AC;
+      Luma_DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
+      Luma_AC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
+      Chroma_DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Chrominance_DC;
+      Chroma_AC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Chrominance_AC;
       Luma_Quantization : constant Quantization.Quantization_Table :=
         Quantization.Luma_Table_For_Quality (Quality);
       Chroma_Quantization : constant Quantization.Quantization_Table :=
@@ -8969,6 +8998,23 @@ package body Jpeglib.Internal.Baseline_Encoder is
               Image_Blocks.Full_Forward);
          if not Results.Succeeded (Block_Result.Outcome) then
             return Block_Result.Outcome;
+         end if;
+
+         if Optimize_Huffman and then not Refine then
+            Optimized_Definitions_For_YCbCr_Blocks
+              (Y_Blocks,
+               Cb_Blocks,
+               Cr_Blocks,
+               Y_Block_Columns,
+               Chroma_Block_Columns,
+               MCU_Columns_N,
+               MCU_Rows_N,
+               Layout,
+               Restart,
+               Luma_DC_Definition,
+               Luma_AC_Definition,
+               Chroma_DC_Definition,
+               Chroma_AC_Definition);
          end if;
 
          Outcome :=

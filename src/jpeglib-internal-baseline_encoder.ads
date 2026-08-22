@@ -13,6 +13,7 @@ package Jpeglib.Internal.Baseline_Encoder is
       Input : Images.Image_View;
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
       Differential : Boolean := False;
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
@@ -252,6 +253,7 @@ package Jpeglib.Internal.Baseline_Encoder is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Refine : Boolean := False;
+      Optimize_Huffman : Boolean := False;
       Differential : Boolean := False;
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
@@ -274,6 +276,7 @@ package Jpeglib.Internal.Baseline_Encoder is
       Layout : Image_Blocks.Subsampling_Layout := Image_Blocks.Subsampling_420;
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
       Differential : Boolean := False;
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
@@ -297,6 +300,7 @@ package Jpeglib.Internal.Baseline_Encoder is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Refine : Boolean := False;
+      Optimize_Huffman : Boolean := False;
       Differential : Boolean := False;
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result

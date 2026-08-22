@@ -2375,19 +2375,32 @@ package body Jpeglib.Decoding is
          return True;
       end Progressive_Raw_Scope_Supported;
 
+      function Effective_Raw_Precision return Sample_Precision is
+      begin
+         if Object.Decode_Options.Raw_Precision = Preserve_Source_Precision then
+            return Internal.Frames.Precision (Header.Frame);
+         else
+            return Object.Decode_Options.Raw_Output_Precision;
+         end if;
+      end Effective_Raw_Precision;
+
       function Raw_View_Is_Valid
         (View : Raw_Component_View;
          Expected_Width : Natural;
          Expected_Height : Natural) return Boolean
       is
+         Sample_Bytes : constant Positive :=
+           (if Effective_Raw_Precision = 8 then 1 else 2);
          Minimum : constant Byte_Count :=
            (if Expected_Height = 0 then 0
-            else Byte_Count (View.Stride) * Byte_Count (Expected_Height - 1) + Byte_Count (Expected_Width));
+            else
+              Byte_Count (View.Stride) * Byte_Count (Expected_Height - 1)
+              + Byte_Count (Expected_Width * Sample_Bytes));
       begin
          return View.Storage /= null
            and then View.Width = Expected_Width
            and then View.Height = Expected_Height
-           and then View.Stride >= Row_Stride (Expected_Width)
+           and then View.Stride >= Row_Stride (Expected_Width * Sample_Bytes)
            and then View.Accessible_Bytes >= Minimum
            and then Byte_Count (View.Storage'Length) >= Minimum;
       end Raw_View_Is_Valid;
@@ -2395,9 +2408,61 @@ package body Jpeglib.Decoding is
       function Raw_Output_Error (Detail : Long_Long_Integer := 0) return Errors.Error is
         (Errors.Make (Errors.Output_Limit_Exceeded, (Detail => Detail, others => <>)));
 
+      function Converted_Raw_Sample
+        (Sample : Integer;
+         Source_Precision : Sample_Precision) return Integer
+      is
+         Source_Max : constant Integer := 2 ** Natural (Source_Precision) - 1;
+         Target_Precision : constant Sample_Precision := Effective_Raw_Precision;
+         Target_Max : constant Integer := 2 ** Natural (Target_Precision) - 1;
+      begin
+         case Object.Decode_Options.Raw_Precision is
+            when Preserve_Source_Precision =>
+               return Integer'Max (0, Integer'Min (Sample, Source_Max));
+            when Clamp_To_Output_Precision =>
+               return Integer'Max (0, Integer'Min (Sample, Target_Max));
+            when Scale_To_Output_Precision | Reject_Precision_Mismatch =>
+               if Source_Max = Target_Max then
+                  return Integer'Max (0, Integer'Min (Sample, Target_Max));
+               else
+                  return
+                    Integer'Max
+                      (0,
+                       Integer'Min
+                         ((Sample * Target_Max + Source_Max / 2) / Source_Max,
+                          Target_Max));
+               end if;
+         end case;
+      end Converted_Raw_Sample;
+
+      procedure Store_Raw_Sample
+        (Target : in out Raw_Component_View;
+         Row : Natural;
+         Column : Natural;
+         Sample : Integer)
+      is
+         Value : constant Integer := Converted_Raw_Sample (Sample, Internal.Frames.Precision (Header.Frame));
+         Sample_Bytes : constant Positive :=
+           (if Effective_Raw_Precision = 8 then 1 else 2);
+         Offset : constant Natural := Row * Natural (Target.Stride) + Column * Sample_Bytes;
+      begin
+         if Sample_Bytes = 1 then
+            Target.Storage (Target.Storage'First + Offset) := Byte (Value);
+         else
+            Target.Storage (Target.Storage'First + Offset) := Byte (Value / 256);
+            Target.Storage (Target.Storage'First + Offset + 1) := Byte (Value mod 256);
+         end if;
+      end Store_Raw_Sample;
+
       function Validate_Raw_Output return Results.Result is
          Item : Internal.Frames.Frame_Component;
       begin
+         if Object.Decode_Options.Raw_Precision = Reject_Precision_Mismatch
+           and then Internal.Frames.Precision (Header.Frame) /= Object.Decode_Options.Raw_Output_Precision
+         then
+            return Results.Failure (Errors.Unsupported_Feature);
+         end if;
+
          if Components'Length < Natural (Internal.Frames.Components (Header.Frame)) then
             return Results.Failure (Raw_Output_Error (Long_Long_Integer (Internal.Frames.Components (Header.Frame))));
          end if;
@@ -2593,9 +2658,7 @@ package body Jpeglib.Decoding is
                begin
                   for Row in Natural range 0 .. Natural (Component.Component_Height) - 1 loop
                      for Column in Natural range 0 .. Natural (Component.Component_Width) - 1 loop
-                        Target.Storage
-                          (Target.Storage'First + Row * Natural (Target.Stride) + Column) :=
-                          Output_Byte (Integer (Blocks (Block_Number) (0)));
+                        Store_Raw_Sample (Target, Row, Column, Integer (Blocks (Block_Number) (0)));
                         Block_Number := Block_Number + 1;
                      end loop;
                   end loop;
@@ -2822,10 +2885,12 @@ package body Jpeglib.Decoding is
 
          for Row in Natural range 0 .. Natural (Internal.Frames.Height (Header.Frame)) - 1 loop
             for Column in Natural range 0 .. Natural (Internal.Frames.Width (Header.Frame)) - 1 loop
-               Target.Storage (Target.Storage'First + Row * Natural (Target.Stride) + Column) :=
-                 Output_Byte
-                   (Samples
-                      (1, Samples'First (2) + Row * Natural (Internal.Frames.Width (Header.Frame)) + Column));
+               Store_Raw_Sample
+                 (Target,
+                  Row,
+                  Column,
+                  Samples
+                    (1, Samples'First (2) + Row * Natural (Internal.Frames.Width (Header.Frame)) + Column));
             end loop;
          end loop;
 
@@ -3071,9 +3136,11 @@ package body Jpeglib.Decoding is
             begin
                for Row in Natural range 0 .. Height - 1 loop
                   for Column in Natural range 0 .. Width - 1 loop
-                     Target.Storage (Target.Storage'First + Row * Natural (Target.Stride) + Column) :=
-                       Output_Byte
-                         (Samples (Component_Index_Value, Samples'First (2) + Row * Width + Column));
+                     Store_Raw_Sample
+                       (Target,
+                        Row,
+                        Column,
+                        Samples (Component_Index_Value, Samples'First (2) + Row * Width + Column));
                   end loop;
                end loop;
             end;
@@ -3323,8 +3390,7 @@ package body Jpeglib.Decoding is
                      Target : Raw_Component_View renames Components (Component_Index_Value);
                      Index : constant Natural := Samples'First (2) + Row * Width + Column;
                   begin
-                     Target.Storage (Target.Storage'First + Row * Natural (Target.Stride) + Column) :=
-                       Output_Byte (Samples (Component_Index_Value, Index));
+                     Store_Raw_Sample (Target, Row, Column, Samples (Component_Index_Value, Index));
                   end;
                end loop;
             end loop;
@@ -3574,8 +3640,7 @@ package body Jpeglib.Decoding is
                      Target : Raw_Component_View renames Components (Component_Index_Value);
                      Index : constant Natural := Samples'First (2) + Row * Width + Column;
                   begin
-                     Target.Storage (Target.Storage'First + Row * Natural (Target.Stride) + Column) :=
-                       Output_Byte (Samples (Component_Index_Value, Index));
+                     Store_Raw_Sample (Target, Row, Column, Samples (Component_Index_Value, Index));
                   end;
                end loop;
             end loop;
@@ -3766,8 +3831,11 @@ package body Jpeglib.Decoding is
 
             for Row in Natural range 0 .. Height - 1 loop
                for Column in Natural range 0 .. Width - 1 loop
-                  Target.Storage (Target.Storage'First + Row * Natural (Target.Stride) + Column) :=
-                    Output_Byte (Samples (1, Samples'First (2) + Row * Width + Column));
+                  Store_Raw_Sample
+                    (Target,
+                     Row,
+                     Column,
+                     Samples (1, Samples'First (2) + Row * Width + Column));
                end loop;
             end loop;
          end;
@@ -3987,8 +4055,7 @@ package body Jpeglib.Decoding is
                      Target : Raw_Component_View renames Components (Component_Index_Value);
                      Index : constant Natural := Samples'First (2) + Row * Width + Column;
                   begin
-                     Target.Storage (Target.Storage'First + Row * Natural (Target.Stride) + Column) :=
-                       Output_Byte (Samples (Component_Index_Value, Index));
+                     Store_Raw_Sample (Target, Row, Column, Samples (Component_Index_Value, Index));
                   end;
                end loop;
             end loop;
@@ -4209,8 +4276,7 @@ package body Jpeglib.Decoding is
                      Target : Raw_Component_View renames Components (Component_Index_Value);
                      Index : constant Natural := Samples'First (2) + Row * Width + Column;
                   begin
-                     Target.Storage (Target.Storage'First + Row * Natural (Target.Stride) + Column) :=
-                       Output_Byte (Samples (Component_Index_Value, Index));
+                     Store_Raw_Sample (Target, Row, Column, Samples (Component_Index_Value, Index));
                   end;
                end loop;
             end loop;
@@ -4431,8 +4497,7 @@ package body Jpeglib.Decoding is
                      Target : Raw_Component_View renames Components (Component_Index_Value);
                      Index : constant Natural := Samples'First (2) + Row * Width + Column;
                   begin
-                     Target.Storage (Target.Storage'First + Row * Natural (Target.Stride) + Column) :=
-                       Output_Byte (Samples (Component_Index_Value, Index));
+                     Store_Raw_Sample (Target, Row, Column, Samples (Component_Index_Value, Index));
                   end;
                end loop;
             end loop;

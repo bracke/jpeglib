@@ -24,6 +24,16 @@
 - Close the lossless-transform complete-plus gap by adding
   `Optimize_Huffman` coefficient-derived DHT output and an optional
   `jpeglib_transform --self-test` comparison against `jpegtran` when available.
+- Close the encoder-optimization complete-plus gap with public
+  `Optimize_Huffman`, `Target_Bytes`, and perceptual preset controls, optimized
+  image-level Huffman DHT generation, and a deterministic
+  `jpeglib_encoder_optimization` matrix gate.
+- Close the precision-buffer complete-plus gap with public raw component
+  precision policies for scaling, clamping, source-precision preservation, and
+  mismatch rejection, plus the `jpeglib_precision_buffer` matrix gate.
+- Close the performance-architecture complete-plus gap with a hostkit-backed
+  scalar reference performance matrix covering deterministic encode/decode
+  equivalence and broad runtime thresholds.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

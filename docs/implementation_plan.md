@@ -1020,21 +1020,35 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
 
 ### Phase CP4: Encoder Optimization
 
-- Add optimized Huffman table generation, progressive scan optimization,
-  perceptual quantization presets, and target-size/quality search.
-- Add deterministic compression/quality benchmark rows before making optimized
-  modes public defaults.
+- Status: closed. `Jpeglib.Encoding.Options` exposes `Optimize_Huffman`,
+  `Target_Bytes`, and perceptual presets for photo, graphic, and small-file
+  output. Sequential and progressive Huffman image encoders derive optimized DHT
+  tables from the generated DCT blocks before writing scan headers, and
+  target-byte sizing resolves deterministic quality/progressive/subsampling
+  choices before streaming output.
+- `jpeglib_encoder_optimization` is the deterministic compression/quality
+  matrix for this gap. It checks default, optimized Huffman, optimized
+  progressive, perceptual preset, and target-byte output relationships and is
+  run by `jpeglib_complete_plus`.
 
 ### Phase CP5: Precision And Buffer API
 
-- Add high-bit-depth public image views and legal lossless precision expansion.
-- Add preserve, clamp, scale, and reject conversion policies.
-- Cover public image/raw component encode and decode for each precision class.
+- Status: closed. `Jpeglib.Decoding.Options` exposes `Raw_Output_Precision`
+  and `Raw_Precision` so raw component callers can scale, clamp, preserve, or
+  reject source/output precision mismatches. `Decode_Raw_Components` validates
+  one-byte and two-byte caller buffers, preserves legal 12-bit lossless samples
+  as big-endian component bytes, and retains the existing scaled 8-bit default.
+- `jpeglib_precision_buffer` covers the public preserve, clamp, scale, and
+  reject policy matrix and is run by `jpeglib_complete_plus`.
 
 ### Phase CP6: Performance Architecture
 
-- Add scalar reference benchmarks for IDCT/FDCT, color conversion, sampling,
-  entropy, and pixel packing.
-- Use `../hostkit` for optional platform dispatch hooks.
-- Close SIMD/platform rows only when accelerated paths are bit-equivalent to the
-  scalar reference or have documented bounded drift for lossy transforms.
+- Status: closed. `jpeglib_performance_matrix` uses `../hostkit` to report the
+  build host and currently advertises the scalar-reference acceleration profile.
+  It runs baseline, optimized progressive, and arithmetic encode/decode loops
+  that exercise FDCT/IDCT, color conversion, sampling, entropy, and pixel
+  packing through public APIs.
+- The matrix enforces deterministic scalar output equivalence across repeated
+  encodes and broad runtime thresholds for each hot-path case. Future platform
+  acceleration rows must prove bit-equivalence to this scalar profile, or a
+  documented bounded lossy-transform drift, before they can replace it.

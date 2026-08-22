@@ -87,6 +87,45 @@ procedure Jpeglib_Complete_Plus is
       end if;
    end Run_Lossless_Transform_Gate;
 
+   procedure Run_Encoder_Optimization_Gate is
+      Status : constant Integer :=
+        Project_Tools.Processes.Run_Status
+          ("complete-plus encoder optimization matrix",
+           Root,
+           Project_Tools.Files.Join (Root, "tests/bin/jpeglib_encoder_optimization"),
+           Project_Tools.Processes.No_Arguments);
+   begin
+      if Status /= 0 then
+         Fail ("encoder optimization gate failed with status" & Integer'Image (Status));
+      end if;
+   end Run_Encoder_Optimization_Gate;
+
+   procedure Run_Precision_Buffer_Gate is
+      Status : constant Integer :=
+        Project_Tools.Processes.Run_Status
+          ("complete-plus precision buffer matrix",
+           Root,
+           Project_Tools.Files.Join (Root, "tests/bin/jpeglib_precision_buffer"),
+           Project_Tools.Processes.No_Arguments);
+   begin
+      if Status /= 0 then
+         Fail ("precision buffer gate failed with status" & Integer'Image (Status));
+      end if;
+   end Run_Precision_Buffer_Gate;
+
+   procedure Run_Performance_Gate is
+      Status : constant Integer :=
+        Project_Tools.Processes.Run_Status
+          ("complete-plus performance architecture matrix",
+           Root,
+           Project_Tools.Files.Join (Root, "tests/bin/jpeglib_performance_matrix"),
+           Project_Tools.Processes.No_Arguments);
+   begin
+      if Status /= 0 then
+         Fail ("performance architecture gate failed with status" & Integer'Image (Status));
+      end if;
+   end Run_Performance_Gate;
+
    procedure Check_Manifest is
       Path : constant String := Project_Tools.Files.Join (Root, Manifest_Relative);
       File : Ada.Text_IO.File_Type;
@@ -158,6 +197,9 @@ begin
 
    Run_Complete_Gate;
    Run_Lossless_Transform_Gate;
+   Run_Encoder_Optimization_Gate;
+   Run_Precision_Buffer_Gate;
+   Run_Performance_Gate;
    Check_Manifest;
 
    if Errors = 0 then

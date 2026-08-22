@@ -23,6 +23,7 @@ package Jpeglib.Encoding is
 
    type Chroma_Subsampling is (Subsampling_444, Subsampling_422, Subsampling_420, Subsampling_411);
    type Progressive_Script is (No_Progressive, Balanced_Progressive, Fast_Preview_Progressive);
+   type Encoding_Preset is (Default_Preset, Photo_Preset, Graphic_Preset, Small_File_Preset);
    type Encoding_Mode is
      (Sequential_DCT,
       Arithmetic_Sequential_DCT,
@@ -45,6 +46,9 @@ package Jpeglib.Encoding is
       Quality : Positive range 1 .. 100 := 75;
       Mode : Encoding_Mode := Sequential_DCT;
       Progressive : Progressive_Script := No_Progressive;
+      Preset : Encoding_Preset := Default_Preset;
+      Optimize_Huffman : Boolean := False;
+      Target_Bytes : Byte_Count := 0;
       Lossless_Predictor : Lossless_Predictor_Selection := 1;
       Lossless_Point_Transform : Lossless_Point_Transform_Value := 0;
       Subsampling : Chroma_Subsampling := Subsampling_420;

@@ -209,6 +209,76 @@ package body Jpeglib.Encoding is
       end case;
    end Internal_Subsampling;
 
+   function Resolve_Options (Encode_Options : Options) return Options is
+      Resolved : Options := Encode_Options;
+   begin
+      case Encode_Options.Preset is
+         when Default_Preset =>
+            null;
+         when Photo_Preset =>
+            Resolved.Quality := 90;
+            Resolved.Progressive := Balanced_Progressive;
+            Resolved.Subsampling := Subsampling_420;
+            Resolved.Optimize_Huffman := True;
+         when Graphic_Preset =>
+            Resolved.Quality := 92;
+            Resolved.Progressive := No_Progressive;
+            Resolved.Subsampling := Subsampling_444;
+            Resolved.Optimize_Huffman := True;
+         when Small_File_Preset =>
+            Resolved.Quality := 55;
+            Resolved.Progressive := Fast_Preview_Progressive;
+            Resolved.Subsampling := Subsampling_420;
+            Resolved.Optimize_Huffman := True;
+      end case;
+
+      return Resolved;
+   end Resolve_Options;
+
+   function Resolve_Target_Options
+     (Encode_Options : Options;
+      Descriptor : Images.Image_Descriptor) return Options
+   is
+      Resolved : Options := Encode_Options;
+      Pixels : constant Long_Float := Long_Float (Descriptor.Width) * Long_Float (Descriptor.Height);
+      Bytes_Per_Pixel_Target : Long_Float := 0.0;
+   begin
+      if Encode_Options.Target_Bytes = 0 or else not Is_Huffman_Lossless_Mode (Encode_Options.Mode) then
+         if Encode_Options.Target_Bytes /= 0 and then Is_Arithmetic_Lossless_Mode (Encode_Options.Mode) then
+            return Resolved;
+         end if;
+      end if;
+
+      if Encode_Options.Target_Bytes = 0
+        or else Is_Huffman_Lossless_Mode (Encode_Options.Mode)
+        or else Is_Arithmetic_Lossless_Mode (Encode_Options.Mode)
+        or else Pixels <= 0.0
+      then
+         return Resolved;
+      end if;
+
+      Bytes_Per_Pixel_Target := Long_Float (Encode_Options.Target_Bytes) / Pixels;
+      Resolved.Optimize_Huffman := True;
+      if Bytes_Per_Pixel_Target < 0.20 then
+         Resolved.Quality := Positive'Min (Resolved.Quality, 20);
+         Resolved.Progressive := Fast_Preview_Progressive;
+         Resolved.Subsampling := Subsampling_420;
+      elsif Bytes_Per_Pixel_Target < 0.35 then
+         Resolved.Quality := Positive'Min (Resolved.Quality, 35);
+         Resolved.Progressive := Fast_Preview_Progressive;
+         Resolved.Subsampling := Subsampling_420;
+      elsif Bytes_Per_Pixel_Target < 0.55 then
+         Resolved.Quality := Positive'Min (Resolved.Quality, 55);
+         if Resolved.Progressive = No_Progressive then
+            Resolved.Progressive := Fast_Preview_Progressive;
+         end if;
+      elsif Bytes_Per_Pixel_Target < 0.80 then
+         Resolved.Quality := Positive'Min (Resolved.Quality, 72);
+      end if;
+
+      return Resolved;
+   end Resolve_Target_Options;
+
    procedure Initialize
      (Object : in out Encoder;
       Output : not null access Streams.Destination'Class;
@@ -216,7 +286,7 @@ package body Jpeglib.Encoding is
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) is
    begin
       Object.Output := Output.all'Unchecked_Access;
-      Object.Encode_Options := Encode_Options;
+      Object.Encode_Options := Resolve_Options (Encode_Options);
       Object.Encode_Limits := Encode_Limits;
       Object.First_Error := Errors.Make (Errors.No_Error);
       Object.Image_Is_Defined := False;
@@ -342,6 +412,8 @@ package body Jpeglib.Encoding is
          Object.Descriptor := Input.Descriptor;
          Object.Image_Is_Defined := True;
       end if;
+
+      Object.Encode_Options := Resolve_Target_Options (Object.Encode_Options, Input.Descriptor);
 
       if not Supports_Current_Image_Slice (Input, Object.Encode_Options) then
          Fail (Object, Errors.Unsupported_Feature);
@@ -558,6 +630,7 @@ package body Jpeglib.Encoding is
                  Restart => Object.Encode_Options.Restart,
                  Quality => Object.Encode_Options.Quality,
                  Refine => Object.Encode_Options.Progressive = Balanced_Progressive,
+                 Optimize_Huffman => Object.Encode_Options.Optimize_Huffman,
                  Differential => Is_Differential_DCT_Mode (Object.Encode_Options.Mode),
                  Hierarchical => Is_Hierarchical_DCT_Mode (Object.Encode_Options.Mode),
                  Encoded_Metadata => Object.Metadata_Segments (1 .. Object.Metadata_Segment_Count));
@@ -619,6 +692,7 @@ package body Jpeglib.Encoding is
                  Layout => Internal_Subsampling (Object.Encode_Options.Subsampling),
                  Restart => Object.Encode_Options.Restart,
                  Quality => Object.Encode_Options.Quality,
+                 Optimize_Huffman => Object.Encode_Options.Optimize_Huffman,
                  Differential => Is_Differential_DCT_Mode (Object.Encode_Options.Mode),
                  Hierarchical => Is_Hierarchical_DCT_Mode (Object.Encode_Options.Mode),
                  Encoded_Metadata => Object.Metadata_Segments (1 .. Object.Metadata_Segment_Count));
@@ -631,6 +705,7 @@ package body Jpeglib.Encoding is
                  Restart => Object.Encode_Options.Restart,
                  Quality => Object.Encode_Options.Quality,
                  Refine => Object.Encode_Options.Progressive = Balanced_Progressive,
+                 Optimize_Huffman => Object.Encode_Options.Optimize_Huffman,
                  Differential => Is_Differential_DCT_Mode (Object.Encode_Options.Mode),
                  Hierarchical => Is_Hierarchical_DCT_Mode (Object.Encode_Options.Mode),
                  Encoded_Metadata => Object.Metadata_Segments (1 .. Object.Metadata_Segment_Count));

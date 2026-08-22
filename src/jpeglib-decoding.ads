@@ -22,6 +22,11 @@ package Jpeglib.Decoding is
       Finalized);
 
    type IDCT_Scaling_Mode is (Full_Size, Half_Size, Quarter_Size, Eighth_Size);
+   type Raw_Precision_Policy is
+     (Scale_To_Output_Precision,
+      Clamp_To_Output_Precision,
+      Preserve_Source_Precision,
+      Reject_Precision_Mismatch);
 
    type Options is record
       Strictness : Strictness_Mode := Strict;
@@ -33,6 +38,8 @@ package Jpeglib.Decoding is
       IDCT_Scaling : IDCT_Scaling_Mode := Full_Size;
       Output_Format : Images.Pixel_Format := Images.RGB_24;
       Alpha_Fill : Byte := 255;
+      Raw_Output_Precision : Sample_Precision := 8;
+      Raw_Precision : Raw_Precision_Policy := Scale_To_Output_Precision;
    end record;
 
    type Image_Info is record
