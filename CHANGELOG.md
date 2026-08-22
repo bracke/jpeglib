@@ -135,7 +135,10 @@
 - Expand the executable proof profile from checked arithmetic to include the
   SPARK-legal descriptor-only image validation layer in `Jpeglib.Images`
   including row-span overflow rejection, and the segment boundary helpers in
-  `Jpeglib.Internal.Segments`.
+  `Jpeglib.Internal.Segments`, and the ownership budget/lease transitions in
+  `Jpeglib.Internal.Ownership`; the proof runner now fails on unproved checks,
+  severity diagnostics, or skipped declared SPARK bodies in the GNATprove
+  summary.
 - Expand `jpeglib_benchmark` from one RGB baseline smoke case to a fixed matrix
   covering RGB baseline, progressive, arithmetic, lossless, plus CMYK baseline
   and lossless encode/decode timing.

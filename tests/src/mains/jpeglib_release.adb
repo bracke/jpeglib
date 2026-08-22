@@ -140,6 +140,9 @@ begin
    Require_Text ("docs/proof_profile.md", "Descriptor_Is_Valid");
    Require_Text ("docs/proof_profile.md", "overflow-safe row-span rejection");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Segments");
+   Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Ownership");
+   Require_Text ("docs/proof_profile.md", "Reserve_State");
+   Require_Text ("docs/proof_profile.md", "unproved checks");
    Require_Text ("docs/proof_profile.md", "jpeglib_release");
    Require_Text ("docs/invariants.md", "IMAGE-VALID-001");
    Require_Text ("docs/invariants.md", "foundation.images.descriptor_overflow");
@@ -152,6 +155,8 @@ begin
    Require_Text ("docs/implementation_plan.md", "ImageMagick-generated baseline/progressive");
    Require_Text ("docs/implementation_plan.md", "RGB 4x3/5x2 and grayscale 5x3/4x4");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Images");
+   Require_Text ("docs/implementation_plan.md", "Jpeglib.Internal.Ownership");
+   Require_Text ("docs/implementation_plan.md", "skipped declared SPARK bodies");
    Require_Text ("docs/implementation_plan.md", "runs 81 deterministic cases");
    Require_Text ("docs/implementation_plan.md", "fixed encode/decode timing matrix");
    Require_Text ("docs/implementation_plan.md", "proof profile");

@@ -597,7 +597,10 @@ targets `Jpeglib.Internal.Checked_Arithmetic`, the SPARK-legal descriptor-only
 `Descriptor_Is_Valid` arithmetic layer of `Jpeglib.Images` including
 overflow-safe row-span rejection before stride-height multiplication, and the
 segment boundary helpers in
-`Jpeglib.Internal.Segments`, and invokes GNATprove only through `alr exec`.
+`Jpeglib.Internal.Segments`, plus the SPARK-visible ownership budget/lease
+transitions in `Jpeglib.Internal.Ownership`, and invokes GNATprove only through
+`alr exec`. The proof runner fails the gate when the GNATprove summary reports
+unproved checks, severity diagnostics, or skipped declared SPARK bodies.
 `jpeglib_release` runs that proof profile before the aggregate gate.
 
 Completed:

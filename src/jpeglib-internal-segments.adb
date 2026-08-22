@@ -2,6 +2,7 @@ with Jpeglib.Errors;
 
 package body Jpeglib.Internal.Segments is
    function Decode_Payload_Length (Declared_Length : Byte_Count) return Payload_Length_Result is
+      pragma SPARK_Mode (On);
    begin
       if Declared_Length < 2 then
          return (Valid => False, Payload_Length => 0);
@@ -11,11 +12,13 @@ package body Jpeglib.Internal.Segments is
    end Decode_Payload_Length;
 
    function Skip_Count_Is_Bounded (Remaining, Count : Byte_Count) return Boolean is
+      pragma SPARK_Mode (On);
    begin
       return Count > 0 and then Count <= Remaining;
    end Skip_Count_Is_Bounded;
 
    function Remaining_After_Skip (Remaining, Count : Byte_Count) return Byte_Count is
+      pragma SPARK_Mode (On);
    begin
       return Remaining - Count;
    end Remaining_After_Skip;

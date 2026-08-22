@@ -14,7 +14,8 @@ package Jpeglib.Images is
       YCCK_32);
 
    function Bytes_Per_Pixel (Format : Pixel_Format) return Byte_Count
-      with SPARK_Mode => On;
+      with SPARK_Mode => On,
+           Post => Bytes_Per_Pixel'Result in 1 .. 4;
 
    type Image_Descriptor is record
       Width : Image_Width;

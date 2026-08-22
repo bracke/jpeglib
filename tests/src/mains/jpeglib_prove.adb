@@ -41,6 +41,8 @@ procedure Jpeglib_Prove is
 
    procedure Run_Proof_Unit (Unit : String) is
       Alr : constant String := Project_Tools.Processes.Locate_Command ("alr");
+      Proof_Log_Path : constant String :=
+        Project_Tools.Files.Join (Root, "obj/proof/gnatprove/gnatprove.out");
       Status : Integer;
    begin
       if Alr = "" then
@@ -64,7 +66,29 @@ procedure Jpeglib_Prove is
                Project_Tools.Processes.Argument ("--level=0")]));
       if Status /= 0 then
          Fail ("proof profile failed for " & Unit & " with status" & Integer'Image (Status));
+         return;
       end if;
+
+      declare
+         Proof_Log : constant String := To_String (Project_Tools.Text.Read_Text_File (Proof_Log_Path));
+      begin
+         if Project_Tools.Text.Contains (Proof_Log, "might fail") then
+            Fail ("proof profile left unproved checks in " & Unit);
+         end if;
+
+         if Project_Tools.Text.Contains (Proof_Log, "medium:")
+           or else Project_Tools.Text.Contains (Proof_Log, "high:")
+        then
+            Fail ("proof profile reported proof severity diagnostics in " & Unit);
+         end if;
+
+         if Project_Tools.Text.Contains (Proof_Log, "skipped; body is SPARK_Mode => Off") then
+            Fail ("proof profile skipped a declared SPARK body in " & Unit);
+         end if;
+      end;
+   exception
+      when others =>
+         Fail ("proof profile log could not be checked for " & Unit);
    end Run_Proof_Unit;
 
    procedure Run_Proof_Profile is
@@ -72,6 +96,7 @@ procedure Jpeglib_Prove is
       Run_Proof_Unit ("jpeglib-internal-checked_arithmetic.adb");
       Run_Proof_Unit ("jpeglib-images.adb");
       Run_Proof_Unit ("jpeglib-internal-segments.adb");
+      Run_Proof_Unit ("jpeglib-internal-ownership.adb");
    end Run_Proof_Profile;
 begin
    if Root = "" then
@@ -159,6 +184,10 @@ begin
            (Profile,
             "Jpeglib.Internal.Segments",
             "proof profile does not document segment boundary target");
+         Require_Text
+           (Profile,
+            "Jpeglib.Internal.Ownership",
+            "proof profile does not document ownership target");
       end if;
    end;
 

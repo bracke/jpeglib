@@ -1,24 +1,30 @@
 with Jpeglib.Errors;
-with Jpeglib.Internal.Checked_Arithmetic;
 
 package body Jpeglib.Internal.Ownership is
-   function Used (Budget : Byte_Budget) return Byte_Count is
-   begin
-      return Budget.Used_Bytes;
-   end Used;
+   pragma SPARK_Mode (On);
 
-   function Is_Active (Lease : Byte_Lease) return Boolean is
+   procedure Reserve_State
+     (Budget : in out Byte_Budget;
+      Limit : Byte_Count;
+      Amount : Byte_Count;
+      Lease : out Byte_Lease;
+      Outcome : out Results.Result)
+   is
    begin
-      return Lease.Active;
-   end Is_Active;
+      Lease := (Active => False, Charged_Bytes => 0);
 
-   function Size (Lease : Byte_Lease) return Byte_Count is
-   begin
-      if Lease.Active then
-         return Lease.Charged_Bytes;
+      if Budget.Used_Bytes > Byte_Count'Last - Amount then
+         Outcome := Results.Failure (Errors.Integer_Overflow);
+         return;
+      elsif Budget.Used_Bytes + Amount > Limit then
+         Outcome := Results.Failure (Errors.Output_Limit_Exceeded);
+         return;
       end if;
-      return 0;
-   end Size;
+
+      Budget.Used_Bytes := Budget.Used_Bytes + Amount;
+      Lease := (Active => True, Charged_Bytes => Amount);
+      Outcome := Results.Success;
+   end Reserve_State;
 
    function Reserve
      (Budget : in out Byte_Budget;
@@ -26,35 +32,40 @@ package body Jpeglib.Internal.Ownership is
       Amount : Byte_Count;
       Lease : out Byte_Lease) return Results.Result
    is
-      Next : constant Checked_Arithmetic.Count_Result :=
-        Checked_Arithmetic.Add (Budget.Used_Bytes, Amount);
+      pragma SPARK_Mode (Off);
+      Outcome : Results.Result;
    begin
-      Lease := (Active => False, Charged_Bytes => 0);
+      Reserve_State (Budget, Limit, Amount, Lease, Outcome);
+      return Outcome;
+   end Reserve;
 
-      if not Results.Succeeded (Next.Outcome) then
-         return Next.Outcome;
-      elsif Next.Count > Limit then
-         return Results.Failure (Errors.Output_Limit_Exceeded);
+   procedure Release_State
+     (Budget : in out Byte_Budget;
+      Lease : in out Byte_Lease;
+      Outcome : out Results.Result)
+   is
+   begin
+      if not Lease.Active then
+         Outcome := Results.Success;
+         return;
+      elsif Budget.Used_Bytes < Lease.Charged_Bytes then
+         Outcome := Results.Failure (Errors.Internal_Invariant_Failed);
+         return;
       end if;
 
-      Budget.Used_Bytes := Next.Count;
-      Lease := (Active => True, Charged_Bytes => Amount);
-      return Results.Success;
-   end Reserve;
+      Budget.Used_Bytes := Budget.Used_Bytes - Lease.Charged_Bytes;
+      Lease := (Active => False, Charged_Bytes => 0);
+      Outcome := Results.Success;
+   end Release_State;
 
    function Release
      (Budget : in out Byte_Budget;
       Lease : in out Byte_Lease) return Results.Result
    is
+      pragma SPARK_Mode (Off);
+      Outcome : Results.Result;
    begin
-      if not Lease.Active then
-         return Results.Success;
-      elsif Budget.Used_Bytes < Lease.Charged_Bytes then
-         return Results.Failure (Errors.Internal_Invariant_Failed);
-      end if;
-
-      Budget.Used_Bytes := Budget.Used_Bytes - Lease.Charged_Bytes;
-      Lease := (Active => False, Charged_Bytes => 0);
-      return Results.Success;
+      Release_State (Budget, Lease, Outcome);
+      return Outcome;
    end Release;
 end Jpeglib.Internal.Ownership;

@@ -1,5 +1,6 @@
 package body Jpeglib.Images is
    function Bytes_Per_Pixel (Format : Pixel_Format) return Byte_Count is
+      pragma SPARK_Mode (On);
    begin
       case Format is
          when Gray_8 =>
@@ -14,6 +15,7 @@ package body Jpeglib.Images is
    end Bytes_Per_Pixel;
 
    function Minimum_Row_Bytes (Width : Image_Width; Format : Pixel_Format) return Byte_Count is
+      pragma SPARK_Mode (On);
    begin
       return Byte_Count (Width) * Bytes_Per_Pixel (Format);
    end Minimum_Row_Bytes;
@@ -22,6 +24,7 @@ package body Jpeglib.Images is
      (Descriptor : Image_Descriptor;
       Storage_Length : Natural) return Boolean
    is
+      pragma SPARK_Mode (On);
       Row_Bytes : constant Byte_Count :=
         Minimum_Row_Bytes (Descriptor.Width, Descriptor.Format);
       Stride_Bytes : constant Byte_Count := Byte_Count (Descriptor.Stride);
