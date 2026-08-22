@@ -128,6 +128,9 @@
 - Require `ffmpeg` RGB-conversion decode for baseline/progressive CMYK and YCCK
   conformance artifacts, while keeping ImageMagick raw-CMYK output diagnostic
   because its channel convention differs on this host.
+- Add required `ffmpeg` limitation probes for arithmetic, differential, and
+  hierarchical conformance artifacts so a future matching external decode is
+  caught and promoted to a positive oracle.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.

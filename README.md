@@ -102,7 +102,9 @@ CMYK/YCCK, lossless, differential, and hierarchical modes are required to pass
 the separate `tests/bin/jpeglib_decode_raw` native process oracle. CMYK/YCCK
 baseline/progressive conformance also requires the installed `ffmpeg` command as
 a third-party RGB-conversion oracle. ImageMagick remains diagnostic when host
-tools do not expose a stable byte oracle for an advanced mode. Lossless Huffman
+tools do not expose a stable byte oracle for an advanced mode. Arithmetic,
+differential, and hierarchical rows run required `ffmpeg` limitation probes so a
+future matching decode must be promoted to a required oracle. Lossless Huffman
 grayscale/RGB conformance, including restarted artifacts with emitted restart
 markers, also requires `ffmpeg` as a third-party raw-byte oracle.
 `jpeglib_prove` audits proof-readiness by default; `jpeglib_prove --run` runs

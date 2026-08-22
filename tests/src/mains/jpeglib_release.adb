@@ -138,6 +138,8 @@ begin
    Require_Text ("docs/external_reference_matrix.md", "Required native process oracle");
    Require_Text ("docs/external_reference_matrix.md", "required third-party `ffmpeg` oracle");
    Require_Text ("docs/external_reference_matrix.md", "required third-party `ffmpeg` RGB-conversion oracle");
+   Require_Text ("docs/external_reference_matrix.md", "required `ffmpeg` limitation probe");
+   Require_Text ("CHANGELOG.md", "future matching external decode");
    Require_Text ("docs/external_reference_matrix.md", "jpeglib_decode_raw");
    Require_Text ("docs/proof_profile.md", "alr exec -- tests/bin/jpeglib_prove --run");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Checked_Arithmetic");

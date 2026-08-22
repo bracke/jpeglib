@@ -372,6 +372,126 @@ procedure Jpeglib_Conformance is
       end loop;
    end Run_FFMPEG_CMYK_RGB_Oracle;
 
+   procedure Run_FFMPEG_Rejects_Advanced
+     (Label         : String;
+      Artifact_Path : String;
+      Pixel_Format  : String;
+      Failed        : in out Boolean)
+   is
+      Status : aliased Integer := -1;
+   begin
+      if FFMPEG = "" then
+         Failed := True;
+         Fail (Label & " ffmpeg limitation probe not found", "artifact: " & Artifact_Path);
+         return;
+      end if;
+
+      declare
+         Output : constant String :=
+           Project_Tools.Processes.Command_Output
+             (FFMPEG,
+              Project_Tools.Processes.Arguments
+                ([Project_Tools.Processes.Argument ("-v"),
+                  Project_Tools.Processes.Argument ("error"),
+                  Project_Tools.Processes.Argument ("-i"),
+                  Project_Tools.Processes.Argument (Artifact_Path),
+                  Project_Tools.Processes.Argument ("-f"),
+                  Project_Tools.Processes.Argument ("rawvideo"),
+                  Project_Tools.Processes.Argument ("-pix_fmt"),
+                  Project_Tools.Processes.Argument (Pixel_Format),
+                  Project_Tools.Processes.Argument ("pipe:1")]),
+              Status => Status'Access,
+              Err_To_Out => True);
+      begin
+         if Status = 0 then
+            Failed := True;
+            Fail
+              (Label & " ffmpeg unexpectedly accepted advanced artifact",
+               "artifact: " & Artifact_Path);
+            return;
+         end if;
+
+         Ada.Text_IO.Put_Line
+           ("jpeglib_conformance: " & Label
+            & " passed ffmpeg advanced-mode rejection probe");
+         if Output = "" then
+            Ada.Text_IO.Put_Line
+              ("jpeglib_conformance: " & Label
+               & " ffmpeg rejection produced no diagnostic text");
+         end if;
+      end;
+   end Run_FFMPEG_Rejects_Advanced;
+
+   procedure Run_FFMPEG_RGB_Mismatch_Diagnostic
+     (Label         : String;
+      Artifact_Path : String;
+      Expected      : Jpeglib.Streams.Byte_Array;
+      Failed        : in out Boolean)
+   is
+      Status : aliased Integer := -1;
+      Any_Difference : Boolean := False;
+   begin
+      if FFMPEG = "" then
+         Failed := True;
+         Fail (Label & " ffmpeg limitation probe not found", "artifact: " & Artifact_Path);
+         return;
+      end if;
+
+      declare
+         Output : constant String :=
+           Project_Tools.Processes.Command_Output
+             (FFMPEG,
+              Project_Tools.Processes.Arguments
+                ([Project_Tools.Processes.Argument ("-v"),
+                  Project_Tools.Processes.Argument ("error"),
+                  Project_Tools.Processes.Argument ("-i"),
+                  Project_Tools.Processes.Argument (Artifact_Path),
+                  Project_Tools.Processes.Argument ("-f"),
+                  Project_Tools.Processes.Argument ("rawvideo"),
+                  Project_Tools.Processes.Argument ("-pix_fmt"),
+                  Project_Tools.Processes.Argument ("rgb24"),
+                  Project_Tools.Processes.Argument ("pipe:1")]),
+              Status => Status'Access,
+              Err_To_Out => False);
+      begin
+         if Status /= 0 then
+            Failed := True;
+            Fail
+              (Label & " ffmpeg limitation probe failed to decode",
+               "artifact: " & Artifact_Path);
+            return;
+         elsif Output'Length /= Expected'Length then
+            Failed := True;
+            Fail
+              (Label & " ffmpeg limitation probe length changed",
+               "artifact: " & Artifact_Path);
+            return;
+         end if;
+
+         for Index in Expected'Range loop
+            if Byte_At (Output, Index - Expected'First + Output'First)
+              /= Natural (Expected (Index))
+            then
+               Any_Difference := True;
+               exit;
+            end if;
+         end loop;
+
+         if not Any_Difference then
+            Failed := True;
+            Fail
+              (Label
+               & " ffmpeg now matches native raw bytes; promote it to a required oracle",
+               "artifact: " & Artifact_Path);
+            return;
+         end if;
+
+         Ada.Text_IO.Put_Line
+           ("jpeglib_conformance: " & Label
+            & " passed ffmpeg advanced-mode mismatch probe");
+      end;
+   end Run_FFMPEG_RGB_Mismatch_Diagnostic;
+
    procedure Run_Magick_Generated_RGB_Case
      (Label         : String;
       Artifact_Name : String;
@@ -796,7 +916,9 @@ procedure Jpeglib_Conformance is
       Magick        : String;
       Failed        : in out Boolean;
       Require_External_Decode : Boolean := True;
-      Require_FFMPEG_Decode   : Boolean := False)
+      Require_FFMPEG_Decode   : Boolean := False;
+      Require_FFMPEG_Rejection : Boolean := False;
+      Require_FFMPEG_Mismatch  : Boolean := False)
    is
       Input_Storage : aliased Jpeglib.Streams.Byte_Array :=
         [255, 0, 0,
@@ -875,6 +997,28 @@ procedure Jpeglib_Conformance is
             Artifact_Path,
             Input_Storage,
             0,
+            Failed);
+         if Failed then
+            return;
+         end if;
+      end if;
+
+      if Require_FFMPEG_Rejection then
+         Run_FFMPEG_Rejects_Advanced
+           (Label,
+            Artifact_Path,
+            "rgb24",
+            Failed);
+         if Failed then
+            return;
+         end if;
+      end if;
+
+      if Require_FFMPEG_Mismatch then
+         Run_FFMPEG_RGB_Mismatch_Diagnostic
+           (Label,
+            Artifact_Path,
+            Input_Storage,
             Failed);
          if Failed then
             return;
@@ -960,7 +1104,8 @@ procedure Jpeglib_Conformance is
       Magick        : String;
       Failed        : in out Boolean;
       Require_External_Decode : Boolean := True;
-      Require_FFMPEG_Decode   : Boolean := False)
+      Require_FFMPEG_Decode   : Boolean := False;
+      Require_FFMPEG_Rejection : Boolean := False)
    is
       Input_Storage : aliased Jpeglib.Streams.Byte_Array :=
         [16, 96,
@@ -1037,6 +1182,17 @@ procedure Jpeglib_Conformance is
             Artifact_Path,
             Input_Storage,
             0,
+            Failed);
+         if Failed then
+            return;
+         end if;
+      end if;
+
+      if Require_FFMPEG_Rejection then
+         Run_FFMPEG_Rejects_Advanced
+           (Label,
+            Artifact_Path,
+            "gray",
             Failed);
          if Failed then
             return;
@@ -1737,7 +1893,8 @@ begin
        others => <>),
       Magick,
       Failed,
-      Require_External_Decode => False);
+      Require_External_Decode => False,
+      Require_FFMPEG_Rejection => True);
 
    Run_Gray_Encode_Case
      ("arithmetic sequential grayscale encode",
@@ -1747,7 +1904,8 @@ begin
        others => <>),
       Magick,
       Failed,
-      Require_External_Decode => False);
+      Require_External_Decode => False,
+      Require_FFMPEG_Rejection => True);
 
    Run_RGB_Encode_Case
      ("differential DCT RGB 4:4:4 encode",
@@ -1758,7 +1916,8 @@ begin
        others => <>),
       Magick,
       Failed,
-      Require_External_Decode => False);
+      Require_External_Decode => False,
+      Require_FFMPEG_Rejection => True);
 
    Run_RGB_Encode_Case
      ("hierarchical DCT RGB 4:4:4 encode",
@@ -1769,7 +1928,8 @@ begin
        others => <>),
       Magick,
       Failed,
-      Require_External_Decode => False);
+      Require_External_Decode => False,
+      Require_FFMPEG_Mismatch => True);
 
    Run_RGB_Encode_Case
      ("lossless Huffman RGB encode",
@@ -1821,7 +1981,8 @@ begin
        others => <>),
       Magick,
       Failed,
-      Require_External_Decode => False);
+      Require_External_Decode => False,
+      Require_FFMPEG_Mismatch => True);
 
    Run_RGB_Encode_Case
      ("progressive RGB 4:2:0 encode",
@@ -1906,7 +2067,8 @@ begin
        others => <>),
       Magick,
       Failed,
-      Require_External_Decode => False);
+      Require_External_Decode => False,
+      Require_FFMPEG_Rejection => True);
 
    Run_Gray_Encode_Case
      ("arithmetic progressive grayscale encode",
@@ -1917,7 +2079,8 @@ begin
        others => <>),
       Magick,
       Failed,
-      Require_External_Decode => False);
+      Require_External_Decode => False,
+      Require_FFMPEG_Rejection => True);
 
    if not Failed then
       Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Success);

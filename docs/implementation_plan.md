@@ -567,7 +567,9 @@ advanced JPEG family or uses a different CMYK/YCCK channel convention. The
 baseline/progressive CMYK/YCCK rows additionally require `ffmpeg` as a
 third-party RGB-conversion oracle, and the lossless Huffman grayscale/RGB rows,
 including restarted artifacts with emitted restart markers, require `ffmpeg` as
-a third-party raw-byte oracle on this host. The
+a third-party raw-byte oracle on this host. Arithmetic sequential/progressive,
+differential, and hierarchical rows also run required `ffmpeg` limitation probes
+so a future matching third-party decode is caught and promoted. The
 required versus diagnostic external coverage is documented in
 `docs/external_reference_matrix.md`. `jpeglib_check` runs these conformance
 checks after fixture verification.
@@ -628,6 +630,9 @@ Completed:
   RGB-conversion decode, while ImageMagick results remain
   optional external-support diagnostics and lossless Huffman grayscale/RGB rows,
   including restarted artifacts, also require `ffmpeg` raw-byte decode.
+  Arithmetic, differential, and hierarchical rows also require `ffmpeg`
+  limitation probes that fail if the host decoder gains matching output and
+  should be promoted to a positive oracle.
   `docs/external_reference_matrix.md`
   records which checks are required native process oracles versus diagnostic
   third-party probes.
@@ -799,5 +804,7 @@ required native process oracle for advanced encode
 families, require `ffmpeg` for baseline/progressive CMYK/YCCK RGB-conversion
 third-party decode and lossless Huffman grayscale/RGB raw-byte third-party
 decode, including restarted artifacts with emitted restart markers, and keep
-ImageMagick diagnostics for host reference decoder support without
+required `ffmpeg` limitation probes for arithmetic, differential, and
+hierarchical rows without a matching third-party byte oracle yet. ImageMagick
+diagnostics are kept for host reference decoder support without
 requiring ImageMagick builds to support every advanced JPEG mode.
