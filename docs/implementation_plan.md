@@ -970,14 +970,16 @@ Exit criteria:
 Goal: close the remaining competitive gaps against mature JPEG ecosystems while
 keeping libjpeg-compatible API and ABI work out of scope.
 
-The executable tracker is:
+The strict executable tracker is:
 
 ```sh
-alr exec -- tests/bin/jpeglib_complete_plus --allow-open
+alr exec -- tests/bin/jpeglib_complete_plus
 ```
 
 Plain `jpeglib_complete_plus` first runs `jpeglib_complete`, then requires every
 row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
+`alr exec -- tests/bin/jpeglib_complete_plus --allow-open` is retained only for
+staging future rows before their evidence is complete.
 
 ### Phase CP1: Multi-Platform CI
 

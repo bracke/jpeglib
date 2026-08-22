@@ -3,11 +3,10 @@
 `jpeglib` is a native Ada 2022 JPEG codec library. The current release-gated
 scope covers broad 8-bit JPEG decoding and encoding, including baseline,
 progressive, metadata preservation, resource limits, streaming interfaces, and
-deterministic error reporting. The library-complete target is stricter than the
-current release gate: diagnostic external rows must become required positive
-oracles or be replaced by a stronger compatibility gate, proof coverage must be
-expanded beyond the current helper-unit boundary where practical, and real-world
-interoperability must be represented by an explicit corpus.
+deterministic error reporting. The library-complete gate is stricter than the
+baseline release gate: it requires closed external-oracle, real-world corpus,
+public API policy, proof expansion, streaming stress, documentation, benchmark,
+and packaging evidence.
 
 This repository supports baseline Huffman JPEG decode for grayscale, YCbCr,
 RGB JPEG, and plain CMYK inputs, progressive grayscale, YCbCr, and RGB JPEG
@@ -137,27 +136,29 @@ implementation-plan coverage.
 the external oracle matrix, real-world corpus, public API policy matrix, proof
 expansion matrix, streaming stress matrix, and final documentation closure
 checks.
-`jpeglib_complete_plus --allow-open` validates the out-of-scope-for-release
-competitive gap matrix in `docs/competitive_gap_matrix.md`. Plain
-`jpeglib_complete_plus` is strict and requires the multi-platform CI,
+`jpeglib_complete_plus` validates the out-of-scope-for-release competitive gap
+matrix in `docs/competitive_gap_matrix.md`. It is strict and requires the
+multi-platform CI,
 expanded-corpus, lossless-transform, encoder-optimization, precision/buffer,
 and performance-architecture rows to be closed. libjpeg-compatible API or ABI
-compatibility is explicitly out of scope.
+compatibility is explicitly out of scope. `--allow-open` is retained only for
+staging future matrix rows while they are being implemented.
 `jpeglib_external_matrix` validates the LC1 external oracle matrix and requires
 every external row to have required positive or required compatibility-boundary
 evidence.
 `jpeglib_real_world --allow-empty` validates the LC2 corpus manifest shape while
 the real-world corpus is being populated; without `--allow-empty` it requires
 at least one manifest entry.
-`jpeglib_policy_matrix --allow-open` validates the LC3 public API policy matrix
-while open rows remain; without `--allow-open` it requires every row to be
-closed by evidence.
-`jpeglib_proof_matrix --allow-open` validates the LC4 proof expansion matrix
-while open rows remain; without `--allow-open` it requires every proof row to be
-closed by evidence or an explicit runtime-boundary policy.
-`jpeglib_stress_matrix --allow-open` validates the LC5 streaming and large-image
-stress matrix while open rows remain; without `--allow-open` every stress row
-must be closed.
+`jpeglib_policy_matrix` validates the closed LC3 public API policy matrix and
+requires every row to be closed by evidence. `--allow-open` is retained only for
+staging future policy rows.
+`jpeglib_proof_matrix` validates the closed LC4 proof expansion matrix and
+requires every proof row to be closed by evidence or an explicit
+runtime-boundary policy. `--allow-open` is retained only for staging future
+proof rows.
+`jpeglib_stress_matrix` validates the closed LC5 streaming and large-image
+stress matrix and requires every stress row to be closed. `--allow-open` is
+retained only for staging future stress rows.
 
 Fixture files live under `tests/fixtures/coefficients` and
 `tests/fixtures/images`. Refresh them with:

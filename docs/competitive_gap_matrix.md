@@ -4,14 +4,16 @@ This document tracks gaps against mature JPEG ecosystems beyond the repository's
 current `jpeglib_complete` gate. libjpeg-compatible API or ABI compatibility is
 explicitly out of scope.
 
-The executable matrix is:
+The strict executable matrix is:
 
 ```sh
-alr exec -- tests/bin/jpeglib_complete_plus --allow-open
+alr exec -- tests/bin/jpeglib_complete_plus
 ```
 
 Plain `jpeglib_complete_plus` is strict and requires every row in
 `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
+`alr exec -- tests/bin/jpeglib_complete_plus --allow-open` is retained only for
+staging future rows before their evidence is complete.
 
 | Gap | Target | Closure Evidence |
 | --- | --- | --- |
