@@ -1,0 +1,10 @@
+# jpeglib public API policy matrix
+# Format:
+# id|surface|scope|policy|status|evidence
+#
+decode-header-current|Jpeglib.Decoding.Read_Header|covered frame and metadata headers|positive/error policy|closed|foundation.decoder.header_advanced_frame_modes
+decode-image-current|Jpeglib.Decoding.Decode_Image|covered grayscale/YCbCr/RGB/CMYK/YCCK and advanced slices|positive/error policy|closed|foundation.decoder.decode_output_layouts
+encode-v1-mode-format|Jpeglib.Encoding.Encode_Image|current V1 mode/format matrix|positive/error policy|closed|foundation.encoder.encode_v1_mode_format_matrix
+metadata-current|Jpeglib.Decoding/Jpeglib.Encoding metadata policy|bounded summaries retention callbacks ICC Exif APP13 APP14|positive/error policy|closed|foundation.encoder.metadata_v1_mode_matrix
+complete-decode-policy|Jpeglib.Decoding public entry points|all advertised frame families color models limits states and output formats|positive/error policy|open|LC3
+complete-encode-policy|Jpeglib.Encoding public entry points|all advertised modes formats metadata restart subsampling progressive scripts and limits|positive/error policy|open|LC3

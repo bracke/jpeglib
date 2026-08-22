@@ -887,6 +887,9 @@ Work:
   entry points across all advertised entropy modes, frame families, color
   models, output formats, metadata policies, restart policies, scaling options,
   and resource limits.
+- Use `jpeglib_policy_matrix --allow-open` to validate the matrix shape during
+  bootstrap, and make plain `jpeglib_policy_matrix` require every row to be
+  closed for the library-complete gate.
 - Add negative-policy coverage for every unsupported combination, including
   exact `Jpeglib.Errors` identifiers and no-output side effects.
 - Require the matrix from `jpeglib_docs` and `jpeglib_release` so capability

@@ -147,6 +147,7 @@ begin
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_prove --run");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_complete");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_real_world --allow-empty");
+   Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_policy_matrix --allow-open");
    Require_Text ("README.md", "descriptor-only image view");
    Require_Text ("CONTRIBUTING.md", "alr exec -- tests/bin/jpeglib_check");
    Require_Text ("CHANGELOG.md", "0.1.0-dev");
@@ -221,6 +222,7 @@ begin
    Require_Text ("docs/implementation_plan.md", "Phase LC2: Real-World Corpus");
    Require_Text ("docs/implementation_plan.md", "jpeglib_real_world --allow-empty");
    Require_Text ("docs/implementation_plan.md", "Phase LC3: Complete Public API Policy Matrix");
+   Require_Text ("docs/implementation_plan.md", "jpeglib_policy_matrix --allow-open");
    Require_Text ("docs/implementation_plan.md", "Phase LC4: Proof Expansion");
    Require_Text ("docs/implementation_plan.md", "Phase LC5: Streaming and Large-Image Completeness");
    Require_Text ("docs/implementation_plan.md", "Phase LC6: Release Completeness Gate");

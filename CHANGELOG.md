@@ -150,6 +150,8 @@
   JPEG-library criteria are closed.
 - Add the `jpeglib_real_world` manifest checker and initial LC2 manifest
   location for the real-world interoperability corpus.
+- Add the `jpeglib_policy_matrix` checker and initial LC3 public API policy
+  matrix with explicit open rows for library-complete coverage.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.

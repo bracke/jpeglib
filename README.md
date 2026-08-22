@@ -91,6 +91,7 @@ alr exec -- tests/bin/jpeglib_prove --run
 alr exec -- tests/bin/jpeglib_release
 alr exec -- tests/bin/jpeglib_complete
 alr exec -- tests/bin/jpeglib_real_world --allow-empty
+alr exec -- tests/bin/jpeglib_policy_matrix --allow-open
 ```
 
 `jpeglib_tests` is the AUnit test runner. `jpeglib_check` is the aggregate local
@@ -136,6 +137,9 @@ coverage, streaming stress, and the final completeness criteria are closed.
 `jpeglib_real_world --allow-empty` validates the LC2 corpus manifest shape while
 the real-world corpus is being populated; without `--allow-empty` it requires
 at least one manifest entry.
+`jpeglib_policy_matrix --allow-open` validates the LC3 public API policy matrix
+while open rows remain; without `--allow-open` it requires every row to be
+closed by evidence.
 
 Fixture files live under `tests/fixtures/coefficients` and
 `tests/fixtures/images`. Refresh them with:
