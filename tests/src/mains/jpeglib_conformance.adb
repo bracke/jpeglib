@@ -158,6 +158,65 @@ procedure Jpeglib_Conformance is
       end;
    end Run_FFMPEG_RGB_Oracle;
 
+   procedure Run_FFMPEG_Gray_Oracle
+     (Label         : String;
+      Artifact_Path : String;
+      Expected      : Jpeglib.Streams.Byte_Array;
+      Tolerance     : Natural;
+      Failed        : in out Boolean)
+   is
+      Status : aliased Integer := -1;
+   begin
+      if FFMPEG = "" then
+         Failed := True;
+         Fail (Label & " ffmpeg oracle not found", "artifact: " & Artifact_Path);
+         return;
+      end if;
+
+      declare
+         Output : constant String :=
+           Project_Tools.Processes.Command_Output
+             (FFMPEG,
+              Project_Tools.Processes.Arguments
+                ([Project_Tools.Processes.Argument ("-v"),
+                  Project_Tools.Processes.Argument ("error"),
+                  Project_Tools.Processes.Argument ("-i"),
+                  Project_Tools.Processes.Argument (Artifact_Path),
+                  Project_Tools.Processes.Argument ("-f"),
+                  Project_Tools.Processes.Argument ("rawvideo"),
+                  Project_Tools.Processes.Argument ("-pix_fmt"),
+                  Project_Tools.Processes.Argument ("gray"),
+                  Project_Tools.Processes.Argument ("pipe:1")]),
+              Status => Status'Access,
+              Err_To_Out => False);
+         Difference : Natural;
+      begin
+         if Status /= 0 then
+            Failed := True;
+            Fail (Label & " ffmpeg grayscale reference decode failed", "artifact: " & Artifact_Path);
+            return;
+         elsif Output'Length /= Expected'Length then
+            Failed := True;
+            Fail (Label & " ffmpeg grayscale output length mismatch", "artifact: " & Artifact_Path);
+            return;
+         end if;
+
+         for Index in Expected'Range loop
+            if Byte_At (Output, Index - Expected'First + Output'First) > Natural (Expected (Index)) then
+               Difference := Byte_At (Output, Index - Expected'First + Output'First) - Natural (Expected (Index));
+            else
+               Difference := Natural (Expected (Index)) - Byte_At (Output, Index - Expected'First + Output'First);
+            end if;
+
+            if Difference > Tolerance then
+               Failed := True;
+               Fail (Label & " ffmpeg grayscale sample mismatch", "artifact: " & Artifact_Path);
+               return;
+            end if;
+         end loop;
+      end;
+   end Run_FFMPEG_Gray_Oracle;
+
    procedure Run_FFMPEG_CMYK_RGB_Oracle
      (Label         : String;
       Artifact_Path : String;
@@ -753,7 +812,10 @@ procedure Jpeglib_Conformance is
             else
                Ada.Text_IO.Put_Line
                  ("jpeglib_conformance: " & Label
-                  & " passed native process oracle; ImageMagick rejected optional external decode");
+                  & (if Require_FFMPEG_Decode then
+                       " passed native process and ffmpeg oracles; ImageMagick rejected optional external decode"
+                     else
+                       " passed native process oracle; ImageMagick rejected optional external decode"));
             end if;
             return;
          elsif Magick_Output'Length /= Input_Storage'Length then
@@ -763,7 +825,10 @@ procedure Jpeglib_Conformance is
             else
                Ada.Text_IO.Put_Line
                  ("jpeglib_conformance: " & Label
-                  & " passed native process oracle; ImageMagick optional external output length differed");
+                  & (if Require_FFMPEG_Decode then
+                       " passed native process and ffmpeg oracles; ImageMagick optional external output length differed"
+                     else
+                       " passed native process oracle; ImageMagick optional external output length differed"));
             end if;
             return;
          end if;
@@ -805,7 +870,8 @@ procedure Jpeglib_Conformance is
       Options       : Jpeglib.Encoding.Options;
       Magick        : String;
       Failed        : in out Boolean;
-      Require_External_Decode : Boolean := True)
+      Require_External_Decode : Boolean := True;
+      Require_FFMPEG_Decode   : Boolean := False)
    is
       Input_Storage : aliased Jpeglib.Streams.Byte_Array :=
         [16, 96,
@@ -876,6 +942,18 @@ procedure Jpeglib_Conformance is
          return;
       end if;
 
+      if Require_FFMPEG_Decode then
+         Run_FFMPEG_Gray_Oracle
+           (Label,
+            Artifact_Path,
+            Input_Storage,
+            0,
+            Failed);
+         if Failed then
+            return;
+         end if;
+      end if;
+
       declare
          Magick_Output : constant String :=
            Project_Tools.Processes.Command_Output
@@ -896,7 +974,10 @@ procedure Jpeglib_Conformance is
             else
                Ada.Text_IO.Put_Line
                  ("jpeglib_conformance: " & Label
-                  & " passed native process oracle; ImageMagick rejected optional external decode");
+                  & (if Require_FFMPEG_Decode then
+                       " passed native process and ffmpeg oracles; ImageMagick rejected optional external decode"
+                     else
+                       " passed native process oracle; ImageMagick rejected optional external decode"));
             end if;
             return;
          elsif Magick_Output'Length /= Input_Storage'Length then
@@ -906,7 +987,10 @@ procedure Jpeglib_Conformance is
             else
                Ada.Text_IO.Put_Line
                  ("jpeglib_conformance: " & Label
-                  & " passed native process oracle; ImageMagick optional external output length differed");
+                  & (if Require_FFMPEG_Decode then
+                       " passed native process and ffmpeg oracles; ImageMagick optional external output length differed"
+                     else
+                       " passed native process oracle; ImageMagick optional external output length differed"));
             end if;
             return;
          end if;
@@ -939,7 +1023,11 @@ procedure Jpeglib_Conformance is
       end;
 
       Ada.Text_IO.Put_Line
-        ("jpeglib_conformance: " & Label & " passed native process and external decode checks");
+        ("jpeglib_conformance: " & Label
+         & (if Require_FFMPEG_Decode then
+              " passed native process, ffmpeg, and external decode checks"
+            else
+              " passed native process and external decode checks"));
    end Run_Gray_Encode_Case;
 
    procedure Run_Four_Channel_Encode_Case
@@ -1319,6 +1407,17 @@ begin
    Run_RGB_Encode_Case
      ("lossless Huffman RGB encode",
       "jpeglib-conformance-lossless-rgb-2x2.jpg",
+      (Mode => Jpeglib.Encoding.Lossless_Huffman,
+       Lossless_Predictor => 1,
+       others => <>),
+      Magick,
+      Failed,
+      Require_External_Decode => False,
+      Require_FFMPEG_Decode => True);
+
+   Run_Gray_Encode_Case
+     ("lossless Huffman grayscale encode",
+      "jpeglib-conformance-lossless-gray-2x2.jpg",
       (Mode => Jpeglib.Encoding.Lossless_Huffman,
        Lossless_Predictor => 1,
        others => <>),

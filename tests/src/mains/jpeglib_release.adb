@@ -122,11 +122,12 @@ begin
    Require_Text ("CHANGELOG.md", "jpeglib_decode_raw");
    Require_Text ("CHANGELOG.md", "ffmpeg");
    Require_Text ("CHANGELOG.md", "RGB-conversion decode");
+   Require_Text ("CHANGELOG.md", "raw gray/RGB decode");
    Require_Text ("CHANGELOG.md", "ImageMagick-generated");
    Require_Text ("CHANGELOG.md", "Jpeglib.Images");
    Require_Text ("CHANGELOG.md", "row-span overflow rejection");
    Require_Text ("CHANGELOG.md", "YCCK");
-   Require_Text ("docs/external_reference_matrix.md", "Lossless Huffman RGB encode");
+   Require_Text ("docs/external_reference_matrix.md", "Lossless Huffman grayscale/RGB encode");
    Require_Text
      ("docs/external_reference_matrix.md",
       "Differential DCT, hierarchical DCT, and hierarchical lossless encode");
@@ -152,6 +153,7 @@ begin
    Require_Text ("docs/implementation_plan.md", "native process oracle");
    Require_Text ("docs/implementation_plan.md", "ffmpeg");
    Require_Text ("docs/implementation_plan.md", "baseline/progressive CMYK/YCCK rows require `ffmpeg`");
+   Require_Text ("docs/implementation_plan.md", "lossless Huffman grayscale/RGB");
    Require_Text ("docs/implementation_plan.md", "ImageMagick-generated baseline/progressive");
    Require_Text ("docs/implementation_plan.md", "RGB 4x3/5x2 and grayscale 5x3/4x4");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Images");

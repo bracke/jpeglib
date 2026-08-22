@@ -101,7 +101,8 @@ the separate `tests/bin/jpeglib_decode_raw` native process oracle. CMYK/YCCK
 baseline/progressive conformance also requires the installed `ffmpeg` command as
 a third-party RGB-conversion oracle. ImageMagick remains diagnostic when host
 tools do not expose a stable byte oracle for an advanced mode. Lossless Huffman
-RGB conformance also requires `ffmpeg` as a third-party raw-byte oracle.
+grayscale/RGB conformance also requires `ffmpeg` as a third-party raw-byte
+oracle.
 `jpeglib_prove` audits proof-readiness by default; `jpeglib_prove --run` runs
 the current proof profile for checked arithmetic, descriptor-only image view
 bounds via `Jpeglib.Images.Descriptor_Is_Valid`, and segment boundary helpers

@@ -120,9 +120,9 @@
   and hierarchical encode artifacts must decode through a separate raw-byte
   process while ImageMagick remains a third-party diagnostic for unsupported
   host modes.
-- Require `ffmpeg` raw RGB decode for lossless Huffman RGB conformance artifacts,
-  promoting the installed third-party oracle where the host can decode the
-  advanced JPEG family.
+- Require `ffmpeg` raw gray/RGB decode for lossless Huffman grayscale/RGB
+  conformance artifacts, promoting the installed third-party oracle where the
+  host can decode the advanced JPEG family.
 - Require `ffmpeg` RGB-conversion decode for baseline/progressive CMYK and YCCK
   conformance artifacts, while keeping ImageMagick raw-CMYK output diagnostic
   because its channel convention differs on this host.
