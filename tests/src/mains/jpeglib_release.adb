@@ -4,6 +4,7 @@ with Ada.Text_IO;
 
 with Jpeglib_Tools;
 with Jpeglib_Tools.Release_Digests;
+with Project_Tools.Alire_Manifests;
 with Project_Tools.Files;
 with Project_Tools.Processes;
 
@@ -32,6 +33,32 @@ procedure Jpeglib_Release is
          Fail (Path & " does not mention " & Text);
       end if;
    end Require_Text;
+
+   procedure Require_Manifest_Shape is
+   begin
+      Project_Tools.Alire_Manifests.Require_Pin_Free_Crate_Manifest
+        (Project_Tools.Files.Join (Root, "alire.toml"),
+         "jpeglib",
+         Quiet => True);
+      Project_Tools.Alire_Manifests.Require_Staged_Crate_Source
+        (Root,
+         "jpeglib",
+         "jpeglib.gpr",
+         Quiet => True);
+      Project_Tools.Alire_Manifests.Require_Workspace_Pin
+        (Project_Tools.Files.Join (Root, "tests/alire.toml"),
+         "project_tools",
+         "../../project_tools",
+         Quiet => True);
+      Project_Tools.Alire_Manifests.Require_Workspace_Pin
+        (Project_Tools.Files.Join (Root, "tests/alire.toml"),
+         "hostkit",
+         "../../hostkit",
+         Quiet => True);
+   exception
+      when Program_Error =>
+         Fail ("project_tools manifest validation failed");
+   end Require_Manifest_Shape;
 
    procedure Run_Step (Label : String; Program : String) is
       Status : constant Integer :=
@@ -130,6 +157,9 @@ begin
    Require_Text ("CHANGELOG.md", "runtime-checked access-bearing views");
    Require_Text ("CHANGELOG.md", "Photoshop_APP13");
    Require_Text ("CHANGELOG.md", "YCCK");
+   Require_Text ("CHANGELOG.md", "project_tools` manifest validation");
+   Require_Text ("README.md", "`project_tools` manifest checks");
+   Require_Text ("README.md", "../hostkit");
    Require_Text ("docs/external_reference_matrix.md", "including restarted artifacts");
    Require_Text ("docs/external_reference_matrix.md", "emitted restart markers");
    Require_Text
@@ -161,6 +191,7 @@ begin
    Require_Text ("docs/limits_and_safety.md", "configured output byte limits");
    Require_Text ("docs/invariants.md", "IMAGE-VALID-001");
    Require_Text ("docs/invariants.md", "foundation.images.descriptor_overflow");
+   Require_Text ("docs/invariants.md", "RELEASE-MANIFEST-001");
    Require_Text ("docs/invariants.md", "arithmetic CMYK/YCCK `Balanced_Progressive`");
    Require_Text ("docs/implementation_plan.md", "arithmetic CMYK/YCCK emits the corresponding 24-scan");
    Require_Text ("docs/implementation_plan.md", "optional external-support diagnostics");
@@ -181,6 +212,10 @@ begin
    Require_Text ("docs/implementation_plan.md", "runs 81 deterministic cases");
    Require_Text ("docs/implementation_plan.md", "fixed encode/decode timing matrix");
    Require_Text ("docs/implementation_plan.md", "proof profile");
+   Require_Text ("docs/implementation_plan.md", "pin-free root Alire manifest");
+   Require_Text ("docs/implementation_plan.md", "../project_tools");
+
+   Require_Manifest_Shape;
 
    if Errors = 0 then
       Report_Release_Digests;

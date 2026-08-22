@@ -590,8 +590,10 @@ status/gate coverage, and `jpeglib_check` runs it as part of the normal local
 gate.
 `jpeglib_release` now verifies core release files and current-version changelog
 coverage, reports `cryptolib` SHA-256 manifest lines for the core release
-inputs, then runs the aggregate gate and benchmark smoke as a release readiness
-wrapper.
+inputs, enforces the pin-free root Alire manifest and required tests-crate
+sibling pins for `../project_tools` and `../hostkit` through `project_tools`
+manifest checks, then runs the aggregate gate and benchmark smoke as a release
+readiness wrapper.
 `jpeglib_generate` now refreshes generated fixture artifacts by invoking
 `jpeglib_fixtures --generate` and verifying the resulting corpus.
 `jpeglib_prove` now performs a proof-readiness audit over proof-designated

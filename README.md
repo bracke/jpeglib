@@ -116,6 +116,9 @@ restart-state configuration, and the pure public capability surface in
 the boundary between
 SPARK-proved descriptor arithmetic and runtime-checked access-bearing views are
 documented in `docs/limits_and_safety.md`.
+The release gate also uses `project_tools` manifest checks to keep the root
+crate publishable without local pins and to require the tests crate's sibling
+pins for `../project_tools` and `../hostkit`.
 
 Fixture files live under `tests/fixtures/coefficients` and
 `tests/fixtures/images`. Refresh them with:

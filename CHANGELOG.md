@@ -133,6 +133,9 @@
   caught and promoted to a positive oracle.
 - Expand the executable proof profile to include restart-state configuration
   and expected-marker bounds in `Jpeglib.Internal.Restarts`.
+- Add `project_tools` manifest validation to the release gate so the root crate
+  stays pin-free and tests keep the required `../project_tools` and `../hostkit`
+  sibling pins.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.
