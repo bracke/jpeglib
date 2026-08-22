@@ -37,6 +37,9 @@
 - Route direct-output subsampled CMYK/YCCK DCT decode rows through staged
   component buffers and the existing row output kernels, keeping reduced-scale
   and oriented output on the scalar coordinate-mapping path.
+- Expand the public V1 encode/decode matrix so CMYK/YCCK DCT modes exercise
+  4:4:4, 4:2:2, 4:2:0, and 4:1:1 subsampling layouts across all DCT
+  progressive-script choices.
 - Add compiler-vectorized SIMD RGB-to-YCbCr row kernels, route encoder
   RGB-family plane filling through them, advertise `SIMD_Acceleration`, and add
   `jpeglib_simd_matrix` scalar-equivalence coverage across RGB/BGR/RGBA/BGRA

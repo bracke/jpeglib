@@ -43322,6 +43322,7 @@ package body Jpeglib_Testing.Test_Foundation is
       type Mode_List is array (Positive range <>) of Jpeglib.Encoding.Encoding_Mode;
       type Script_List is array (Positive range <>) of Jpeglib.Encoding.Progressive_Script;
       type Format_List is array (Positive range <>) of Jpeglib.Images.Pixel_Format;
+      type Subsampling_List is array (Positive range <>) of Jpeglib.Encoding.Chroma_Subsampling;
 
       Modes : constant Mode_List :=
         [Jpeglib.Encoding.Sequential_DCT,
@@ -43345,6 +43346,11 @@ package body Jpeglib_Testing.Test_Foundation is
          Jpeglib.Encoding.Balanced_Progressive,
          Jpeglib.Encoding.Fast_Preview_Progressive];
       Lossless_Scripts : constant Script_List := [1 => Jpeglib.Encoding.No_Progressive];
+      DCT_Subsamplings : constant Subsampling_List :=
+        [Jpeglib.Encoding.Subsampling_444,
+         Jpeglib.Encoding.Subsampling_422,
+         Jpeglib.Encoding.Subsampling_420,
+         Jpeglib.Encoding.Subsampling_411];
       Formats : constant Format_List :=
         [Jpeglib.Images.Gray_8,
          Jpeglib.Images.Gray_Alpha_16,
@@ -43369,7 +43375,8 @@ package body Jpeglib_Testing.Test_Foundation is
       procedure Encode_Case
         (Mode : Jpeglib.Encoding.Encoding_Mode;
          Script : Jpeglib.Encoding.Progressive_Script;
-         Format : Jpeglib.Images.Pixel_Format)
+         Format : Jpeglib.Images.Pixel_Format;
+         Subsampling : Jpeglib.Encoding.Chroma_Subsampling := Jpeglib.Encoding.Subsampling_444)
       is
          Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 16_384 => 0];
          Gray_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 => 128];
@@ -43393,7 +43400,9 @@ package body Jpeglib_Testing.Test_Foundation is
            & " "
            & Jpeglib.Encoding.Progressive_Script'Image (Script)
            & " "
-           & Jpeglib.Images.Pixel_Format'Image (Format);
+           & Jpeglib.Images.Pixel_Format'Image (Format)
+           & " "
+           & Jpeglib.Encoding.Chroma_Subsampling'Image (Subsampling);
          Allowed_Drift : constant Natural := (if Is_Lossless_Mode (Mode) then 0 else 16);
 
          procedure Initialize_Input_Patterns is
@@ -43684,7 +43693,7 @@ package body Jpeglib_Testing.Test_Foundation is
             (Quality => 100,
              Mode => Mode,
              Progressive => Script,
-             Subsampling => Jpeglib.Encoding.Subsampling_444,
+             Subsampling => Subsampling,
              others => <>));
          Outcome := Jpeglib.Encoding.Encode_Image (Encoder, Input);
          Assert
@@ -43725,7 +43734,9 @@ package body Jpeglib_Testing.Test_Foundation is
                end loop;
             elsif Format in Jpeglib.Images.CMYK_32 | Jpeglib.Images.YCCK_32 then
                for Script of DCT_Scripts loop
-                  Encode_Case (Mode, Script, Format);
+                  for Subsampling of DCT_Subsamplings loop
+                     Encode_Case (Mode, Script, Format, Subsampling);
+                  end loop;
                end loop;
             else
                for Script of DCT_Scripts loop
