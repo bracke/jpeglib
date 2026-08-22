@@ -1,4 +1,6 @@
 with Ada.Command_Line;
+with Ada.Streams;
+with Ada.Streams.Stream_IO;
 with Ada.Text_IO;
 
 with Jpeglib.Coefficients;
@@ -8,6 +10,8 @@ with Jpeglib.Results;
 with Jpeglib.Streams;
 
 with Jpeglib_Tools;
+with Project_Tools.Files;
+with Project_Tools.Processes;
 
 procedure Jpeglib_Transform is
    use type Jpeglib.Block_Count;
@@ -75,6 +79,122 @@ procedure Jpeglib_Transform is
       Decoded_Progressive_Color_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 3) := [others => [others => 0]];
       Blocks_Decoded : Jpeglib.Block_Count := 0;
       Outcome : Jpeglib.Results.Result;
+
+      procedure Write_File
+        (Path : String;
+         Storage : Jpeglib.Streams.Byte_Array;
+         Last : Natural)
+      is
+         use Ada.Streams;
+         File : Ada.Streams.Stream_IO.File_Type;
+         Data : Stream_Element_Array (1 .. Stream_Element_Offset (Last));
+      begin
+         for Index in 1 .. Last loop
+            Data (Stream_Element_Offset (Index)) :=
+              Stream_Element (Storage (Storage'First + Index - 1));
+         end loop;
+
+         Ada.Streams.Stream_IO.Create (File, Ada.Streams.Stream_IO.Out_File, Path);
+         Ada.Streams.Stream_IO.Write (File, Data);
+         Ada.Streams.Stream_IO.Close (File);
+      exception
+         when others =>
+            if Ada.Streams.Stream_IO.Is_Open (File) then
+               Ada.Streams.Stream_IO.Close (File);
+            end if;
+            raise;
+      end Write_File;
+
+      procedure Check_Jpegtran_Transpose
+        (Input_JPEG : Jpeglib.Streams.Byte_Array;
+         Input_Length : Natural)
+      is
+         Jpegtran : constant String := Project_Tools.Processes.Locate_Command ("jpegtran");
+         Input_Path : constant String := Project_Tools.Files.Temp_Dir & "/jpeglib-transform-jpegtran-input.jpg";
+         Output_Path : constant String := Project_Tools.Files.Temp_Dir & "/jpeglib-transform-jpegtran-output.jpg";
+         Gray_Layouts : constant Jpeglib.Coefficients.Component_Block_Layout_Array (1 .. 1) :=
+           [1 => (Width_In_Blocks => 2, Height_In_Blocks => 1)];
+         Transposed_Layouts : Jpeglib.Coefficients.Component_Block_Layout_Array (1 .. 1);
+         Expected_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) := [others => [others => 0]];
+         Actual_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) := [others => [others => 0]];
+         Actual_Source : aliased Jpeglib.Streams.Memory_Source;
+         Actual_Decoder : Jpeglib.Decoding.Decoder;
+         Actual_Decoded : Jpeglib.Block_Count := 0;
+         Actual_Status : Jpeglib.Coefficients.Transform_Status;
+         Actual_Written : Jpeglib.Coefficients.Component_Block_Count;
+         Status : Integer;
+      begin
+         if Jpegtran = "" then
+            Ada.Text_IO.Put_Line ("jpeglib_transform: jpegtran not found; external transform comparison skipped");
+            return;
+         end if;
+
+         Jpeglib.Coefficients.Transform_Image
+           (Input (1 .. 2),
+            Gray_Layouts,
+            Jpeglib.Coefficients.Full_Windows (Gray_Layouts),
+            Jpeglib.Coefficients.Transpose,
+            Expected_Blocks,
+            Transposed_Layouts,
+            Actual_Written,
+            Actual_Status);
+         if Actual_Status /= Jpeglib.Coefficients.Transform_Ok
+           or else Actual_Written /= 2
+           or else Transposed_Layouts /= [1 => (Width_In_Blocks => 1, Height_In_Blocks => 2)]
+         then
+            Fail ("native transpose oracle setup failed");
+            return;
+         end if;
+
+         Write_File (Input_Path, Input_JPEG, Input_Length);
+         Status :=
+           Project_Tools.Processes.Run_Status
+             ("jpegtran transpose comparison",
+              Project_Tools.Files.Temp_Dir,
+              Jpegtran,
+              Project_Tools.Processes.Arguments
+                ([Project_Tools.Processes.Argument ("-transpose"),
+                  Project_Tools.Processes.Argument ("-outfile"),
+                  Project_Tools.Processes.Argument (Output_Path),
+                  Project_Tools.Processes.Argument (Input_Path)]),
+              Quiet => True);
+         if Status /= 0 then
+            Fail ("jpegtran transpose failed");
+            return;
+         end if;
+
+         declare
+            Raw : constant String := Project_Tools.Files.Read_Raw_File (Output_Path);
+            Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. Raw'Length => 0];
+         begin
+            if Raw'Length = 0 then
+               Fail ("jpegtran produced empty output");
+               return;
+            end if;
+
+            for Index in Raw'Range loop
+               Storage (Storage'First + Index - Raw'First) :=
+                 Jpeglib.Byte (Character'Pos (Raw (Index)));
+            end loop;
+
+            Jpeglib.Streams.Open (Actual_Source, Storage'Unchecked_Access);
+            Jpeglib.Decoding.Initialize (Actual_Decoder, Actual_Source'Access);
+            Outcome :=
+              Jpeglib.Decoding.Decode_Coefficients
+                (Actual_Decoder, Actual_Blocks, Actual_Decoded);
+         end;
+
+         if not Jpeglib.Results.Succeeded (Outcome) then
+            Fail ("jpegtran transpose output did not decode");
+            return;
+         elsif Actual_Decoded /= 2 then
+            Fail ("jpegtran transpose output decoded wrong block count");
+            return;
+         elsif Actual_Blocks /= Expected_Blocks then
+            Fail ("jpegtran transpose coefficients differ from native transpose");
+            return;
+         end if;
+      end Check_Jpegtran_Transpose;
    begin
       Jpeglib.Coefficients.Transform_Image
         (Input,
@@ -133,6 +253,10 @@ procedure Jpeglib_Transform is
          Fail ("coefficient JPEG output failed");
          return;
       end if;
+
+      Check_Jpegtran_Transpose
+        (Encoded_Storage,
+         Natural (Jpeglib.Streams.Offset (Destination)));
 
       Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
       Jpeglib.Decoding.Initialize (Decoder, Source'Access);

@@ -143,6 +143,187 @@ package body Jpeglib.Internal.Huffman is
       return Result;
    end Standard_Chrominance_AC;
 
+   function Optimized_Definition (Frequencies : Symbol_Frequencies) return Huffman_Definition is
+      Max_Nodes : constant Natural := 511;
+      subtype Node_Range is Natural range 1 .. Max_Nodes;
+      type Weight_Array is array (Node_Range) of Symbol_Frequency;
+      type Parent_Array is array (Node_Range) of Natural range 0 .. Max_Nodes;
+      type Symbol_By_Node is array (Node_Range) of Byte;
+      type Boolean_Array is array (Node_Range) of Boolean;
+      type Length_By_Symbol is array (Byte) of Natural range 0 .. 16;
+
+      Weights : Weight_Array := [others => 0];
+      Parents : Parent_Array := [others => 0];
+      Symbols : Symbol_By_Node := [others => 0];
+      Is_Leaf : Boolean_Array := [others => False];
+      Active : Boolean_Array := [others => False];
+      Lengths : Length_By_Symbol := [others => 0];
+      Leaf_Count : Natural := 0;
+      Node_Count : Natural := 0;
+      Active_Count : Natural := 0;
+      Result : Huffman_Definition;
+
+      function Minimum_Length_For (Count : Natural) return Code_Length is
+         Capacity : Natural := 2;
+      begin
+         for Length in Code_Length loop
+            if Count <= Capacity then
+               return Length;
+            end if;
+            Capacity := Capacity * 2;
+         end loop;
+
+         return Code_Length'Last;
+      end Minimum_Length_For;
+
+      procedure Add_Leaf
+        (Symbol : Byte;
+         Weight : Symbol_Frequency)
+      is
+      begin
+         Node_Count := Node_Count + 1;
+         Leaf_Count := Leaf_Count + 1;
+         Active_Count := Active_Count + 1;
+         Weights (Node_Count) := Weight;
+         Symbols (Node_Count) := Symbol;
+         Is_Leaf (Node_Count) := True;
+         Active (Node_Count) := True;
+      end Add_Leaf;
+
+      function Better_Candidate
+        (Candidate : Natural;
+         Current : Natural) return Boolean
+      is
+      begin
+         if Current = 0 then
+            return True;
+         elsif Weights (Candidate) /= Weights (Current) then
+            return Weights (Candidate) < Weights (Current);
+         elsif Is_Leaf (Candidate) /= Is_Leaf (Current) then
+            return Is_Leaf (Candidate);
+         elsif Is_Leaf (Candidate) then
+            return Symbols (Candidate) < Symbols (Current);
+         else
+            return Candidate < Current;
+         end if;
+      end Better_Candidate;
+
+      procedure Select_Two
+        (First : out Natural;
+         Second : out Natural)
+      is
+      begin
+         First := 0;
+         Second := 0;
+
+         for Node in 1 .. Node_Count loop
+            if Active (Node) then
+               if Better_Candidate (Node, First) then
+                  Second := First;
+                  First := Node;
+               elsif Better_Candidate (Node, Second) then
+                  Second := Node;
+               end if;
+            end if;
+         end loop;
+      end Select_Two;
+
+      procedure Build_Result is
+         Position : Natural := 1;
+      begin
+         Result := (others => <>);
+
+         for Symbol in Byte loop
+            if Lengths (Symbol) /= 0 then
+               Result.Lengths (Code_Length (Lengths (Symbol))) :=
+                 Result.Lengths (Code_Length (Lengths (Symbol))) + 1;
+               Result.Total := Result.Total + 1;
+            end if;
+         end loop;
+
+         for Length in Code_Length loop
+            for Symbol in Byte loop
+               if Lengths (Symbol) = Natural (Length) then
+                  Result.Symbols (Symbol_Index (Position)) := Symbol;
+                  Position := Position + 1;
+               end if;
+            end loop;
+         end loop;
+      end Build_Result;
+
+      First : Natural;
+      Second : Natural;
+      Length : Natural;
+      Parent : Natural;
+      Flat_Length : Code_Length;
+      Too_Deep : Boolean := False;
+   begin
+      for Symbol in Byte loop
+         if Frequencies (Symbol) > 0 then
+            Add_Leaf (Symbol, Frequencies (Symbol));
+         end if;
+      end loop;
+
+      if Leaf_Count = 0 then
+         Add_Leaf (0, 1);
+      end if;
+
+      if Leaf_Count = 1 then
+         for Symbol in Byte loop
+            if Frequencies (Symbol) = 0 then
+               Add_Leaf (Symbol, 1);
+               exit;
+            end if;
+         end loop;
+      end if;
+
+      while Active_Count > 1 loop
+         Select_Two (First, Second);
+         Node_Count := Node_Count + 1;
+         Weights (Node_Count) := Weights (First) + Weights (Second);
+         Active (First) := False;
+         Active (Second) := False;
+         Active (Node_Count) := True;
+         Active_Count := Active_Count - 1;
+         Parents (First) := Node_Count;
+         Parents (Second) := Node_Count;
+      end loop;
+
+      for Node in 1 .. Node_Count loop
+         if Is_Leaf (Node) then
+            Length := 0;
+            Parent := Parents (Node);
+            while Parent /= 0 loop
+               Length := Length + 1;
+               Parent := Parents (Parent);
+            end loop;
+
+            if Length > Natural (Code_Length'Last) then
+               Too_Deep := True;
+               exit;
+            end if;
+
+            Lengths (Symbols (Node)) := Length;
+         end if;
+      end loop;
+
+      if Too_Deep then
+         Flat_Length := Minimum_Length_For (Leaf_Count);
+         Lengths := [others => 0];
+         for Node in 1 .. Node_Count loop
+            if Is_Leaf (Node) then
+               Lengths (Symbols (Node)) := Natural (Flat_Length);
+            end if;
+         end loop;
+      end if;
+
+      Build_Result;
+      return Result;
+   exception
+      when Constraint_Error =>
+         return (Lengths => [8 => 2, others => 0], Symbols => [1 => 0, 2 => 1, others => 0], Total => 2);
+   end Optimized_Definition;
+
    function Invalid
      (Segment : Segments.Segment_Reader;
       Source : Source_Offset;

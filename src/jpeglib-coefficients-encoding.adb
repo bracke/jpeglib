@@ -34,6 +34,7 @@ package body Jpeglib.Coefficients.Encoding is
       Blocks : DCT_Block_Array;
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
    is
@@ -54,6 +55,7 @@ package body Jpeglib.Coefficients.Encoding is
          Blocks,
          Restart,
          Quality,
+         Optimize_Huffman,
          Encoded_Metadata);
    exception
       when Constraint_Error =>
@@ -68,6 +70,7 @@ package body Jpeglib.Coefficients.Encoding is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Refine : Boolean := False;
+      Optimize_Huffman : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
    is
@@ -89,6 +92,7 @@ package body Jpeglib.Coefficients.Encoding is
          Restart,
          Quality,
          Refine,
+         Optimize_Huffman,
          Encoded_Metadata);
    exception
       when Constraint_Error =>
@@ -103,6 +107,7 @@ package body Jpeglib.Coefficients.Encoding is
       Layouts : Component_Block_Layout_Array;
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
    is
@@ -126,6 +131,7 @@ package body Jpeglib.Coefficients.Encoding is
          Layouts,
          Restart,
          Quality,
+         Optimize_Huffman,
          Encoded_Metadata);
    exception
       when Constraint_Error =>
@@ -141,6 +147,7 @@ package body Jpeglib.Coefficients.Encoding is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Refine : Boolean := False;
+      Optimize_Huffman : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
    is
@@ -165,6 +172,7 @@ package body Jpeglib.Coefficients.Encoding is
          Restart,
          Quality,
          Refine,
+         Optimize_Huffman,
          Encoded_Metadata);
    exception
       when Constraint_Error =>

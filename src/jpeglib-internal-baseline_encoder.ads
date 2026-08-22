@@ -25,6 +25,7 @@ package Jpeglib.Internal.Baseline_Encoder is
       Blocks : Jpeglib.Coefficients.DCT_Block_Array;
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
      with Pre => Quality <= 100;
 
@@ -36,6 +37,7 @@ package Jpeglib.Internal.Baseline_Encoder is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Refine : Boolean := False;
+      Optimize_Huffman : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
      with Pre => Quality <= 100;
 
@@ -47,6 +49,7 @@ package Jpeglib.Internal.Baseline_Encoder is
       Layouts : Jpeglib.Coefficients.Component_Block_Layout_Array;
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
      with Pre => Quality <= 100;
 
@@ -59,6 +62,7 @@ package Jpeglib.Internal.Baseline_Encoder is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Refine : Boolean := False;
+      Optimize_Huffman : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
      with Pre => Quality <= 100;
 

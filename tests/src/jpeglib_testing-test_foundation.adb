@@ -9479,6 +9479,32 @@ package body Jpeglib_Testing.Test_Foundation is
       Encode_Result : Jpeglib.Results.Result;
       Decode_Result : Jpeglib.Results.Result;
       Header : Jpeglib.Decoding.Image_Info;
+
+      function Has_Optimized_DHT (Last : Natural) return Boolean is
+         Cursor : Positive := Encoded_Storage'First;
+         Length : Natural;
+      begin
+         while Cursor + 4 <= Last loop
+            if Encoded_Storage (Cursor) = 16#FF#
+              and then Encoded_Storage (Cursor + 1) = Jpeglib.Byte (Jpeglib.Internal.Markers.DHT)
+            then
+               Length := Natural (Encoded_Storage (Cursor + 2)) * 256 + Natural (Encoded_Storage (Cursor + 3));
+               if Length /= 31 and then Length /= 181 then
+                  return True;
+               end if;
+               Cursor := Cursor + 2 + Length;
+            elsif Encoded_Storage (Cursor) = 16#FF#
+              and then Jpeglib.Internal.Markers.Has_Length (Jpeglib.Marker_Code (Encoded_Storage (Cursor + 1)))
+            then
+               Length := Natural (Encoded_Storage (Cursor + 2)) * 256 + Natural (Encoded_Storage (Cursor + 3));
+               Cursor := Cursor + 2 + Length;
+            else
+               Cursor := Cursor + 1;
+            end if;
+         end loop;
+
+         return False;
+      end Has_Optimized_DHT;
    begin
       Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
       Encode_Result :=
@@ -9488,12 +9514,14 @@ package body Jpeglib_Testing.Test_Foundation is
            Height => 8,
            Blocks => Input_Blocks,
            Restart => 1,
-           Quality => 75);
+           Quality => 75,
+           Optimize_Huffman => True);
       Assert
         (Jpeglib.Results.Succeeded (Encode_Result),
          "public grayscale coefficient encode failed");
       Encoded_Length := Natural (Jpeglib.Streams.Offset (Destination));
       Assert (Encoded_Length > 0, "public grayscale coefficient encode wrote no bytes");
+      Assert (Has_Optimized_DHT (Encoded_Length), "public grayscale coefficient optimize did not emit custom DHT");
 
       Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
       Jpeglib.Decoding.Initialize (Decoder, Source'Access);
@@ -9598,6 +9626,32 @@ package body Jpeglib_Testing.Test_Foundation is
       Encode_Result : Jpeglib.Results.Result;
       Decode_Result : Jpeglib.Results.Result;
       Header : Jpeglib.Decoding.Image_Info;
+
+      function Has_Optimized_DHT (Last : Natural) return Boolean is
+         Cursor : Positive := Encoded_Storage'First;
+         Length : Natural;
+      begin
+         while Cursor + 4 <= Last loop
+            if Encoded_Storage (Cursor) = 16#FF#
+              and then Encoded_Storage (Cursor + 1) = Jpeglib.Byte (Jpeglib.Internal.Markers.DHT)
+            then
+               Length := Natural (Encoded_Storage (Cursor + 2)) * 256 + Natural (Encoded_Storage (Cursor + 3));
+               if Length /= 31 and then Length /= 181 then
+                  return True;
+               end if;
+               Cursor := Cursor + 2 + Length;
+            elsif Encoded_Storage (Cursor) = 16#FF#
+              and then Jpeglib.Internal.Markers.Has_Length (Jpeglib.Marker_Code (Encoded_Storage (Cursor + 1)))
+            then
+               Length := Natural (Encoded_Storage (Cursor + 2)) * 256 + Natural (Encoded_Storage (Cursor + 3));
+               Cursor := Cursor + 2 + Length;
+            else
+               Cursor := Cursor + 1;
+            end if;
+         end loop;
+
+         return False;
+      end Has_Optimized_DHT;
    begin
       Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
       Encode_Result :=
@@ -9608,10 +9662,14 @@ package body Jpeglib_Testing.Test_Foundation is
            Blocks => Input_Blocks,
            Layouts => Layouts,
            Restart => 0,
-           Quality => 75);
+           Quality => 75,
+           Optimize_Huffman => True);
       Assert
         (Jpeglib.Results.Succeeded (Encode_Result),
          "public YCbCr coefficient encode failed");
+      Assert
+        (Has_Optimized_DHT (Natural (Jpeglib.Streams.Offset (Destination))),
+         "public YCbCr coefficient optimize did not emit custom DHT");
 
       Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
       Jpeglib.Decoding.Initialize (Decoder, Source'Access);

@@ -129,7 +129,10 @@ component-major Y, Cb, and Cr coefficient blocks and layout metadata. These
 entry points validate block counts against the image dimensions and component
 layouts, reject coefficients outside the baseline encoding range, preserve
 restart interval signaling, and are covered by public encode/decode coefficient
-round-trip tests.
+round-trip tests. Set `Optimize_Huffman => True` to emit coefficient-derived
+DHT tables instead of the standard Huffman tables; the option is covered by
+baseline grayscale and YCbCr coefficient round trips. Progressive refinement
+coefficient output keeps standard tables for refinement scans.
 
 ## State Transitions
 

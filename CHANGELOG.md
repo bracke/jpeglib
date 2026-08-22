@@ -21,6 +21,9 @@
   and YCbCr JPEG streams plus progressive Huffman grayscale and YCbCr streams
   from quantized coefficient blocks, with AC-preserving public coefficient
   decode round-trip coverage.
+- Close the lossless-transform complete-plus gap by adding
+  `Optimize_Huffman` coefficient-derived DHT output and an optional
+  `jpeglib_transform --self-test` comparison against `jpegtran` when available.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

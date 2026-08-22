@@ -11,6 +11,8 @@ package Jpeglib.Internal.Huffman is
    type Symbol_Index is range 1 .. 256;
    type Symbol_Array is array (Symbol_Index) of Byte;
    type Length_Counts is array (Code_Length) of Symbol_Count;
+   type Symbol_Frequency is range 0 .. Long_Long_Integer'Last;
+   type Symbol_Frequencies is array (Byte) of Symbol_Frequency;
 
    type Huffman_Definition is private;
    type Compiled_Huffman is private;
@@ -36,6 +38,7 @@ package Jpeglib.Internal.Huffman is
    function Standard_Luminance_AC return Huffman_Definition;
    function Standard_Chrominance_DC return Huffman_Definition;
    function Standard_Chrominance_AC return Huffman_Definition;
+   function Optimized_Definition (Frequencies : Symbol_Frequencies) return Huffman_Definition;
 
    function Parse_DHT
      (State : in out Huffman_State;
