@@ -1,6 +1,7 @@
 with AUnit.Test_Cases;
 with Jpeglib_Testing.Test_Arithmetic;
 with Jpeglib_Testing.Test_Capabilities_Release;
+with Jpeglib_Testing.Test_Coefficient_Scans;
 with Jpeglib_Testing.Test_Coefficient_Encoding;
 with Jpeglib_Testing.Test_Core;
 with Jpeglib_Testing.Test_Entropy_Tables;
@@ -13,6 +14,8 @@ package body Jpeglib_Testing.Suite is
       Arithmetic : constant AUnit.Test_Cases.Test_Case_Access := new Jpeglib_Testing.Test_Arithmetic.Test;
       Capabilities_Release : constant AUnit.Test_Cases.Test_Case_Access :=
         new Jpeglib_Testing.Test_Capabilities_Release.Test;
+      Coefficient_Scans : constant AUnit.Test_Cases.Test_Case_Access :=
+        new Jpeglib_Testing.Test_Coefficient_Scans.Test;
       Coefficient_Encoding : constant AUnit.Test_Cases.Test_Case_Access :=
         new Jpeglib_Testing.Test_Coefficient_Encoding.Test;
       Core : constant AUnit.Test_Cases.Test_Case_Access := new Jpeglib_Testing.Test_Core.Test;
@@ -24,6 +27,7 @@ package body Jpeglib_Testing.Suite is
    begin
       Suite.Add_Test (Arithmetic);
       Suite.Add_Test (Capabilities_Release);
+      Suite.Add_Test (Coefficient_Scans);
       Suite.Add_Test (Coefficient_Encoding);
       Suite.Add_Test (Core);
       Suite.Add_Test (Entropy_Tables);
