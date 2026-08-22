@@ -1056,9 +1056,10 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
   and direct full-size grayscale,
   two-component, three-component, four-component, lossless, plus 4:4:4 DCT
   YCbCr/RGB/CMYK/YCCK image decode writes rows through output kernels.
-  Three-component subsampled DCT decode now stages direct-output rows after
-  chroma upsampling and writes them through the same row kernels, while
-  reduced-IDCT and EXIF-oriented output keep the scalar coordinate-mapping path.
+  Three-component YCbCr/RGB and four-component CMYK/YCCK subsampled DCT decode
+  now stage direct-output rows after component upsampling and write them through
+  the same row kernels, while reduced-IDCT and EXIF-oriented output keep the
+  scalar coordinate-mapping path.
   `Jpeglib.Capabilities.SIMD_Acceleration` advertises the acceleration surface.
 - `jpeglib_simd_matrix` uses `../hostkit` to report the host and verifies
   bit-exact row-kernel equivalence against scalar `Read_RGB` plus

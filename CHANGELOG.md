@@ -34,6 +34,9 @@
 - Close the performance-architecture complete-plus gap with a hostkit-backed
   performance matrix covering deterministic encode/decode equivalence and broad
   runtime thresholds.
+- Route direct-output subsampled CMYK/YCCK DCT decode rows through staged
+  component buffers and the existing row output kernels, keeping reduced-scale
+  and oriented output on the scalar coordinate-mapping path.
 - Add compiler-vectorized SIMD RGB-to-YCbCr row kernels, route encoder
   RGB-family plane filling through them, advertise `SIMD_Acceleration`, and add
   `jpeglib_simd_matrix` scalar-equivalence coverage across RGB/BGR/RGBA/BGRA

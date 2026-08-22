@@ -2616,15 +2616,6 @@ package body Jpeglib.Decoding is
          Required : constant Block_Count := Lossless_Coefficient_Blocks (Header.Frame);
          Blocks_Decoded : Block_Count := 0;
 
-         function Output_Byte (Sample : Integer) return Byte is
-            Max_Sample : constant Integer := 2 ** Natural (Internal.Frames.Precision (Header.Frame)) - 1;
-         begin
-            if Internal.Frames.Precision (Header.Frame) = 8 then
-               return Byte (Sample);
-            else
-               return Byte ((Sample * Integer (Byte'Last) + Max_Sample / 2) / Max_Sample);
-            end if;
-         end Output_Byte;
       begin
          if Required = 0
            or else Coefficient_Bytes (Required) > Object.Decode_Limits.Max_Coefficient_Bytes
@@ -2721,16 +2712,6 @@ package body Jpeglib.Decoding is
          begin
             return Samples (1, Samples'First (2) + Row * Natural (Internal.Frames.Width (Header.Frame)) + Column);
          end Stored;
-
-         function Output_Byte (Sample : Integer) return Byte is
-            Max_Sample : constant Integer := 2 ** Natural (Internal.Frames.Precision (Header.Frame)) - 1;
-         begin
-            if Internal.Frames.Precision (Header.Frame) = 8 then
-               return Byte (Sample);
-            else
-               return Byte ((Sample * Integer (Byte'Last) + Max_Sample / 2) / Max_Sample);
-            end if;
-         end Output_Byte;
 
          function Predictor (Column, Row : Natural) return Integer is
             Ra : Integer;
@@ -2950,16 +2931,6 @@ package body Jpeglib.Decoding is
 
          function Stored (Component : Component_Index; Column, Row : Natural) return Integer is
            (Samples (Component, Samples'First (2) + Row * Width + Column));
-
-         function Output_Byte (Sample : Integer) return Byte is
-            Max_Sample : constant Integer := 2 ** Natural (Internal.Frames.Precision (Header.Frame)) - 1;
-         begin
-            if Internal.Frames.Precision (Header.Frame) = 8 then
-               return Byte (Sample);
-            else
-               return Byte ((Sample * Integer (Byte'Last) + Max_Sample / 2) / Max_Sample);
-            end if;
-         end Output_Byte;
 
          function Predictor (Component : Component_Index; Column, Row : Natural) return Integer is
             Ra : Integer;
@@ -3203,16 +3174,6 @@ package body Jpeglib.Decoding is
          function Stored (Component : Component_Index; Column, Row : Natural) return Integer is
            (Samples (Component, Samples'First (2) + Row * Width + Column));
 
-         function Output_Byte (Sample : Integer) return Byte is
-            Max_Sample : constant Integer := 2 ** Natural (Internal.Frames.Precision (Header.Frame)) - 1;
-         begin
-            if Internal.Frames.Precision (Header.Frame) = 8 then
-               return Byte (Sample);
-            else
-               return Byte ((Sample * Integer (Byte'Last) + Max_Sample / 2) / Max_Sample);
-            end if;
-         end Output_Byte;
-
          function Predictor (Component : Component_Index; Column, Row : Natural) return Integer is
             Ra : Integer;
             Rb : Integer;
@@ -3453,16 +3414,6 @@ package body Jpeglib.Decoding is
          function Stored (Component : Component_Index; Column, Row : Natural) return Integer is
            (Samples (Component, Samples'First (2) + Row * Width + Column));
 
-         function Output_Byte (Sample : Integer) return Byte is
-            Max_Sample : constant Integer := 2 ** Natural (Internal.Frames.Precision (Header.Frame)) - 1;
-         begin
-            if Internal.Frames.Precision (Header.Frame) = 8 then
-               return Byte (Sample);
-            else
-               return Byte ((Sample * Integer (Byte'Last) + Max_Sample / 2) / Max_Sample);
-            end if;
-         end Output_Byte;
-
          function Predictor (Component : Component_Index; Column, Row : Natural) return Integer is
             Ra : Integer;
             Rb : Integer;
@@ -3683,16 +3634,6 @@ package body Jpeglib.Decoding is
             return Samples (1, Samples'First (2) + Row * Width + Column);
          end Stored;
 
-         function Output_Byte (Sample : Integer) return Byte is
-            Max_Sample : constant Integer := 2 ** Natural (Internal.Frames.Precision (Header.Frame)) - 1;
-         begin
-            if Internal.Frames.Precision (Header.Frame) = 8 then
-               return Byte (Sample);
-            else
-               return Byte ((Sample * Integer (Byte'Last) + Max_Sample / 2) / Max_Sample);
-            end if;
-         end Output_Byte;
-
          function Predictor (Column, Row : Natural) return Integer is
             Ra : Integer;
             Rb : Integer;
@@ -3877,16 +3818,6 @@ package body Jpeglib.Decoding is
 
          function Stored (Component : Component_Index; Column, Row : Natural) return Integer is
            (Samples (Component, Samples'First (2) + Row * Width + Column));
-
-         function Output_Byte (Sample : Integer) return Byte is
-            Max_Sample : constant Integer := 2 ** Natural (Internal.Frames.Precision (Header.Frame)) - 1;
-         begin
-            if Internal.Frames.Precision (Header.Frame) = 8 then
-               return Byte (Sample);
-            else
-               return Byte ((Sample * Integer (Byte'Last) + Max_Sample / 2) / Max_Sample);
-            end if;
-         end Output_Byte;
 
          function Predictor (Component : Component_Index; Column, Row : Natural) return Integer is
             Ra : Integer;
@@ -4099,16 +4030,6 @@ package body Jpeglib.Decoding is
          function Stored (Component : Component_Index; Column, Row : Natural) return Integer is
            (Samples (Component, Samples'First (2) + Row * Width + Column));
 
-         function Output_Byte (Sample : Integer) return Byte is
-            Max_Sample : constant Integer := 2 ** Natural (Internal.Frames.Precision (Header.Frame)) - 1;
-         begin
-            if Internal.Frames.Precision (Header.Frame) = 8 then
-               return Byte (Sample);
-            else
-               return Byte ((Sample * Integer (Byte'Last) + Max_Sample / 2) / Max_Sample);
-            end if;
-         end Output_Byte;
-
          function Predictor (Component : Component_Index; Column, Row : Natural) return Integer is
             Ra : Integer;
             Rb : Integer;
@@ -4319,16 +4240,6 @@ package body Jpeglib.Decoding is
 
          function Stored (Component : Component_Index; Column, Row : Natural) return Integer is
            (Samples (Component, Samples'First (2) + Row * Width + Column));
-
-         function Output_Byte (Sample : Integer) return Byte is
-            Max_Sample : constant Integer := 2 ** Natural (Internal.Frames.Precision (Header.Frame)) - 1;
-         begin
-            if Internal.Frames.Precision (Header.Frame) = 8 then
-               return Byte (Sample);
-            else
-               return Byte ((Sample * Integer (Byte'Last) + Max_Sample / 2) / Max_Sample);
-            end if;
-         end Output_Byte;
 
          function Predictor (Component : Component_Index; Column, Row : Natural) return Integer is
             Ra : Integer;
@@ -7716,6 +7627,8 @@ package body Jpeglib.Decoding is
                M_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 2);
                Y_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 3);
                K_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 4);
+               Width : constant Natural := Natural (Internal.Frames.Width (Header.Frame));
+               Height : constant Natural := Natural (Internal.Frames.Height (Header.Frame));
                Component : Internal.Frames.Frame_Component;
                Dequantized : Internal.Transforms.Dequantized_Block;
                Samples : Internal.Transforms.Sample_Block;
@@ -7821,17 +7734,15 @@ package body Jpeglib.Decoding is
 
                function Can_Write_Direct_Four_Component_Rows return Boolean is
                  (Header_Color_Model in CMYK | YCCK
-                  and then Can_Write_Direct_Output_Rows
-                    (Natural (Internal.Frames.Width (Header.Frame)),
-                     Natural (Internal.Frames.Height (Header.Frame)))
-                  and then Natural (C_Component.Component_Width) = Natural (Internal.Frames.Width (Header.Frame))
-                  and then Natural (C_Component.Component_Height) = Natural (Internal.Frames.Height (Header.Frame))
-                  and then Natural (M_Component.Component_Width) = Natural (Internal.Frames.Width (Header.Frame))
-                  and then Natural (M_Component.Component_Height) = Natural (Internal.Frames.Height (Header.Frame))
-                  and then Natural (Y_Component.Component_Width) = Natural (Internal.Frames.Width (Header.Frame))
-                  and then Natural (Y_Component.Component_Height) = Natural (Internal.Frames.Height (Header.Frame))
-                  and then Natural (K_Component.Component_Width) = Natural (Internal.Frames.Width (Header.Frame))
-                  and then Natural (K_Component.Component_Height) = Natural (Internal.Frames.Height (Header.Frame)));
+                  and then Can_Write_Direct_Output_Rows (Width, Height)
+                  and then Natural (C_Component.Component_Width) = Width
+                  and then Natural (C_Component.Component_Height) = Height
+                  and then Natural (M_Component.Component_Width) = Width
+                  and then Natural (M_Component.Component_Height) = Height
+                  and then Natural (Y_Component.Component_Width) = Width
+                  and then Natural (Y_Component.Component_Height) = Height
+                  and then Natural (K_Component.Component_Width) = Width
+                  and then Natural (K_Component.Component_Height) = Height);
             begin
                if Internal.Scans.Components (Header.Scan) = 1 then
                   Store_Separate_Component (1, C_Component, C_Plane);
@@ -7853,9 +7764,8 @@ package body Jpeglib.Decoding is
                end if;
 
                if Can_Write_Direct_Four_Component_Rows then
-                  for Row in Natural range 0 .. Natural (Internal.Frames.Height (Header.Frame)) - 1 loop
+                  for Row in Natural range 0 .. Height - 1 loop
                      declare
-                        Width : constant Natural := Natural (Internal.Frames.Width (Header.Frame));
                         Row_Offset : constant Natural := Row * Width;
                         Written : Natural;
                      begin
@@ -7898,9 +7808,103 @@ package body Jpeglib.Decoding is
                         end if;
                      end;
                   end loop;
+               elsif Header_Color_Model in CMYK | YCCK and then Can_Write_Direct_Output_Rows (Width, Height) then
+                  for Row in Natural range 0 .. Height - 1 loop
+                     declare
+                        C_Row : Jpeglib.Streams.Byte_Array (1 .. Width);
+                        M_Row : Jpeglib.Streams.Byte_Array (1 .. Width);
+                        Y_Row : Jpeglib.Streams.Byte_Array (1 .. Width);
+                        K_Row : Jpeglib.Streams.Byte_Array (1 .. Width);
+                        Written : Natural;
+                     begin
+                        for Column in Natural range 0 .. Width - 1 loop
+                           declare
+                              C_C : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Column_For_Image
+                                     (Header.Frame, 1, Internal.Sampling.Sample_Column (Column)));
+                              C_R : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Row_For_Image
+                                     (Header.Frame, 1, Internal.Sampling.Sample_Row (Row)));
+                              M_C : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Column_For_Image
+                                     (Header.Frame, 2, Internal.Sampling.Sample_Column (Column)));
+                              M_R : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Row_For_Image
+                                     (Header.Frame, 2, Internal.Sampling.Sample_Row (Row)));
+                              Y_C : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Column_For_Image
+                                     (Header.Frame, 3, Internal.Sampling.Sample_Column (Column)));
+                              Y_R : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Row_For_Image
+                                     (Header.Frame, 3, Internal.Sampling.Sample_Row (Row)));
+                              K_C : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Column_For_Image
+                                     (Header.Frame, 4, Internal.Sampling.Sample_Column (Column)));
+                              K_R : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Row_For_Image
+                                     (Header.Frame, 4, Internal.Sampling.Sample_Row (Row)));
+                           begin
+                              C_Row (C_Row'First + Column) :=
+                                C_Plane (C_Plane'First + C_R * Natural (C_Component.Component_Width) + C_C);
+                              M_Row (M_Row'First + Column) :=
+                                M_Plane (M_Plane'First + M_R * Natural (M_Component.Component_Width) + M_C);
+                              Y_Row (Y_Row'First + Column) :=
+                                Y_Plane (Y_Plane'First + Y_R * Natural (Y_Component.Component_Width) + Y_C);
+                              K_Row (K_Row'First + Column) :=
+                                K_Plane (K_Plane'First + K_R * Natural (K_Component.Component_Width) + K_C);
+                           end;
+                        end loop;
+
+                        if Header_Color_Model = YCCK then
+                           Internal.Colors.Write_YCCK_Row
+                             (Output,
+                              Row,
+                              C_Row,
+                              M_Row,
+                              Y_Row,
+                              K_Row,
+                              0,
+                              Width,
+                              Object.Decode_Options.Alpha_Fill,
+                              Written);
+                        else
+                           Internal.Colors.Write_CMYK_Row
+                             (Output,
+                              Row,
+                              C_Row,
+                              M_Row,
+                              Y_Row,
+                              K_Row,
+                              0,
+                              Width,
+                              Object.Decode_Options.Alpha_Fill,
+                              Written);
+                        end if;
+
+                        if Written /= Width then
+                           for Column in Natural range 0 .. Width - 1 loop
+                              Write_Four_Component_Pixel
+                                (Column,
+                                 Row,
+                                 C_Row (C_Row'First + Column),
+                                 M_Row (M_Row'First + Column),
+                                 Y_Row (Y_Row'First + Column),
+                                 K_Row (K_Row'First + Column));
+                           end loop;
+                        end if;
+                     end;
+                  end loop;
                else
-                  for Row in Natural range 0 .. Natural (Internal.Frames.Height (Header.Frame)) - 1 loop
-                     for Column in Natural range 0 .. Natural (Internal.Frames.Width (Header.Frame)) - 1 loop
+                  for Row in Natural range 0 .. Height - 1 loop
+                     for Column in Natural range 0 .. Width - 1 loop
                         declare
                            C_C : constant Natural :=
                              Natural
