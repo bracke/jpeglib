@@ -55,6 +55,9 @@
   full-size four-component lossless and DCT decode output through row writers,
   and extend `jpeglib_simd_matrix` scalar-equivalence coverage for
   four-component row output across every public output format.
+- Add compiler-vectorized CMYK/YCCK row input plane filling, route
+  four-component DCT encoder plane assembly through row readers, and extend
+  `jpeglib_simd_matrix` scalar-equivalence coverage for CMYK/YCCK input rows.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

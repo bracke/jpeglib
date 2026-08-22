@@ -31,6 +31,7 @@ procedure Jpeglib_SIMD_Matrix is
    Expected_Y : aliased Jpeglib.Streams.Byte_Array := [1 .. Plane_Bytes => 0];
    Expected_Cb : aliased Jpeglib.Streams.Byte_Array := [1 .. Plane_Bytes => 0];
    Expected_Cr : aliased Jpeglib.Streams.Byte_Array := [1 .. Plane_Bytes => 0];
+   Expected_K : aliased Jpeglib.Streams.Byte_Array := [1 .. Plane_Bytes => 0];
    Failures : Natural := 0;
 
    procedure Fail (Message : String) is
@@ -48,6 +49,7 @@ procedure Jpeglib_SIMD_Matrix is
       R : Jpeglib.Byte;
       G : Jpeglib.Byte;
       B : Jpeglib.Byte;
+      K : Jpeglib.Byte;
    begin
       Input_Storage := [others => 0];
       for Row in 0 .. Natural (Height) - 1 loop
@@ -56,7 +58,13 @@ procedure Jpeglib_SIMD_Matrix is
             R := Jpeglib.Byte ((Row * 17 + Column * 11 + 3) mod 256);
             G := Jpeglib.Byte ((Row * 7 + Column * 23 + 91) mod 256);
             B := Jpeglib.Byte ((Row * 29 + Column * 5 + 177) mod 256);
+            K := Jpeglib.Byte ((Row * 13 + Column * 31 + 59) mod 256);
             case Format is
+               when Jpeglib.Images.Gray_8 =>
+                  Input_Storage (Cursor) := R;
+               when Jpeglib.Images.Gray_Alpha_16 =>
+                  Input_Storage (Cursor) := R;
+                  Input_Storage (Cursor + 1) := K;
                when Jpeglib.Images.RGB_24 =>
                   Input_Storage (Cursor) := R;
                   Input_Storage (Cursor + 1) := G;
@@ -75,8 +83,11 @@ procedure Jpeglib_SIMD_Matrix is
                   Input_Storage (Cursor + 1) := G;
                   Input_Storage (Cursor + 2) := R;
                   Input_Storage (Cursor + 3) := Jpeglib.Byte ((Row + Column) mod 256);
-               when others =>
-                  null;
+               when Jpeglib.Images.CMYK_32 | Jpeglib.Images.YCCK_32 =>
+                  Input_Storage (Cursor) := R;
+                  Input_Storage (Cursor + 1) := G;
+                  Input_Storage (Cursor + 2) := B;
+                  Input_Storage (Cursor + 3) := K;
             end case;
          end loop;
       end loop;
@@ -131,6 +142,29 @@ procedure Jpeglib_SIMD_Matrix is
       end loop;
    end Build_Expected;
 
+   procedure Build_Expected_CMYK_Input (Input : Jpeglib.Images.Image_View; YCCK : Boolean) is
+      Offset : Natural := 0;
+      Sample : Jpeglib.Internal.Colors.CMYK_Sample;
+   begin
+      Expected_Y := [others => 0];
+      Expected_Cb := [others => 0];
+      Expected_Cr := [others => 0];
+      Expected_K := [others => 0];
+      for Row in 0 .. Natural (Height) - 1 loop
+         for Column in 0 .. Natural (Width) - 1 loop
+            Sample :=
+              (if YCCK
+               then Jpeglib.Internal.Colors.Read_YCCK (Input, Column, Row)
+               else Jpeglib.Internal.Colors.Read_CMYK (Input, Column, Row));
+            Expected_Y (Expected_Y'First + Offset) := Sample.C;
+            Expected_Cb (Expected_Cb'First + Offset) := Sample.M;
+            Expected_Cr (Expected_Cr'First + Offset) := Sample.Y;
+            Expected_K (Expected_K'First + Offset) := Sample.K;
+            Offset := Offset + 1;
+         end loop;
+      end loop;
+   end Build_Expected_CMYK_Input;
+
    procedure Run_Format (Format : Jpeglib.Images.Pixel_Format) is
       Input : Jpeglib.Images.Image_View;
       Written : Natural;
@@ -169,6 +203,53 @@ procedure Jpeglib_SIMD_Matrix is
          Fail (Jpeglib.Images.Pixel_Format'Image (Format) & " Cr plane differs from scalar reference");
       end if;
    end Run_Format;
+
+   procedure Run_CMYK_Input_Format (Format : Jpeglib.Images.Pixel_Format; YCCK : Boolean) is
+      Input : Jpeglib.Images.Image_View;
+      Written : Natural;
+      Offset : Natural := 0;
+      Label : constant String :=
+        (if YCCK then " YCCK input row conversion" else " CMYK input row conversion");
+   begin
+      Fill_Input (Format);
+      Input := View (Format);
+      Build_Expected_CMYK_Input (Input, YCCK);
+      Y_Plane := [others => 0];
+      Cb_Plane := [others => 0];
+      Cr_Plane := [others => 0];
+      K_Plane := [others => 0];
+
+      for Row in 0 .. Natural (Height) - 1 loop
+         Jpeglib.Internal.Colors.Convert_CMYK_Row_To_CMYK_Planes
+           (Input,
+            Row,
+            Y_Plane,
+            Cb_Plane,
+            Cr_Plane,
+            K_Plane,
+            Offset,
+            Natural (Width),
+            YCCK,
+            Written);
+         if Written /= Natural (Width) then
+            Fail (Jpeglib.Images.Pixel_Format'Image (Format) & Label & " wrote wrong count");
+         end if;
+         Offset := Offset + Written;
+      end loop;
+
+      if Y_Plane /= Expected_Y then
+         Fail (Jpeglib.Images.Pixel_Format'Image (Format) & Label & " C plane differs from scalar reference");
+      end if;
+      if Cb_Plane /= Expected_Cb then
+         Fail (Jpeglib.Images.Pixel_Format'Image (Format) & Label & " M plane differs from scalar reference");
+      end if;
+      if Cr_Plane /= Expected_Cr then
+         Fail (Jpeglib.Images.Pixel_Format'Image (Format) & Label & " Y plane differs from scalar reference");
+      end if;
+      if K_Plane /= Expected_K then
+         Fail (Jpeglib.Images.Pixel_Format'Image (Format) & Label & " K plane differs from scalar reference");
+      end if;
+   end Run_CMYK_Input_Format;
 
    procedure Fill_YCbCr_Planes is
       Offset : Natural := 0;
@@ -504,6 +585,22 @@ begin
    Run_Format (Jpeglib.Images.BGR_24);
    Run_Format (Jpeglib.Images.RGBA_32);
    Run_Format (Jpeglib.Images.BGRA_32);
+   Run_CMYK_Input_Format (Jpeglib.Images.Gray_8, False);
+   Run_CMYK_Input_Format (Jpeglib.Images.Gray_Alpha_16, False);
+   Run_CMYK_Input_Format (Jpeglib.Images.RGB_24, False);
+   Run_CMYK_Input_Format (Jpeglib.Images.BGR_24, False);
+   Run_CMYK_Input_Format (Jpeglib.Images.RGBA_32, False);
+   Run_CMYK_Input_Format (Jpeglib.Images.BGRA_32, False);
+   Run_CMYK_Input_Format (Jpeglib.Images.CMYK_32, False);
+   Run_CMYK_Input_Format (Jpeglib.Images.YCCK_32, False);
+   Run_CMYK_Input_Format (Jpeglib.Images.Gray_8, True);
+   Run_CMYK_Input_Format (Jpeglib.Images.Gray_Alpha_16, True);
+   Run_CMYK_Input_Format (Jpeglib.Images.RGB_24, True);
+   Run_CMYK_Input_Format (Jpeglib.Images.BGR_24, True);
+   Run_CMYK_Input_Format (Jpeglib.Images.RGBA_32, True);
+   Run_CMYK_Input_Format (Jpeglib.Images.BGRA_32, True);
+   Run_CMYK_Input_Format (Jpeglib.Images.CMYK_32, True);
+   Run_CMYK_Input_Format (Jpeglib.Images.YCCK_32, True);
    Run_Output_Format (Jpeglib.Images.Gray_8);
    Run_Output_Format (Jpeglib.Images.Gray_Alpha_16);
    Run_Output_Format (Jpeglib.Images.RGB_24);

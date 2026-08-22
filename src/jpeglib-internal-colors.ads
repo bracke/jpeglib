@@ -54,6 +54,18 @@ package Jpeglib.Internal.Colors is
       Column : Natural;
       Row : Natural) return CMYK_Sample;
 
+   procedure Convert_CMYK_Row_To_CMYK_Planes
+     (Input : Images.Image_View;
+      Row : Natural;
+      C_Plane : in out Streams.Byte_Array;
+      M_Plane : in out Streams.Byte_Array;
+      Y_Plane : in out Streams.Byte_Array;
+      K_Plane : in out Streams.Byte_Array;
+      Output_Offset : Natural;
+      Pixels : Natural;
+      YCCK : Boolean := False;
+      Written : out Natural);
+
    procedure Write_Gray
      (Output : in out Images.Mutable_Image_View;
       Column : Natural;

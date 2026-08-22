@@ -270,6 +270,113 @@ package body Jpeglib.Internal.Colors is
       return Read_CMYK (Input, Column, Row);
    end Read_YCCK;
 
+   procedure Convert_CMYK_Row_To_CMYK_Planes
+     (Input : Images.Image_View;
+      Row : Natural;
+      C_Plane : in out Streams.Byte_Array;
+      M_Plane : in out Streams.Byte_Array;
+      Y_Plane : in out Streams.Byte_Array;
+      K_Plane : in out Streams.Byte_Array;
+      Output_Offset : Natural;
+      Pixels : Natural;
+      YCCK : Boolean := False;
+      Written : out Natural)
+   is
+      Descriptor : constant Images.Image_Descriptor := Input.Descriptor;
+      Input_Row_Base : constant Positive :=
+        Input.Storage'First + Natural (Row_Stride (Row) * Descriptor.Stride);
+      C_Output_Base : constant Positive := C_Plane'First + Output_Offset;
+      M_Output_Base : constant Positive := M_Plane'First + Output_Offset;
+      Y_Output_Base : constant Positive := Y_Plane'First + Output_Offset;
+      K_Output_Base : constant Positive := K_Plane'First + Output_Offset;
+      Input_Index : Positive;
+      Output_Index : Positive;
+      Sample : CMYK_Sample;
+   begin
+      Written := 0;
+      if Pixels = 0
+        or else Row >= Natural (Descriptor.Height)
+        or else Output_Offset + Pixels > Natural (C_Plane'Length)
+        or else Output_Offset + Pixels > Natural (M_Plane'Length)
+        or else Output_Offset + Pixels > Natural (Y_Plane'Length)
+        or else Output_Offset + Pixels > Natural (K_Plane'Length)
+      then
+         return;
+      end if;
+
+      case Descriptor.Format is
+         when Images.CMYK_32 | Images.YCCK_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Input_Index := Input_Row_Base + Column * 4;
+               Output_Index := C_Output_Base + Column;
+               C_Plane (Output_Index) := Input.Storage (Input_Index);
+               M_Plane (M_Output_Base + Column) := Input.Storage (Input_Index + 1);
+               Y_Plane (Y_Output_Base + Column) := Input.Storage (Input_Index + 2);
+               K_Plane (K_Output_Base + Column) := Input.Storage (Input_Index + 3);
+            end loop;
+         when Images.RGB_24 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Input_Index := Input_Row_Base + Column * 3;
+               Output_Index := C_Output_Base + Column;
+               C_Plane (Output_Index) := Byte'Last - Input.Storage (Input_Index);
+               M_Plane (M_Output_Base + Column) := Byte'Last - Input.Storage (Input_Index + 1);
+               Y_Plane (Y_Output_Base + Column) := Byte'Last - Input.Storage (Input_Index + 2);
+               K_Plane (K_Output_Base + Column) := 0;
+            end loop;
+         when Images.BGR_24 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Input_Index := Input_Row_Base + Column * 3;
+               Output_Index := C_Output_Base + Column;
+               C_Plane (Output_Index) := Byte'Last - Input.Storage (Input_Index + 2);
+               M_Plane (M_Output_Base + Column) := Byte'Last - Input.Storage (Input_Index + 1);
+               Y_Plane (Y_Output_Base + Column) := Byte'Last - Input.Storage (Input_Index);
+               K_Plane (K_Output_Base + Column) := 0;
+            end loop;
+         when Images.RGBA_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Input_Index := Input_Row_Base + Column * 4;
+               Output_Index := C_Output_Base + Column;
+               C_Plane (Output_Index) := Byte'Last - Input.Storage (Input_Index);
+               M_Plane (M_Output_Base + Column) := Byte'Last - Input.Storage (Input_Index + 1);
+               Y_Plane (Y_Output_Base + Column) := Byte'Last - Input.Storage (Input_Index + 2);
+               K_Plane (K_Output_Base + Column) := 0;
+            end loop;
+         when Images.BGRA_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Input_Index := Input_Row_Base + Column * 4;
+               Output_Index := C_Output_Base + Column;
+               C_Plane (Output_Index) := Byte'Last - Input.Storage (Input_Index + 2);
+               M_Plane (M_Output_Base + Column) := Byte'Last - Input.Storage (Input_Index + 1);
+               Y_Plane (Y_Output_Base + Column) := Byte'Last - Input.Storage (Input_Index);
+               K_Plane (K_Output_Base + Column) := 0;
+            end loop;
+         when others =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               if YCCK then
+                  Sample := Read_YCCK (Input, Column, Row);
+               else
+                  Sample := Read_CMYK (Input, Column, Row);
+               end if;
+               Output_Index := C_Output_Base + Column;
+               C_Plane (Output_Index) := Sample.C;
+               M_Plane (M_Output_Base + Column) := Sample.M;
+               Y_Plane (Y_Output_Base + Column) := Sample.Y;
+               K_Plane (K_Output_Base + Column) := Sample.K;
+            end loop;
+      end case;
+
+      Written := Pixels;
+   exception
+      when Constraint_Error =>
+         Written := 0;
+   end Convert_CMYK_Row_To_CMYK_Planes;
+
    procedure Write_RGB_Channels
      (Output : in out Images.Mutable_Image_View;
       Column : Natural;

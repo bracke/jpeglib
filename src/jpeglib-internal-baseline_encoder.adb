@@ -1561,6 +1561,8 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Needed : constant Byte_Count := Plane_Sample_Count (Input.Descriptor.Width, Input.Descriptor.Height);
       Index : Positive;
       Sample : Colors.CMYK_Sample;
+      Offset : Natural := 0;
+      Written : Natural;
    begin
       if Byte_Count (C_Plane'Length) < Needed
         or else Byte_Count (M_Plane'Length) < Needed
@@ -1571,14 +1573,33 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       for Row in 0 .. Natural (Input.Descriptor.Height) - 1 loop
-         for Column in 0 .. Natural (Input.Descriptor.Width) - 1 loop
-            Index := C_Plane'First + Row * Natural (Input.Descriptor.Width) + Column;
-            Sample := (if YCCK then Colors.Read_YCCK (Input, Column, Row) else Colors.Read_CMYK (Input, Column, Row));
-            C_Plane (Index) := Sample.C;
-            M_Plane (Index) := Sample.M;
-            Y_Plane (Index) := Sample.Y;
-            K_Plane (Index) := Sample.K;
-         end loop;
+         Colors.Convert_CMYK_Row_To_CMYK_Planes
+           (Input,
+            Row,
+            C_Plane,
+            M_Plane,
+            Y_Plane,
+            K_Plane,
+            Offset,
+            Natural (Input.Descriptor.Width),
+            YCCK,
+            Written);
+
+         if Written /= Natural (Input.Descriptor.Width) then
+            for Column in 0 .. Natural (Input.Descriptor.Width) - 1 loop
+               Index := C_Plane'First + Row * Natural (Input.Descriptor.Width) + Column;
+               Sample :=
+                 (if YCCK
+                  then Colors.Read_YCCK (Input, Column, Row)
+                  else Colors.Read_CMYK (Input, Column, Row));
+               C_Plane (Index) := Sample.C;
+               M_Plane (Index) := Sample.M;
+               Y_Plane (Index) := Sample.Y;
+               K_Plane (Index) := Sample.K;
+            end loop;
+         end if;
+
+         Offset := Offset + Natural (Input.Descriptor.Width);
       end loop;
 
       return (Outcome => Results.Success, Samples_Written => Needed);
