@@ -855,25 +855,15 @@ package body Jpeglib.Internal.Baseline_Encoder is
          end if;
 
          Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output, Component => 1, Spectral_Start => 0, Spectral_End => 63, DC_Table => 0, AC_Table => 0);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Encode_Arithmetic_Blocks (Output, Gray_Blocks, Restart);
+           Encode_Arithmetic_Component_Blocks
+             (Output, Component => 1, Blocks => Gray_Blocks, Restart => Restart, DC_Table => 0, AC_Table => 0);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
          Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output, Component => 2, Spectral_Start => 0, Spectral_End => 63, DC_Table => 0, AC_Table => 0);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Encode_Arithmetic_Blocks (Output, Alpha_Blocks, Restart);
+           Encode_Arithmetic_Component_Blocks
+             (Output, Component => 2, Blocks => Alpha_Blocks, Restart => Restart, DC_Table => 0, AC_Table => 0);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
@@ -896,25 +886,25 @@ package body Jpeglib.Internal.Baseline_Encoder is
                  [others => [others => 0]];
             begin
                Outcome :=
-                 Writers.Write_SOS_Component_Progressive
-                   (Output, Component => 1, Spectral_Start => 0, Spectral_End => 63, DC_Table => 0, AC_Table => 0);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Encode_Arithmetic_Blocks (Output, Gray_Residual_Blocks, Restart);
+                 Encode_Arithmetic_Component_Blocks
+                   (Output,
+                    Component => 1,
+                    Blocks => Gray_Residual_Blocks,
+                    Restart => Restart,
+                    DC_Table => 0,
+                    AC_Table => 0);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
 
                Outcome :=
-                 Writers.Write_SOS_Component_Progressive
-                   (Output, Component => 2, Spectral_Start => 0, Spectral_End => 63, DC_Table => 0, AC_Table => 0);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Encode_Arithmetic_Blocks (Output, Alpha_Residual_Blocks, Restart);
+                 Encode_Arithmetic_Component_Blocks
+                   (Output,
+                    Component => 2,
+                    Blocks => Alpha_Residual_Blocks,
+                    Restart => Restart,
+                    DC_Table => 0,
+                    AC_Table => 0);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
@@ -984,18 +974,18 @@ package body Jpeglib.Internal.Baseline_Encoder is
                return Outcome;
             end if;
 
-            Outcome :=
-              Writers.Write_SOS_Component_Progressive
-                (Output, Component => 1, Spectral_Start => 0, Spectral_End => 63, DC_Table => 0, AC_Table => 0);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-
             declare
                Residual_Blocks : constant Jpeglib.Coefficients.DCT_Block_Array (Blocks'Range) :=
                  [others => [others => 0]];
             begin
-               Outcome := Encode_Arithmetic_Blocks (Output, Residual_Blocks, Restart);
+               Outcome :=
+                 Encode_Arithmetic_Component_Blocks
+                   (Output,
+                    Component => 1,
+                    Blocks => Residual_Blocks,
+                    Restart => Restart,
+                    DC_Table => 0,
+                    AC_Table => 0);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
