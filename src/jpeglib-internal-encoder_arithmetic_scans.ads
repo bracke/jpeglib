@@ -15,6 +15,14 @@ package Jpeglib.Internal.Encoder_Arithmetic_Scans is
       Blocks : Jpeglib.Coefficients.DCT_Block_Array;
       Restart : Restart_Interval) return Results.Result;
 
+   function Encode_Arithmetic_Component_Blocks
+     (Output : in out Streams.Destination'Class;
+      Component : Component_Identifier;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval;
+      DC_Table : Huffman_Table_Index;
+      AC_Table : Huffman_Table_Index) return Results.Result;
+
    function Encode_Arithmetic_Progressive_Fast_Preview_Blocks
      (Output : in out Streams.Destination'Class;
       Blocks : Jpeglib.Coefficients.DCT_Block_Array;

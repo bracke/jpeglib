@@ -1918,69 +1918,29 @@ package body Jpeglib.Internal.Baseline_Encoder is
          end if;
 
          Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output,
-              Component => Component_Identifier (Character'Pos ('C')),
-              Spectral_Start => 0,
-              Spectral_End => 63,
-              DC_Table => 0,
-              AC_Table => 0);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Encode_Arithmetic_Blocks (Output, C_Blocks, Restart);
+           Encode_Arithmetic_Component_Blocks
+             (Output, Component_Identifier (Character'Pos ('C')), C_Blocks, Restart, DC_Table => 0, AC_Table => 0);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
          Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output,
-              Component => Component_Identifier (Character'Pos ('M')),
-              Spectral_Start => 0,
-              Spectral_End => 63,
-              DC_Table => 0,
-              AC_Table => 0);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Encode_Arithmetic_Blocks (Output, M_Blocks, Restart);
+           Encode_Arithmetic_Component_Blocks
+             (Output, Component_Identifier (Character'Pos ('M')), M_Blocks, Restart, DC_Table => 0, AC_Table => 0);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
          Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output,
-              Component => Component_Identifier (Character'Pos ('Y')),
-              Spectral_Start => 0,
-              Spectral_End => 63,
-              DC_Table => 0,
-              AC_Table => 0);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Encode_Arithmetic_Blocks (Output, Y_Blocks, Restart);
+           Encode_Arithmetic_Component_Blocks
+             (Output, Component_Identifier (Character'Pos ('Y')), Y_Blocks, Restart, DC_Table => 0, AC_Table => 0);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
          Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output,
-              Component => Component_Identifier (Character'Pos ('K')),
-              Spectral_Start => 0,
-              Spectral_End => 63,
-              DC_Table => 0,
-              AC_Table => 0);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Encode_Arithmetic_Blocks (Output, K_Blocks, Restart);
+           Encode_Arithmetic_Component_Blocks
+             (Output, Component_Identifier (Character'Pos ('K')), K_Blocks, Restart, DC_Table => 0, AC_Table => 0);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
@@ -2007,69 +1967,49 @@ package body Jpeglib.Internal.Baseline_Encoder is
                  [others => [others => 0]];
             begin
                Outcome :=
-                 Writers.Write_SOS_Component_Progressive
+                 Encode_Arithmetic_Component_Blocks
                    (Output,
-                    Component => Component_Identifier (Character'Pos ('C')),
-                    Spectral_Start => 0,
-                    Spectral_End => 63,
+                    Component_Identifier (Character'Pos ('C')),
+                    C_Residual_Blocks,
+                    Restart,
                     DC_Table => 0,
                     AC_Table => 0);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Encode_Arithmetic_Blocks (Output, C_Residual_Blocks, Restart);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
 
                Outcome :=
-                 Writers.Write_SOS_Component_Progressive
+                 Encode_Arithmetic_Component_Blocks
                    (Output,
-                    Component => Component_Identifier (Character'Pos ('M')),
-                    Spectral_Start => 0,
-                    Spectral_End => 63,
+                    Component_Identifier (Character'Pos ('M')),
+                    M_Residual_Blocks,
+                    Restart,
                     DC_Table => 0,
                     AC_Table => 0);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Encode_Arithmetic_Blocks (Output, M_Residual_Blocks, Restart);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
 
                Outcome :=
-                 Writers.Write_SOS_Component_Progressive
+                 Encode_Arithmetic_Component_Blocks
                    (Output,
-                    Component => Component_Identifier (Character'Pos ('Y')),
-                    Spectral_Start => 0,
-                    Spectral_End => 63,
+                    Component_Identifier (Character'Pos ('Y')),
+                    Y_Residual_Blocks,
+                    Restart,
                     DC_Table => 0,
                     AC_Table => 0);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Encode_Arithmetic_Blocks (Output, Y_Residual_Blocks, Restart);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
 
                Outcome :=
-                 Writers.Write_SOS_Component_Progressive
+                 Encode_Arithmetic_Component_Blocks
                    (Output,
-                    Component => Component_Identifier (Character'Pos ('K')),
-                    Spectral_Start => 0,
-                    Spectral_End => 63,
+                    Component_Identifier (Character'Pos ('K')),
+                    K_Residual_Blocks,
+                    Restart,
                     DC_Table => 0,
                     AC_Table => 0);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Encode_Arithmetic_Blocks (Output, K_Residual_Blocks, Restart);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
@@ -2425,37 +2365,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
          end if;
 
          Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output, Component => 1, Spectral_Start => 0, Spectral_End => 63, DC_Table => 0, AC_Table => 0);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Encode_Arithmetic_Blocks (Output, Y_Blocks, Restart);
+           Encode_Arithmetic_Component_Blocks
+             (Output, 1, Y_Blocks, Restart, DC_Table => 0, AC_Table => 0);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
          Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output, Component => 2, Spectral_Start => 0, Spectral_End => 63, DC_Table => 1, AC_Table => 1);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Encode_Arithmetic_Blocks (Output, Cb_Blocks, Restart);
+           Encode_Arithmetic_Component_Blocks
+             (Output, 2, Cb_Blocks, Restart, DC_Table => 1, AC_Table => 1);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
 
          Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output, Component => 3, Spectral_Start => 0, Spectral_End => 63, DC_Table => 1, AC_Table => 1);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Encode_Arithmetic_Blocks (Output, Cr_Blocks, Restart);
+           Encode_Arithmetic_Component_Blocks
+             (Output, 3, Cr_Blocks, Restart, DC_Table => 1, AC_Table => 1);
          if not Results.Succeeded (Outcome) then
             return Outcome;
          end if;
@@ -2482,37 +2407,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
                  [others => [others => 0]];
             begin
                Outcome :=
-                 Writers.Write_SOS_Component_Progressive
-                   (Output, Component => 1, Spectral_Start => 0, Spectral_End => 63, DC_Table => 0, AC_Table => 0);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Encode_Arithmetic_Blocks (Output, Y_Residual_Blocks, Restart);
+                 Encode_Arithmetic_Component_Blocks
+                   (Output, 1, Y_Residual_Blocks, Restart, DC_Table => 0, AC_Table => 0);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
 
                Outcome :=
-                 Writers.Write_SOS_Component_Progressive
-                   (Output, Component => 2, Spectral_Start => 0, Spectral_End => 63, DC_Table => 1, AC_Table => 1);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Encode_Arithmetic_Blocks (Output, Cb_Residual_Blocks, Restart);
+                 Encode_Arithmetic_Component_Blocks
+                   (Output, 2, Cb_Residual_Blocks, Restart, DC_Table => 1, AC_Table => 1);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;
 
                Outcome :=
-                 Writers.Write_SOS_Component_Progressive
-                   (Output, Component => 3, Spectral_Start => 0, Spectral_End => 63, DC_Table => 1, AC_Table => 1);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Encode_Arithmetic_Blocks (Output, Cr_Residual_Blocks, Restart);
+                 Encode_Arithmetic_Component_Blocks
+                   (Output, 3, Cr_Residual_Blocks, Restart, DC_Table => 1, AC_Table => 1);
                if not Results.Succeeded (Outcome) then
                   return Outcome;
                end if;

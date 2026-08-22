@@ -112,6 +112,31 @@ package body Jpeglib.Internal.Encoder_Arithmetic_Scans is
       return Arithmetic.Finish (Arithmetic_Encoder);
    end Encode_Arithmetic_Blocks;
 
+   function Encode_Arithmetic_Component_Blocks
+     (Output : in out Streams.Destination'Class;
+      Component : Component_Identifier;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval;
+      DC_Table : Huffman_Table_Index;
+      AC_Table : Huffman_Table_Index) return Results.Result
+   is
+      Outcome : Results.Result;
+   begin
+      Outcome :=
+        Writers.Write_SOS_Component_Progressive
+          (Output,
+           Component => Component,
+           Spectral_Start => 0,
+           Spectral_End => 63,
+           DC_Table => DC_Table,
+           AC_Table => AC_Table);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      return Encode_Arithmetic_Blocks (Output, Blocks, Restart);
+   end Encode_Arithmetic_Component_Blocks;
+
    function Encode_Arithmetic_Progressive_Fast_Preview_Blocks
      (Output : in out Streams.Destination'Class;
       Blocks : Jpeglib.Coefficients.DCT_Block_Array;
