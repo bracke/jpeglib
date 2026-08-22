@@ -14,6 +14,13 @@
   `jpeglib_real_world` verify a typed manifest with pinned file digests,
   header/metadata fields, decoded output SHA-256 values, and deterministic
   malformed rejection outcomes.
+- Add public coefficient image transforms with component-major layout/window
+  validation, full-image and block-aligned crop remapping, AUnit coverage, and
+  a `jpeglib_transform --self-test` CLI gate.
+- Add `Jpeglib.Coefficients.Encoding` for emitting baseline Huffman grayscale
+  and YCbCr JPEG streams plus covered progressive Huffman grayscale DC-only
+  streams from quantized coefficient blocks, with public coefficient decode
+  round-trip coverage.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

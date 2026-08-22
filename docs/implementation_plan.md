@@ -1007,9 +1007,20 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
 
 ### Phase CP3: Lossless Transform API
 
-- Add `Jpeglib.Transforms` for coefficient-domain rotate, flip, transpose,
-  crop, Huffman optimization, and valid baseline/progressive conversion.
-- Add `jpeglib_transform` for command-line coverage.
+- Status: partial. `Jpeglib.Coefficients.Transform_Image`,
+  `foundation.coefficients.public_image_transforms`, and
+  `jpeglib_transform --self-test` cover deterministic coefficient-domain block
+  and component-grid remapping for rotate, flip, transpose, transverse, and
+  block-aligned crop operations. `Jpeglib.Coefficients.Encoding` now emits
+  baseline Huffman grayscale and YCbCr JPEG streams, plus the covered
+  progressive Huffman grayscale DC-only stream, from quantized coefficient
+  arrays.
+- Remaining: extend the coefficient-domain output path to progressive AC
+  coefficient streams and broader color progressive DCT output so decoded
+  coefficient arrays can be emitted as JPEG streams after lossless transforms
+  across the supported DCT modes.
+- Keep Huffman optimization under CP4 unless it is needed as an option on the
+  coefficient-domain output path.
 - Compare against `jpegtran` where a stable external oracle exists.
 
 ### Phase CP4: Encoder Optimization

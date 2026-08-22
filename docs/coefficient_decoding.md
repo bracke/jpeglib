@@ -95,7 +95,7 @@ zig-zag order.
 block. `Jpeglib.Coefficients.Apply_Transform` applies the same operation
 in-place.
 
-The public block transform scope covers:
+The public block and image transform scope covers:
 
 - `Identity`
 - `Flip_Horizontal`
@@ -106,9 +106,27 @@ The public block transform scope covers:
 - `Rotate_270`
 - `Transverse`
 
-Transforms operate on a single block. Callers that need whole-image lossless
-JPEG-style transforms remain responsible for reordering blocks and handling edge
-MCUs consistently with their image geometry.
+`Component_Block_Layout` describes the component-major block grid returned by
+public coefficient decoding. `Full_Windows` builds a full-image transform
+window, while callers that need lossless block-aligned crops can supply one
+`Component_Block_Window` per component. `Transform_Image` validates the layouts
+and windows, derives transformed component layouts, remaps component-major
+blocks, and applies the coefficient-domain block operation to each moved block
+without allocation.
+
+`Transform_Image` reports deterministic status values for mismatched layout
+ranges, zero-sized layouts, invalid crop windows, and insufficient input or
+output block storage.
+
+`Jpeglib.Coefficients.Encoding.Encode_Grayscale_Baseline` emits a baseline
+Huffman grayscale JPEG stream from quantized coefficient blocks.
+`Encode_YCbCr_Baseline` emits a baseline Huffman YCbCr JPEG stream from
+component-major Y, Cb, and Cr coefficient blocks and layout metadata.
+`Encode_Grayscale_Progressive` emits the covered progressive Huffman grayscale
+DC-only coefficient stream. These entry points validate block counts against the
+image dimensions and component layouts, reject coefficients outside the baseline
+encoding range, preserve restart interval signaling, and are covered by public
+encode/decode coefficient round-trip tests.
 
 ## State Transitions
 

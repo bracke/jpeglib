@@ -2,6 +2,7 @@ with Ada.Strings.Unbounded;
 
 with AUnit.Assertions;
 with Jpeglib.Coefficients;
+with Jpeglib.Coefficients.Encoding;
 with Jpeglib.Capabilities;
 with Jpeglib.Decoding;
 with Jpeglib.Encoding;
@@ -73,7 +74,10 @@ package body Jpeglib_Testing.Test_Foundation is
    use type Jpeglib.Internal.Arithmetic.DC_Difference;
    use type Jpeglib.Coefficients.DCT_Block;
    use type Jpeglib.Coefficients.DCT_Block_Array;
+   use type Jpeglib.Coefficients.Component_Block_Layout;
+   use type Jpeglib.Coefficients.Component_Block_Layout_Array;
    use type Jpeglib.Coefficients.Quantized_Coefficient;
+   use type Jpeglib.Coefficients.Transform_Status;
    use type Jpeglib.Internal.Coefficients.DC_Predictor;
    use type Jpeglib.Internal.Coefficients.EOB_Run_Count;
    use type Jpeglib.Internal.Transforms.Dequantized_Coefficient;
@@ -1562,6 +1566,13 @@ package body Jpeglib_Testing.Test_Foundation is
    procedure Public_Decoder_Decodes_Progressive_Interleaved_Color_Coefficients
      (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Coefficient_Transforms_Block (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Coefficient_Transforms_Image (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Coefficient_Encoding_Grayscale_Baseline
+     (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Coefficient_Encoding_Grayscale_Progressive
+     (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Coefficient_Encoding_YCbCr_Baseline
+     (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Rejects_Too_Few_Coefficient_Blocks (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Rejects_Coefficients_In_Invalid_State (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Rejects_Wrong_Restart_Marker (T : in out AUnit.Test_Cases.Test_Case'Class);
@@ -2441,6 +2452,22 @@ package body Jpeglib_Testing.Test_Foundation is
         (T,
          Public_Coefficient_Transforms_Block'Access,
          "foundation.coefficients.public_transforms");
+      Register_Routine
+        (T,
+         Public_Coefficient_Transforms_Image'Access,
+         "foundation.coefficients.public_image_transforms");
+      Register_Routine
+        (T,
+         Public_Coefficient_Encoding_Grayscale_Baseline'Access,
+         "foundation.coefficients.public_encode_grayscale_baseline");
+      Register_Routine
+        (T,
+         Public_Coefficient_Encoding_Grayscale_Progressive'Access,
+         "foundation.coefficients.public_encode_grayscale_progressive");
+      Register_Routine
+        (T,
+         Public_Coefficient_Encoding_YCbCr_Baseline'Access,
+         "foundation.coefficients.public_encode_ycbcr_baseline");
       Register_Routine
         (T,
          Public_Decoder_Rejects_Too_Few_Coefficient_Blocks'Access,
@@ -9280,6 +9307,348 @@ package body Jpeglib_Testing.Test_Foundation is
          Assert (In_Place = Result, "in-place coefficient transform mismatch");
       end loop;
    end Public_Coefficient_Transforms_Block;
+
+   procedure Public_Coefficient_Transforms_Image (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+
+      subtype QC is Jpeglib.Coefficients.Quantized_Coefficient;
+
+      function Make_Block (DC : QC) return Jpeglib.Coefficients.DCT_Block is
+      begin
+         return [0 => DC, 1 => DC + 100, 8 => DC + 200, others => 0];
+      end Make_Block;
+
+      function Block_At
+        (Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+         Index : Natural) return Jpeglib.Coefficients.DCT_Block is
+      begin
+         return Blocks (Positive (Natural (Blocks'First) + Index));
+      end Block_At;
+
+      Input_Layouts : constant Jpeglib.Coefficients.Component_Block_Layout_Array (1 .. 2) :=
+        [1 => (Width_In_Blocks => 3, Height_In_Blocks => 2),
+         2 => (Width_In_Blocks => 2, Height_In_Blocks => 1)];
+      Full_Windows : constant Jpeglib.Coefficients.Component_Block_Window_Array :=
+        Jpeglib.Coefficients.Full_Windows (Input_Layouts);
+      Crop_Windows : constant Jpeglib.Coefficients.Component_Block_Window_Array (1 .. 2) :=
+        [1 => (Left => 1, Top => 0, Width_In_Blocks => 2, Height_In_Blocks => 2),
+         2 => (Left => 0, Top => 0, Width_In_Blocks => 2, Height_In_Blocks => 1)];
+      Bad_Windows : constant Jpeglib.Coefficients.Component_Block_Window_Array (1 .. 2) :=
+        [1 => (Left => 2, Top => 0, Width_In_Blocks => 2, Height_In_Blocks => 1),
+         2 => (Left => 0, Top => 0, Width_In_Blocks => 2, Height_In_Blocks => 1)];
+      Input : constant Jpeglib.Coefficients.DCT_Block_Array (1 .. 8) :=
+        [1 => Make_Block (1),
+         2 => Make_Block (2),
+         3 => Make_Block (3),
+         4 => Make_Block (4),
+         5 => Make_Block (5),
+         6 => Make_Block (6),
+         7 => Make_Block (101),
+         8 => Make_Block (102)];
+      Output : Jpeglib.Coefficients.DCT_Block_Array (1 .. 8) := [others => [others => -1]];
+      Small_Output : Jpeglib.Coefficients.DCT_Block_Array (1 .. 3) := [others => [others => -1]];
+      Output_Layouts : Jpeglib.Coefficients.Component_Block_Layout_Array (1 .. 2);
+      Blocks_Written : Jpeglib.Coefficients.Component_Block_Count;
+      Status : Jpeglib.Coefficients.Transform_Status;
+      Expected_Layouts : Jpeglib.Coefficients.Component_Block_Layout_Array (1 .. 2);
+   begin
+      Assert
+        (Jpeglib.Coefficients.Total_Block_Count (Input_Layouts) = 8,
+         "component block total mismatch");
+      Assert
+        (Jpeglib.Coefficients.Validate_Windows (Input_Layouts, Full_Windows) =
+           Jpeglib.Coefficients.Transform_Ok,
+         "full coefficient windows were rejected");
+      Assert
+        (Jpeglib.Coefficients.Validate_Windows (Input_Layouts, Bad_Windows) =
+           Jpeglib.Coefficients.Invalid_Window,
+         "invalid coefficient window was accepted");
+
+      Jpeglib.Coefficients.Transform_Image
+        (Input,
+         Input_Layouts,
+         Crop_Windows,
+         Jpeglib.Coefficients.Rotate_90,
+         Output,
+         Output_Layouts,
+         Blocks_Written,
+         Status);
+      Assert (Status = Jpeglib.Coefficients.Transform_Ok, "cropped rotate-90 failed");
+      Assert (Blocks_Written = 6, "cropped rotate-90 block count mismatch");
+      Assert (Output_Layouts (1) = (Width_In_Blocks => 2, Height_In_Blocks => 2),
+              "cropped rotate-90 component 1 layout mismatch");
+      Assert (Output_Layouts (2) = (Width_In_Blocks => 1, Height_In_Blocks => 2),
+              "cropped rotate-90 component 2 layout mismatch");
+      Assert
+        (Block_At (Output, 0) =
+           Jpeglib.Coefficients.Transform (Input (5), Jpeglib.Coefficients.Rotate_90),
+         "cropped rotate-90 component 1 block 0 mismatch");
+      Assert
+        (Block_At (Output, 1) =
+           Jpeglib.Coefficients.Transform (Input (2), Jpeglib.Coefficients.Rotate_90),
+         "cropped rotate-90 component 1 block 1 mismatch");
+      Assert
+        (Block_At (Output, 2) =
+           Jpeglib.Coefficients.Transform (Input (6), Jpeglib.Coefficients.Rotate_90),
+         "cropped rotate-90 component 1 block 2 mismatch");
+      Assert
+        (Block_At (Output, 3) =
+           Jpeglib.Coefficients.Transform (Input (3), Jpeglib.Coefficients.Rotate_90),
+         "cropped rotate-90 component 1 block 3 mismatch");
+      Assert
+        (Block_At (Output, 4) =
+           Jpeglib.Coefficients.Transform (Input (7), Jpeglib.Coefficients.Rotate_90),
+         "cropped rotate-90 component 2 block 0 mismatch");
+      Assert
+        (Block_At (Output, 5) =
+           Jpeglib.Coefficients.Transform (Input (8), Jpeglib.Coefficients.Rotate_90),
+         "cropped rotate-90 component 2 block 1 mismatch");
+
+      Jpeglib.Coefficients.Transform_Image
+        (Input,
+         Input_Layouts,
+         Full_Windows,
+         Jpeglib.Coefficients.Rotate_180,
+         Output,
+         Output_Layouts,
+         Blocks_Written,
+         Status);
+      Assert (Status = Jpeglib.Coefficients.Transform_Ok, "full rotate-180 failed");
+      Assert (Blocks_Written = 8, "full rotate-180 block count mismatch");
+      Assert (Output_Layouts = Input_Layouts, "full rotate-180 layout mismatch");
+      Assert
+        (Block_At (Output, 0) =
+           Jpeglib.Coefficients.Transform (Input (6), Jpeglib.Coefficients.Rotate_180),
+         "full rotate-180 component 1 block 0 mismatch");
+      Assert
+        (Block_At (Output, 5) =
+           Jpeglib.Coefficients.Transform (Input (1), Jpeglib.Coefficients.Rotate_180),
+         "full rotate-180 component 1 block 5 mismatch");
+      Assert
+        (Block_At (Output, 6) =
+           Jpeglib.Coefficients.Transform (Input (8), Jpeglib.Coefficients.Rotate_180),
+         "full rotate-180 component 2 block 0 mismatch");
+
+      Jpeglib.Coefficients.Transform_Image
+        (Input,
+         Input_Layouts,
+         Bad_Windows,
+         Jpeglib.Coefficients.Identity,
+         Output,
+         Output_Layouts,
+         Blocks_Written,
+         Status);
+      Assert (Status = Jpeglib.Coefficients.Invalid_Window, "bad window transform succeeded");
+      Assert (Blocks_Written = 0, "bad window wrote blocks");
+
+      Jpeglib.Coefficients.Transform_Image
+        (Input,
+         Input_Layouts,
+         Full_Windows,
+         Jpeglib.Coefficients.Identity,
+         Small_Output,
+         Expected_Layouts,
+         Blocks_Written,
+         Status);
+      Assert (Status = Jpeglib.Coefficients.Output_Too_Small, "small output transform succeeded");
+      Assert (Blocks_Written = 0, "small output wrote blocks");
+   end Public_Coefficient_Transforms_Image;
+
+   procedure Public_Coefficient_Encoding_Grayscale_Baseline
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Decoder_State;
+
+      Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 4096 => 0];
+      Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+      Source : aliased Jpeglib.Streams.Memory_Source;
+      Decoder : Jpeglib.Decoding.Decoder;
+      Input_Blocks : constant Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) :=
+        [1 => [0 => 3, others => 0],
+         2 => [0 => 5, others => 0]];
+      Decoded_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) := [others => [others => 0]];
+      Encoded_Length : Natural;
+      Blocks_Decoded : Jpeglib.Block_Count := 0;
+      Encode_Result : Jpeglib.Results.Result;
+      Decode_Result : Jpeglib.Results.Result;
+      Header : Jpeglib.Decoding.Image_Info;
+   begin
+      Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+      Encode_Result :=
+        Jpeglib.Coefficients.Encoding.Encode_Grayscale_Baseline
+          (Destination,
+           Width => 16,
+           Height => 8,
+           Blocks => Input_Blocks,
+           Restart => 1,
+           Quality => 75);
+      Assert
+        (Jpeglib.Results.Succeeded (Encode_Result),
+         "public grayscale coefficient encode failed");
+      Encoded_Length := Natural (Jpeglib.Streams.Offset (Destination));
+      Assert (Encoded_Length > 0, "public grayscale coefficient encode wrote no bytes");
+
+      Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
+      Jpeglib.Decoding.Initialize (Decoder, Source'Access);
+      Decode_Result := Jpeglib.Decoding.Decode_Coefficients (Decoder, Decoded_Blocks, Blocks_Decoded);
+      Assert
+        (Jpeglib.Results.Succeeded (Decode_Result),
+         "public grayscale coefficient output did not decode");
+      Assert (Jpeglib.Decoding.State (Decoder) = Jpeglib.Decoding.Completed,
+              "public coefficient output decoder did not complete");
+      Header := Jpeglib.Decoding.Header (Decoder);
+      Assert (Header.Width = 16, "public coefficient output width mismatch");
+      Assert (Header.Height = 8, "public coefficient output height mismatch");
+      Assert (Header.Components = 1, "public coefficient output component mismatch");
+      Assert (Header.Restart = 1, "public coefficient output restart mismatch");
+      Assert (Blocks_Decoded = 2, "public coefficient output block count mismatch");
+      Assert (Decoded_Blocks = Input_Blocks, "public coefficient output blocks changed");
+
+      Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+      Encode_Result :=
+        Jpeglib.Coefficients.Encoding.Encode_Grayscale_Baseline
+          (Destination,
+           Width => 16,
+           Height => 8,
+           Blocks => Input_Blocks (1 .. 1));
+      Assert
+        (not Jpeglib.Results.Succeeded (Encode_Result),
+         "public grayscale coefficient encode accepted the wrong block count");
+      Assert
+        (Encode_Result.First_Error.Code = Jpeglib.Errors.Output_Limit_Exceeded,
+         "public grayscale coefficient encode used wrong block-count error");
+   end Public_Coefficient_Encoding_Grayscale_Baseline;
+
+   procedure Public_Coefficient_Encoding_Grayscale_Progressive
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Decoder_State;
+
+      Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 4096 => 0];
+      Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+      Source : aliased Jpeglib.Streams.Memory_Source;
+      Decoder : Jpeglib.Decoding.Decoder;
+      Input_Blocks : constant Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) :=
+        [1 => [0 => 3, others => 0],
+         2 => [0 => 5, others => 0]];
+      Decoded_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) := [others => [others => 0]];
+      Blocks_Decoded : Jpeglib.Block_Count := 0;
+      Encode_Result : Jpeglib.Results.Result;
+      Decode_Result : Jpeglib.Results.Result;
+      Header : Jpeglib.Decoding.Image_Info;
+   begin
+      Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+      Encode_Result :=
+        Jpeglib.Coefficients.Encoding.Encode_Grayscale_Progressive
+          (Destination,
+           Width => 16,
+           Height => 8,
+           Blocks => Input_Blocks,
+           Restart => 1,
+           Quality => 75,
+           Refine => False);
+      Assert
+        (Jpeglib.Results.Succeeded (Encode_Result),
+         "public progressive grayscale coefficient encode failed");
+
+      Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
+      Jpeglib.Decoding.Initialize (Decoder, Source'Access);
+      Decode_Result := Jpeglib.Decoding.Decode_Coefficients (Decoder, Decoded_Blocks, Blocks_Decoded);
+      Assert
+        (Jpeglib.Results.Succeeded (Decode_Result),
+         "public progressive grayscale coefficient output did not decode");
+      Assert (Jpeglib.Decoding.State (Decoder) = Jpeglib.Decoding.Completed,
+              "public progressive coefficient output decoder did not complete");
+      Header := Jpeglib.Decoding.Header (Decoder);
+      Assert (Header.Width = 16, "public progressive coefficient output width mismatch");
+      Assert (Header.Height = 8, "public progressive coefficient output height mismatch");
+      Assert (Header.Components = 1, "public progressive coefficient output component mismatch");
+      Assert (Header.Progressive, "public progressive coefficient output not marked progressive");
+      Assert (Header.Coefficient_Blocks = 2, "public progressive coefficient output header block count mismatch");
+      Assert (Blocks_Decoded >= 2, "public progressive coefficient output decoded no final block pass");
+      for Block_Index in Decoded_Blocks'Range loop
+         Assert
+           (Decoded_Blocks (Block_Index) (0) = Input_Blocks (Block_Index) (0),
+            "public progressive coefficient output DC changed");
+         for Coefficient in Jpeglib.Coefficient_Index range 1 .. 63 loop
+            Assert
+              (Decoded_Blocks (Block_Index) (Coefficient) = 0,
+               "public progressive DC-only coefficient output produced AC data");
+         end loop;
+      end loop;
+   end Public_Coefficient_Encoding_Grayscale_Progressive;
+
+   procedure Public_Coefficient_Encoding_YCbCr_Baseline
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Decoder_State;
+
+      Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 4096 => 0];
+      Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+      Source : aliased Jpeglib.Streams.Memory_Source;
+      Decoder : Jpeglib.Decoding.Decoder;
+      Layouts : constant Jpeglib.Coefficients.Component_Block_Layout_Array (1 .. 3) :=
+        [others => (Width_In_Blocks => 1, Height_In_Blocks => 1)];
+      Input_Blocks : constant Jpeglib.Coefficients.DCT_Block_Array (1 .. 3) :=
+        [1 => [0 => 3, 1 => 1, others => 0],
+         2 => [0 => -2, 8 => 1, others => 0],
+         3 => [0 => 4, 16 => -1, others => 0]];
+      Decoded_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 3) := [others => [others => 77]];
+      Blocks_Decoded : Jpeglib.Block_Count := 0;
+      Encode_Result : Jpeglib.Results.Result;
+      Decode_Result : Jpeglib.Results.Result;
+      Header : Jpeglib.Decoding.Image_Info;
+   begin
+      Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+      Encode_Result :=
+        Jpeglib.Coefficients.Encoding.Encode_YCbCr_Baseline
+          (Destination,
+           Width => 8,
+           Height => 8,
+           Blocks => Input_Blocks,
+           Layouts => Layouts,
+           Restart => 0,
+           Quality => 75);
+      Assert
+        (Jpeglib.Results.Succeeded (Encode_Result),
+         "public YCbCr coefficient encode failed");
+
+      Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
+      Jpeglib.Decoding.Initialize (Decoder, Source'Access);
+      Decode_Result := Jpeglib.Decoding.Decode_Coefficients (Decoder, Decoded_Blocks, Blocks_Decoded);
+      Assert
+        (Jpeglib.Results.Succeeded (Decode_Result),
+         "public YCbCr coefficient output did not decode");
+      Assert (Jpeglib.Decoding.State (Decoder) = Jpeglib.Decoding.Completed,
+              "public YCbCr coefficient output decoder did not complete");
+      Header := Jpeglib.Decoding.Header (Decoder);
+      Assert (Header.Width = 8, "public YCbCr coefficient output width mismatch");
+      Assert (Header.Height = 8, "public YCbCr coefficient output height mismatch");
+      Assert (Header.Components = 3, "public YCbCr coefficient output component mismatch");
+      Assert (Header.Color_Model = Jpeglib.YCbCr, "public YCbCr coefficient output color mismatch");
+      Assert (Blocks_Decoded = 3, "public YCbCr coefficient output block count mismatch");
+      Assert (Decoded_Blocks = Input_Blocks, "public YCbCr coefficient output blocks changed");
+
+      Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+      Encode_Result :=
+        Jpeglib.Coefficients.Encoding.Encode_YCbCr_Baseline
+          (Destination,
+           Width => 8,
+           Height => 8,
+           Blocks => Input_Blocks,
+           Layouts => [1 => (Width_In_Blocks => 2, Height_In_Blocks => 1),
+                       2 => (Width_In_Blocks => 1, Height_In_Blocks => 1),
+                       3 => (Width_In_Blocks => 1, Height_In_Blocks => 1)]);
+      Assert
+        (not Jpeglib.Results.Succeeded (Encode_Result),
+         "public YCbCr coefficient encode accepted mismatched block count");
+      Assert
+        (Encode_Result.First_Error.Code = Jpeglib.Errors.Output_Limit_Exceeded,
+         "public YCbCr coefficient encode used wrong block-count error");
+   end Public_Coefficient_Encoding_YCbCr_Baseline;
 
    procedure Public_Decoder_Rejects_Too_Few_Coefficient_Blocks (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);

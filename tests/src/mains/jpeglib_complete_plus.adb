@@ -73,6 +73,20 @@ procedure Jpeglib_Complete_Plus is
       end if;
    end Run_Complete_Gate;
 
+   procedure Run_Lossless_Transform_Gate is
+      Status : constant Integer :=
+        Project_Tools.Processes.Run_Status
+          ("complete-plus lossless coefficient transforms",
+           Root,
+           Project_Tools.Files.Join (Root, "tests/bin/jpeglib_transform"),
+           Project_Tools.Processes.Arguments
+             ([Project_Tools.Processes.Argument ("--self-test")]));
+   begin
+      if Status /= 0 then
+         Fail ("CP3 lossless transform gate failed with status" & Integer'Image (Status));
+      end if;
+   end Run_Lossless_Transform_Gate;
+
    procedure Check_Manifest is
       Path : constant String := Project_Tools.Files.Join (Root, Manifest_Relative);
       File : Ada.Text_IO.File_Type;
@@ -143,6 +157,7 @@ begin
    end if;
 
    Run_Complete_Gate;
+   Run_Lossless_Transform_Gate;
    Check_Manifest;
 
    if Errors = 0 then

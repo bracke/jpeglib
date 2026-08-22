@@ -1,6 +1,5 @@
 with Interfaces;
 
-with Jpeglib.Coefficients;
 with Jpeglib.Errors;
 with Jpeglib.Internal.Bit_Streams;
 with Jpeglib.Internal.Coefficients;
@@ -14,6 +13,7 @@ with Jpeglib.Internal.Writers;
 
 package body Jpeglib.Internal.Baseline_Encoder is
    use type Errors.Error_Code;
+   use type Jpeglib.Coefficients.Component_Block_Layout;
    use type Jpeglib.Coefficients.Quantized_Coefficient;
    use type Arithmetic.DC_Difference;
    use type Huffman.Symbol_Count;
@@ -1468,6 +1468,265 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end;
    end Encode_Blocks;
 
+   function Encode_YCbCr_Blocks
+     (Output : in out Streams.Destination'Class;
+      Luma_DC_Definition : Huffman.Huffman_Definition;
+      Luma_AC_Definition : Huffman.Huffman_Definition;
+      Chroma_DC_Definition : Huffman.Huffman_Definition;
+      Chroma_AC_Definition : Huffman.Huffman_Definition;
+      Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Cb_Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Cr_Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Y_Block_Columns : Positive;
+      C_Block_Columns : Positive;
+      MCU_Columns : Positive;
+      MCU_Rows : Positive;
+      Layout : Image_Blocks.Subsampling_Layout;
+      Restart : Restart_Interval) return Results.Result;
+
+   function Encode_Grayscale_Coefficients
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
+   is
+      DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
+      AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
+      Luma_Quantization : constant Quantization.Quantization_Table :=
+        Quantization.Luma_Table_For_Quality (Quality);
+      Block_Columns : constant Natural := (Natural (Width) + 7) / 8;
+      Block_Rows : constant Natural := (Natural (Height) + 7) / 8;
+      Needed : constant Block_Count := Block_Count (Block_Columns * Block_Rows);
+      Outcome : Results.Result;
+   begin
+      if Huffman.Symbol_Total (DC_Definition) = 0 or else Huffman.Symbol_Total (AC_Definition) = 0 then
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+      elsif Block_Count (Blocks'Length) /= Needed then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      end if;
+
+      Outcome := Write_SOI_And_Metadata (Output, Encoded_Metadata);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_JFIF_APP0 (Output);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DQT (Output, 0, Luma_Quantization);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.DC, 0, DC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.AC, 0, AC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Write_DCT_SOF_Grayscale (Output, Markers.SOF0, Width, Height);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      if Restart /= 0 then
+         Outcome := Writers.Write_DRI (Output, Restart);
+         if not Results.Succeeded (Outcome) then
+            return Outcome;
+         end if;
+      end if;
+
+      Outcome := Writers.Write_SOS_Grayscale (Output);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Encode_Blocks (Output, DC_Definition, AC_Definition, Blocks, Restart);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      return Writers.Write_Marker (Output, Markers.EOI);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_Grayscale_Coefficients;
+
+   function Encode_YCbCr_Coefficients
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Layouts : Jpeglib.Coefficients.Component_Block_Layout_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
+   is
+      Luma_DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
+      Luma_AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
+      Chroma_DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Chrominance_DC;
+      Chroma_AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Chrominance_AC;
+      Luma_Quantization : constant Quantization.Quantization_Table :=
+        Quantization.Luma_Table_For_Quality (Quality);
+      Chroma_Quantization : constant Quantization.Quantization_Table :=
+        Quantization.Chroma_Table_For_Quality (Quality);
+      Y_Layout : Jpeglib.Coefficients.Component_Block_Layout;
+      Cb_Layout : Jpeglib.Coefficients.Component_Block_Layout;
+      Cr_Layout : Jpeglib.Coefficients.Component_Block_Layout;
+      Layout : Image_Blocks.Subsampling_Layout;
+      Y_Count : Block_Count;
+      Cb_Count : Block_Count;
+      Cr_Count : Block_Count;
+      H_Factor : Natural;
+      V_Factor : Natural;
+      C_Start : Positive;
+      Cr_Start : Positive;
+      Outcome : Results.Result;
+   begin
+      if Layouts'Length /= 3
+        or else Layouts'First /= 1
+        or else Blocks'Length = 0
+      then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      end if;
+
+      Y_Layout := Layouts (1);
+      Cb_Layout := Layouts (2);
+      Cr_Layout := Layouts (3);
+
+      if Y_Layout.Width_In_Blocks = 0
+        or else Y_Layout.Height_In_Blocks = 0
+        or else Cb_Layout.Width_In_Blocks = 0
+        or else Cb_Layout.Height_In_Blocks = 0
+        or else Cb_Layout /= Cr_Layout
+        or else Y_Layout.Width_In_Blocks mod Cb_Layout.Width_In_Blocks /= 0
+        or else Y_Layout.Height_In_Blocks mod Cb_Layout.Height_In_Blocks /= 0
+      then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      end if;
+
+      H_Factor := Natural (Y_Layout.Width_In_Blocks / Cb_Layout.Width_In_Blocks);
+      V_Factor := Natural (Y_Layout.Height_In_Blocks / Cb_Layout.Height_In_Blocks);
+
+      if H_Factor not in 1 | 2 | 4
+        or else V_Factor not in 1 | 2
+      then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      end if;
+
+      Layout :=
+        (Chroma_Horizontal_Factor => H_Factor,
+         Chroma_Vertical_Factor => V_Factor);
+
+      Y_Count := Jpeglib.Coefficients.Block_Count_For (Y_Layout);
+      Cb_Count := Jpeglib.Coefficients.Block_Count_For (Cb_Layout);
+      Cr_Count := Jpeglib.Coefficients.Block_Count_For (Cr_Layout);
+
+      if Block_Count (Blocks'Length) /= Y_Count + Cb_Count + Cr_Count then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      end if;
+
+      Outcome := Write_SOI_And_Metadata (Output, Encoded_Metadata);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_JFIF_APP0 (Output);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DQT (Output, 0, Luma_Quantization);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DQT (Output, 1, Chroma_Quantization);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.DC, 0, Luma_DC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.AC, 0, Luma_AC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.DC, 1, Chroma_DC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.AC, 1, Chroma_AC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome :=
+        Write_DCT_SOF_YCbCr
+          (Output,
+           Marker => Markers.SOF0,
+           Width => Width,
+           Height => Height,
+           Luma_Horizontal_Sampling => Layout.Chroma_Horizontal_Factor,
+           Luma_Vertical_Sampling => Layout.Chroma_Vertical_Factor);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      if Restart /= 0 then
+         Outcome := Writers.Write_DRI (Output, Restart);
+         if not Results.Succeeded (Outcome) then
+            return Outcome;
+         end if;
+      end if;
+
+      Outcome := Writers.Write_SOS_YCbCr (Output);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      C_Start := Blocks'First + Positive (Y_Count);
+      Cr_Start := C_Start + Positive (Cb_Count);
+      Outcome :=
+        Encode_YCbCr_Blocks
+          (Output,
+           Luma_DC_Definition,
+           Luma_AC_Definition,
+           Chroma_DC_Definition,
+           Chroma_AC_Definition,
+           Blocks (Blocks'First .. C_Start - 1),
+           Blocks (C_Start .. Cr_Start - 1),
+           Blocks (Cr_Start .. Blocks'Last),
+           Positive (Y_Layout.Width_In_Blocks),
+           Positive (Cb_Layout.Width_In_Blocks),
+           Positive (Cb_Layout.Width_In_Blocks),
+           Positive (Cb_Layout.Height_In_Blocks),
+           Layout,
+           Restart);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      return Writers.Write_Marker (Output, Markers.EOI);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_YCbCr_Coefficients;
+
    function Arithmetic_Blocks_Supported
      (Blocks : Jpeglib.Coefficients.DCT_Block_Array;
       Restart : Restart_Interval) return Boolean
@@ -2903,6 +3162,79 @@ package body Jpeglib.Internal.Baseline_Encoder is
 
       return Results.Success;
    end Encode_Progressive_Blocks;
+
+   function Encode_Progressive_Grayscale_Coefficients
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Refine : Boolean := False;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
+   is
+      DC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
+      AC_Definition : constant Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
+      Luma_Quantization : constant Quantization.Quantization_Table :=
+        Quantization.Luma_Table_For_Quality (Quality);
+      Block_Columns : constant Natural := (Natural (Width) + 7) / 8;
+      Block_Rows : constant Natural := (Natural (Height) + 7) / 8;
+      Needed : constant Block_Count := Block_Count (Block_Columns * Block_Rows);
+      Outcome : Results.Result;
+   begin
+      if Huffman.Symbol_Total (DC_Definition) = 0 or else Huffman.Symbol_Total (AC_Definition) = 0 then
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+      elsif Block_Count (Blocks'Length) /= Needed then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      end if;
+
+      Outcome := Write_SOI_And_Metadata (Output, Encoded_Metadata);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_JFIF_APP0 (Output);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DQT (Output, 0, Luma_Quantization);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.DC, 0, DC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.AC, 0, AC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Write_DCT_SOF_Grayscale (Output, Markers.SOF2, Width, Height);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      if Restart /= 0 then
+         Outcome := Writers.Write_DRI (Output, Restart);
+         if not Results.Succeeded (Outcome) then
+            return Outcome;
+         end if;
+      end if;
+
+      Outcome := Encode_Progressive_Blocks (Output, DC_Definition, AC_Definition, Blocks, Restart, Refine);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      return Writers.Write_Marker (Output, Markers.EOI);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_Progressive_Grayscale_Coefficients;
 
    function Encode_Progressive_Component_Scan
      (Output : in out Streams.Destination'Class;
