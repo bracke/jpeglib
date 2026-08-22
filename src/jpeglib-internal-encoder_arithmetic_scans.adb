@@ -7,6 +7,25 @@ package body Jpeglib.Internal.Encoder_Arithmetic_Scans is
    use type Jpeglib.Coefficients.Quantized_Coefficient;
    use type Arithmetic.DC_Difference;
 
+   function Write_Arithmetic_Component_Progressive_SOS
+     (Output : in out Streams.Destination'Class;
+      Component : Component_Identifier;
+      DC_Scan : Boolean;
+      Refinement : Boolean;
+      Al : Successive_Approximation_Value) return Results.Result is
+   begin
+      return
+        Writers.Write_SOS_Component_Progressive
+          (Output,
+           Component => Component,
+           Spectral_Start => (if DC_Scan then 0 else 1),
+           Spectral_End => (if DC_Scan then 0 else 63),
+           Ah => (if Refinement then Al + 1 else 0),
+           Al => Al,
+           DC_Table => 0,
+           AC_Table => 0);
+   end Write_Arithmetic_Component_Progressive_SOS;
+
    function Arithmetic_Blocks_Supported
      (Blocks : Jpeglib.Coefficients.DCT_Block_Array;
       Restart : Restart_Interval) return Boolean
@@ -621,15 +640,12 @@ package body Jpeglib.Internal.Encoder_Arithmetic_Scans is
          end Write_Restart_When_Due;
       begin
          Scan_Outcome :=
-           Writers.Write_SOS_Component_Progressive
+           Write_Arithmetic_Component_Progressive_SOS
              (Output,
-              Component => Component,
-              Spectral_Start => 0,
-              Spectral_End => 0,
-              Ah => (if Refinement then Al + 1 else 0),
-              Al => Al,
-              DC_Table => 0,
-              AC_Table => 0);
+              Component,
+              DC_Scan => True,
+              Refinement => Refinement,
+              Al => Al);
          if not Results.Succeeded (Scan_Outcome) then
             return Scan_Outcome;
          end if;
@@ -731,15 +747,12 @@ package body Jpeglib.Internal.Encoder_Arithmetic_Scans is
          end Write_Restart_When_Due;
       begin
          Scan_Outcome :=
-           Writers.Write_SOS_Component_Progressive
+           Write_Arithmetic_Component_Progressive_SOS
              (Output,
-              Component => Component,
-              Spectral_Start => 1,
-              Spectral_End => 63,
-              Ah => (if Refinement then Al + 1 else 0),
-              Al => Al,
-              DC_Table => 0,
-              AC_Table => 0);
+              Component,
+              DC_Scan => False,
+              Refinement => Refinement,
+              Al => Al);
          if not Results.Succeeded (Scan_Outcome) then
             return Scan_Outcome;
          end if;
