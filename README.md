@@ -92,6 +92,7 @@ alr exec -- tests/bin/jpeglib_release
 alr exec -- tests/bin/jpeglib_complete
 alr exec -- tests/bin/jpeglib_real_world --allow-empty
 alr exec -- tests/bin/jpeglib_policy_matrix --allow-open
+alr exec -- tests/bin/jpeglib_stress_matrix --allow-open
 ```
 
 `jpeglib_tests` is the AUnit test runner. `jpeglib_check` is the aggregate local
@@ -140,6 +141,9 @@ at least one manifest entry.
 `jpeglib_policy_matrix --allow-open` validates the LC3 public API policy matrix
 while open rows remain; without `--allow-open` it requires every row to be
 closed by evidence.
+`jpeglib_stress_matrix --allow-open` validates the LC5 streaming and large-image
+stress matrix while open rows remain; without `--allow-open` every stress row
+must be closed.
 
 Fixture files live under `tests/fixtures/coefficients` and
 `tests/fixtures/images`. Refresh them with:

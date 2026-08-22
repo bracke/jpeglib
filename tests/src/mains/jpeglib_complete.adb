@@ -63,6 +63,19 @@ procedure Jpeglib_Complete is
          Fail ("LC3 public API policy matrix failed with status" & Integer'Image (Status));
       end if;
    end Run_Policy_Matrix;
+
+   procedure Run_Stress_Matrix is
+      Status : constant Integer :=
+        Project_Tools.Processes.Run_Status
+          ("library-complete streaming stress matrix",
+           Root,
+           Project_Tools.Files.Join (Root, "tests/bin/jpeglib_stress_matrix"),
+           Project_Tools.Processes.No_Arguments);
+   begin
+      if Status /= 0 then
+         Fail ("LC5 streaming stress matrix failed with status" & Integer'Image (Status));
+      end if;
+   end Run_Stress_Matrix;
 begin
    if Root = "" then
       Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "jpeglib_complete: run below the jpeglib tree");
@@ -74,6 +87,7 @@ begin
    Run_Release_Gate;
    Run_Real_World_Manifest;
    Run_Policy_Matrix;
+   Run_Stress_Matrix;
 
    if Errors = 0 then
       Require_Resolved

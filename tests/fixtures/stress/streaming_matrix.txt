@@ -1,0 +1,11 @@
+# jpeglib streaming and large-image stress matrix
+# Format:
+# id|surface|stress_scope|limit_policy|status|evidence
+#
+short-read-segments|Jpeglib.Streams.Source|short positive reads across marker segments|deterministic progress/error|closed|foundation.segments.short_skip
+fixed-destination-capacity|Jpeglib.Streams.Destination|partial writes and output exhaustion|deterministic byte count/error|closed|foundation.streams.fixed_destination_partial_write
+output-limit-encode|Jpeglib.Encoding.Encode_Image|configured output byte limits|deterministic failure|closed|foundation.encoder.encode_output_limit
+output-limit-decode|Jpeglib.Decoding.Decode_Image|configured output byte limits|deterministic failure|closed|foundation.decoder.decode_output_limit
+chunked-restart-boundaries|Jpeglib.Decoding/Jpeglib.Encoding|restart markers across chunked source/destination boundaries|state integrity|open|LC5
+large-dimension-resource-limits|Jpeglib.Decoding/Jpeglib.Encoding|large dimensions high component counts and bounded allocation|documented limit or success|open|LC5
+metadata-callback-stress|Jpeglib.Decoding metadata callbacks|callback count and payload chunk boundaries under load|deterministic limit behavior|open|LC5

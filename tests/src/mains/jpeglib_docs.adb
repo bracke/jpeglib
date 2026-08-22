@@ -66,6 +66,7 @@ begin
    Require_Text ("README.md", "jpeglib_complete");
    Require_Text ("README.md", "jpeglib_real_world --allow-empty");
    Require_Text ("README.md", "jpeglib_policy_matrix --allow-open");
+   Require_Text ("README.md", "jpeglib_stress_matrix --allow-open");
    Require_Text ("README.md", "`project_tools` manifest checks");
    Require_Text ("README.md", "`Project_Tools.Release_Checks` tests GPR main inventory");
    Require_Text ("README.md", "../hostkit");
@@ -128,6 +129,7 @@ begin
    Require_Text ("docs/implementation_plan.md", "jpeglib_policy_matrix --allow-open");
    Require_Text ("docs/implementation_plan.md", "Phase LC4: Proof Expansion");
    Require_Text ("docs/implementation_plan.md", "Phase LC5: Streaming and Large-Image Completeness");
+   Require_Text ("docs/implementation_plan.md", "jpeglib_stress_matrix --allow-open");
    Require_Text ("docs/implementation_plan.md", "Phase LC6: Release Completeness Gate");
    Require_Text ("docs/implementation_plan.md", "Bootstrap `jpeglib_complete`");
    Require_Text ("docs/implementation_plan.md", "pin-free root Alire manifest");

@@ -930,6 +930,9 @@ Work:
 
 - Add large-dimension and high-component stress fixtures that exercise resource
   limits without requiring excessive CI memory.
+- Use `jpeglib_stress_matrix --allow-open` to validate the LC5 stress matrix
+  during bootstrap, and make plain `jpeglib_stress_matrix` require every stress
+  row to be closed for the library-complete gate.
 - Add chunked source/destination tests for short reads, short writes,
   cancellation, restart boundaries across chunks, metadata callback limits, and
   output-buffer exhaustion.
