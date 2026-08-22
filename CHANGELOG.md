@@ -154,6 +154,10 @@
   location for the real-world interoperability corpus.
 - Add the `jpeglib_policy_matrix` checker and initial LC3 public API policy
   matrix with explicit open rows for library-complete coverage.
+- Close the LC3 public API policy matrix rows against the existing complete
+  decode/encode AUnit evidence for advertised frame families, color models,
+  limits, states, metadata policies, progressive scripts, restart behavior, and
+  output formats.
 - Add the `jpeglib_proof_matrix` checker and initial LC4 proof expansion matrix
   with explicit open rows for library-complete coverage.
 - Add the `jpeglib_stress_matrix` checker and initial LC5 streaming/large-image
