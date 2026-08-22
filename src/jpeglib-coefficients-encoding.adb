@@ -27,6 +27,37 @@ package body Jpeglib.Coefficients.Encoding is
       return True;
    end Coefficients_Are_In_Baseline_Range;
 
+   function Validate_Encode_Limits
+     (Width : Image_Width;
+      Height : Image_Height;
+      Blocks : DCT_Block_Array;
+      Encode_Limits : Limits.Limit_Set) return Results.Result
+   is
+      Coefficient_Bytes : Byte_Count;
+      Minimum_Output_Bytes : Byte_Count;
+   begin
+      if Width > Encode_Limits.Max_Width or else Height > Encode_Limits.Max_Height then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      elsif Pixel_Count (Width) * Pixel_Count (Height) > Encode_Limits.Max_Pixels then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      end if;
+
+      Coefficient_Bytes := Byte_Count (Blocks'Length) * 64 * 2;
+      if Coefficient_Bytes > Encode_Limits.Max_Coefficient_Bytes then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      end if;
+
+      Minimum_Output_Bytes := 2 + 2;
+      if Minimum_Output_Bytes > Encode_Limits.Max_Output_Bytes then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      end if;
+
+      return Results.Success;
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+   end Validate_Encode_Limits;
+
    function Encode_Grayscale_Baseline
      (Output : in out Streams.Destination'Class;
       Width : Image_Width;
@@ -38,9 +69,11 @@ package body Jpeglib.Coefficients.Encoding is
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
    is
-      pragma Unreferenced (Encode_Limits);
+      Limit_Outcome : constant Results.Result := Validate_Encode_Limits (Width, Height, Blocks, Encode_Limits);
    begin
-      if Width > 65_535 or else Height > 65_535 then
+      if not Results.Succeeded (Limit_Outcome) then
+         return Limit_Outcome;
+      elsif Width > 65_535 or else Height > 65_535 then
          return Results.Failure (Errors.Frame_Invalid_Definition);
       elsif Block_Count (Blocks'Length) /= Required_Blocks (Width, Height) then
          return Results.Failure (Errors.Output_Limit_Exceeded);
@@ -74,9 +107,11 @@ package body Jpeglib.Coefficients.Encoding is
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
    is
-      pragma Unreferenced (Encode_Limits);
+      Limit_Outcome : constant Results.Result := Validate_Encode_Limits (Width, Height, Blocks, Encode_Limits);
    begin
-      if Width > 65_535 or else Height > 65_535 then
+      if not Results.Succeeded (Limit_Outcome) then
+         return Limit_Outcome;
+      elsif Width > 65_535 or else Height > 65_535 then
          return Results.Failure (Errors.Frame_Invalid_Definition);
       elsif Block_Count (Blocks'Length) /= Required_Blocks (Width, Height) then
          return Results.Failure (Errors.Output_Limit_Exceeded);
@@ -111,9 +146,11 @@ package body Jpeglib.Coefficients.Encoding is
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
    is
-      pragma Unreferenced (Encode_Limits);
+      Limit_Outcome : constant Results.Result := Validate_Encode_Limits (Width, Height, Blocks, Encode_Limits);
    begin
-      if Width > 65_535 or else Height > 65_535 then
+      if not Results.Succeeded (Limit_Outcome) then
+         return Limit_Outcome;
+      elsif Width > 65_535 or else Height > 65_535 then
          return Results.Failure (Errors.Frame_Invalid_Definition);
       elsif Layouts'Length /= 3 or else Layouts'First /= 1 then
          return Results.Failure (Errors.Frame_Invalid_Definition);
@@ -151,9 +188,11 @@ package body Jpeglib.Coefficients.Encoding is
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
    is
-      pragma Unreferenced (Encode_Limits);
+      Limit_Outcome : constant Results.Result := Validate_Encode_Limits (Width, Height, Blocks, Encode_Limits);
    begin
-      if Width > 65_535 or else Height > 65_535 then
+      if not Results.Succeeded (Limit_Outcome) then
+         return Limit_Outcome;
+      elsif Width > 65_535 or else Height > 65_535 then
          return Results.Failure (Errors.Frame_Invalid_Definition);
       elsif Layouts'Length /= 3 or else Layouts'First /= 1 then
          return Results.Failure (Errors.Frame_Invalid_Definition);

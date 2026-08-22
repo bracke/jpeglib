@@ -26,6 +26,8 @@ package Jpeglib.Internal.Colors is
    type Acceleration_Profile is (Scalar_Reference, Compiler_Vectorized_SIMD);
 
    function Active_Acceleration return Acceleration_Profile;
+   function Active_Acceleration_Backend return String;
+   function Active_Acceleration_Detail return String;
 
    function Read_RGB
      (Input : Images.Image_View;

@@ -3,7 +3,6 @@ with Ada.Strings.Unbounded;
 with AUnit.Assertions;
 with Jpeglib.Coefficients;
 with Jpeglib.Coefficients.Encoding;
-with Jpeglib.Capabilities;
 with Jpeglib.Decoding;
 with Jpeglib.Encoding;
 with Jpeglib.Errors;
@@ -34,7 +33,6 @@ with Jpeglib.Metadata;
 with Jpeglib.Results;
 with Jpeglib.Streams;
 with Jpeglib.Version;
-with Jpeglib_Tools.Release_Digests;
 with Jpeglib_Testing.Fixtures;
 
 package body Jpeglib_Testing.Test_Foundation is
@@ -1860,8 +1858,6 @@ package body Jpeglib_Testing.Test_Foundation is
    procedure Public_Encoder_Finish_Without_Input_Fails (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Cancel_Is_Terminal (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Finalize_Is_Terminal (T : in out AUnit.Test_Cases.Test_Case'Class);
-   procedure Capability_Foundation_Advertises_V1 (T : in out AUnit.Test_Cases.Test_Case'Class);
-   procedure Release_Digest_Uses_SHA256 (T : in out AUnit.Test_Cases.Test_Case'Class);
 
    overriding function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
@@ -3183,8 +3179,6 @@ package body Jpeglib_Testing.Test_Foundation is
          "foundation.encoder.finish_without_input");
       Register_Routine (T, Public_Encoder_Cancel_Is_Terminal'Access, "foundation.encoder.cancel_terminal");
       Register_Routine (T, Public_Encoder_Finalize_Is_Terminal'Access, "foundation.encoder.finalize_terminal");
-      Register_Routine (T, Capability_Foundation_Advertises_V1'Access, "foundation.capabilities.v1");
-      Register_Routine (T, Release_Digest_Uses_SHA256'Access, "foundation.release.digest_sha256");
    end Register_Tests;
 
    procedure Version_Is_Synchronized (T : in out AUnit.Test_Cases.Test_Case'Class) is
@@ -44852,38 +44846,4 @@ package body Jpeglib_Testing.Test_Foundation is
       Assert (Jpeglib.Encoding.State (Encoder) = Jpeglib.Encoding.Failed, "finalized encoder terminal state mismatch");
    end Public_Encoder_Finalize_Is_Terminal;
 
-   procedure Capability_Foundation_Advertises_V1 (T : in out AUnit.Test_Cases.Test_Case'Class) is
-      pragma Unreferenced (T);
-   begin
-      Assert (Jpeglib.Capabilities.Coefficients, "public coefficient decode must be advertised");
-      Assert (Jpeglib.Capabilities.Grayscale, "grayscale image decode must be advertised");
-      Assert (Jpeglib.Capabilities.YCbCr, "YCbCr image decode must be advertised");
-      Assert (Jpeglib.Capabilities.RGB_JPEG, "RGB JPEG image decode must be advertised");
-      Assert (Jpeglib.Capabilities.CMYK, "CMYK image decode must be advertised");
-      Assert (Jpeglib.Capabilities.Huffman_Coding, "Huffman-coded baseline decode must be advertised");
-      Assert (Jpeglib.Capabilities.Restart_Intervals, "restart interval decode must be advertised");
-      Assert (Jpeglib.Capabilities.Baseline_Decode, "baseline decode must be advertised");
-      Assert (Jpeglib.Capabilities.Baseline_Encode, "baseline encode must be advertised");
-      Assert (Jpeglib.Capabilities.Progressive_Decode, "progressive image decode must be advertised");
-      Assert (Jpeglib.Capabilities.Progressive_Encode, "progressive encode must be advertised");
-      Assert (Jpeglib.Capabilities.Arithmetic_Coding, "arithmetic coding must be advertised");
-      Assert (Jpeglib.Capabilities.Twelve_Bit_DCT, "12-bit DCT must be advertised");
-      Assert (Jpeglib.Capabilities.Lossless_JPEG, "lossless JPEG must be advertised");
-      Assert (Jpeglib.Capabilities.Hierarchical_JPEG, "hierarchical JPEG must be advertised");
-      Assert (Jpeglib.Capabilities.YCCK, "YCCK must be advertised");
-      Assert (Jpeglib.Capabilities.Raw_Components, "raw components must be advertised");
-      Assert (Jpeglib.Capabilities.Reduced_IDCT, "reduced IDCT must be advertised");
-      Assert (Jpeglib.Capabilities.Exif_Orientation, "Exif orientation must be advertised");
-      Assert (Jpeglib.Capabilities.ICC_Preservation, "ICC preservation must be advertised");
-      Assert (Jpeglib.Capabilities.Coefficient_Transforms, "coefficient transforms must be advertised");
-   end Capability_Foundation_Advertises_V1;
-
-   procedure Release_Digest_Uses_SHA256 (T : in out AUnit.Test_Cases.Test_Case'Class) is
-      pragma Unreferenced (T);
-   begin
-      Assert
-        (Jpeglib_Tools.Release_Digests.SHA256_Hex ("abc")
-         = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-         "release digest helper did not compute SHA-256");
-   end Release_Digest_Uses_SHA256;
 end Jpeglib_Testing.Test_Foundation;

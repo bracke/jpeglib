@@ -77,6 +77,17 @@
 - Add compiler-vectorized full-block sample loaders for grayscale and component
   plane DCT block extraction, keeping scalar edge-padding semantics for
   right/bottom partial blocks.
+- Add explicit acceleration backend/detail reporting for the portable
+  compiler-vectorized SIMD path, plus JSON-style `jpeglib_performance_matrix`
+  evidence records for host identity, output sizes, iteration counts, elapsed
+  seconds, thresholds, and determinism.
+- Split decoder DNL/color-model/lossless-block helpers and encoder optimized
+  Huffman definition generation into focused internal packages, and move
+  capability/release plus coefficient-encoding limit tests into separate AUnit
+  cases.
+- Enforce `Jpeglib.Coefficients.Encoding` caller limits for dimensions, pixels,
+  coefficient storage, and minimum output budget instead of accepting the limit
+  set as a dormant argument.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

@@ -2,8 +2,8 @@ with Ada.Unchecked_Deallocation;
 
 with Jpeglib.Internal.Bit_Streams;
 with Jpeglib.Internal.Arithmetic;
-with Jpeglib.Internal.Bytes;
 with Jpeglib.Internal.Colors;
+with Jpeglib.Internal.Decoding_Support;
 with Jpeglib.Internal.Frames;
 with Jpeglib.Internal.Huffman;
 with Jpeglib.Internal.Markers;
@@ -20,131 +20,6 @@ package body Jpeglib.Decoding is
    use type Streams.Byte_Array_Access;
 
    type Lossless_Sample_Array is array (Component_Index range <>, Positive range <>) of Integer;
-
-   function Parse_Known_Height_DNL
-     (Input : not null access Streams.Source'Class;
-      Marker_Source : Source_Offset;
-      Frame : Internal.Frames.Frame) return Results.Result
-   is
-      Segment : Internal.Segments.Segment_Reader :=
-        Internal.Segments.Open (Input, Internal.Markers.DNL, Marker_Source);
-      Outcome : constant Results.Result := Internal.Segments.Status (Segment);
-      High : Internal.Bytes.Read_Byte_Result;
-      Low : Internal.Bytes.Read_Byte_Result;
-      Lines : Natural;
-   begin
-      if not Results.Succeeded (Outcome) then
-         return Outcome;
-      elsif Internal.Segments.Descriptor (Segment).Payload_Length /= 2 then
-         return
-           Results.Failure
-             (Errors.Make
-                (Errors.Segment_Invalid_Length,
-                 (Source => Internal.Segments.Descriptor (Segment).Length_Source,
-                  Marker => Internal.Markers.DNL,
-                  Detail => Long_Long_Integer (Internal.Segments.Descriptor (Segment).Declared_Length),
-                  others => <>)));
-      end if;
-
-      High := Internal.Segments.Read_Byte (Segment);
-      if not Results.Succeeded (High.Outcome) then
-         return High.Outcome;
-      end if;
-
-      Low := Internal.Segments.Read_Byte (Segment);
-      if not Results.Succeeded (Low.Outcome) then
-         return Low.Outcome;
-      end if;
-
-      Lines := Natural (High.Value) * 256 + Natural (Low.Value);
-      if Lines /= Natural (Internal.Frames.Height (Frame)) then
-         return
-           Results.Failure
-             (Errors.Make
-                (Errors.Frame_Invalid_Definition,
-                 (Source => High.Source,
-                  Marker => Internal.Markers.DNL,
-                  Detail => Long_Long_Integer (Lines),
-                  others => <>)));
-      end if;
-
-      return Results.Success;
-   end Parse_Known_Height_DNL;
-
-   function Infer_Color_Model (Frame : Internal.Frames.Frame) return Encoded_Color_Model is
-      C1 : Internal.Frames.Frame_Component;
-      C2 : Internal.Frames.Frame_Component;
-      C3 : Internal.Frames.Frame_Component;
-      C4 : Internal.Frames.Frame_Component;
-   begin
-      case Internal.Frames.Components (Frame) is
-         when 1 =>
-            return Grayscale;
-         when 2 =>
-            return Unknown;
-         when 3 =>
-            C1 := Internal.Frames.Component (Frame, 1);
-            C2 := Internal.Frames.Component (Frame, 2);
-            C3 := Internal.Frames.Component (Frame, 3);
-            if C1.Identifier = 1 and then C2.Identifier = 2 and then C3.Identifier = 3 then
-               return YCbCr;
-            elsif C1.Identifier = Component_Identifier (Character'Pos ('R'))
-              and then C2.Identifier = Component_Identifier (Character'Pos ('G'))
-              and then C3.Identifier = Component_Identifier (Character'Pos ('B'))
-            then
-               return RGB;
-            else
-               return Unknown;
-            end if;
-         when 4 =>
-            C1 := Internal.Frames.Component (Frame, 1);
-            C2 := Internal.Frames.Component (Frame, 2);
-            C3 := Internal.Frames.Component (Frame, 3);
-            C4 := Internal.Frames.Component (Frame, 4);
-            if C1.Identifier = Component_Identifier (Character'Pos ('C'))
-              and then C2.Identifier = Component_Identifier (Character'Pos ('M'))
-              and then C3.Identifier = Component_Identifier (Character'Pos ('Y'))
-              and then C4.Identifier = Component_Identifier (Character'Pos ('K'))
-            then
-               return CMYK;
-            else
-               return Unknown;
-            end if;
-         when others =>
-            return Unknown;
-      end case;
-   end Infer_Color_Model;
-
-   function Infer_Color_Model (Header_Result : Internal.Decoder.Header_Result) return Encoded_Color_Model is
-      Frame_Model : constant Encoded_Color_Model := Infer_Color_Model (Header_Result.Frame);
-   begin
-      if Frame_Model = CMYK
-        and then Header_Result.Has_Adobe_APP14_Transform
-        and then Header_Result.Adobe_APP14_Transform = 2
-      then
-         return YCCK;
-      end if;
-
-      return Frame_Model;
-   end Infer_Color_Model;
-
-   function Lossless_Coefficient_Blocks (Frame : Internal.Frames.Frame) return Block_Count is
-      Result : Byte_Count := 0;
-      Component : Internal.Frames.Frame_Component;
-   begin
-      for Index in Component_Index range 1 .. Component_Index (Internal.Frames.Components (Frame)) loop
-         Component := Internal.Frames.Component (Frame, Index);
-         Result :=
-           Result
-           + Byte_Count (Component.Component_Width)
-           * Byte_Count (Component.Component_Height);
-      end loop;
-
-      return Block_Count (Result);
-   exception
-      when Constraint_Error =>
-         return 0;
-   end Lossless_Coefficient_Blocks;
 
    function Decode_Hierarchical_Lossless_Continuation
      (Header : in out Internal.Decoder.Header_Result;
@@ -754,7 +629,7 @@ package body Jpeglib.Decoding is
       elsif Ending.Marker = Internal.Markers.DNL then
          declare
             Outcome : constant Results.Result :=
-              Parse_Known_Height_DNL (Input, Ending.Source, Header.Frame);
+              Internal.Decoding_Support.Parse_Known_Height_DNL (Input, Ending.Source, Header.Frame);
          begin
             if not Results.Succeeded (Outcome) then
                return Outcome;
@@ -1306,13 +1181,13 @@ package body Jpeglib.Decoding is
            (if Internal.Frames.Mode (Header_Result.Frame) in Lossless | Differential_Lossless
             then Internal.Scans.Successive_Low (Header_Result.Scan)
             else 0),
-         Color_Model => Infer_Color_Model (Header_Result),
+         Color_Model => Internal.Decoding_Support.Infer_Color_Model (Header_Result),
          Restart => Header_Result.Restart,
          Coefficient_Blocks =>
            (if not Internal.Frames.Height_Defined (Header_Result.Frame)
             then 0
             elsif Internal.Frames.Mode (Header_Result.Frame) in Lossless | Differential_Lossless
-            then Lossless_Coefficient_Blocks (Header_Result.Frame)
+            then Internal.Decoding_Support.Lossless_Coefficient_Blocks (Header_Result.Frame)
             else Internal.Frames.Total_Blocks (Header_Result.Frame)),
          Metadata_Segments => Header_Result.Metadata_Segments,
          Metadata_Bytes => Header_Result.Metadata_Bytes,
@@ -1486,7 +1361,7 @@ package body Jpeglib.Decoding is
          use type Internal.Bit_Streams.Entropy_Bits;
          use type Internal.Bit_Streams.Entropy_Byte_Kind;
          Header : Internal.Decoder.Header_Result renames Object.Saved_Header;
-         Required : constant Block_Count := Lossless_Coefficient_Blocks (Header.Frame);
+         Required : constant Block_Count := Internal.Decoding_Support.Lossless_Coefficient_Blocks (Header.Frame);
          Component_Total : constant Component_Index := Component_Index (Internal.Frames.Components (Header.Frame));
          type Huffman_Table_Array is array (Component_Index range <>) of Internal.Huffman.Compiled_Huffman;
          type Context_Array is array (Component_Index range <>) of Internal.Arithmetic.DC_Context_Index;
@@ -1753,7 +1628,7 @@ package body Jpeglib.Decoding is
                elsif Marker.Marker = Internal.Markers.DNL then
                   declare
                      Outcome : constant Results.Result :=
-                       Parse_Known_Height_DNL (Object.Input, Marker.Source, Header.Frame);
+                       Internal.Decoding_Support.Parse_Known_Height_DNL (Object.Input, Marker.Source, Header.Frame);
                   begin
                      if not Results.Succeeded (Outcome) then
                         return Outcome;
@@ -2613,7 +2488,7 @@ package body Jpeglib.Decoding is
       end Store_Raw_Blocks;
 
       function Decode_Lossless_Raw_From_Coefficients return Results.Result is
-         Required : constant Block_Count := Lossless_Coefficient_Blocks (Header.Frame);
+         Required : constant Block_Count := Internal.Decoding_Support.Lossless_Coefficient_Blocks (Header.Frame);
          Blocks_Decoded : Block_Count := 0;
 
       begin
@@ -2877,6 +2752,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Lossless_Grayscale_Raw;
+      --  Retained as a component-specialized staging path while public raw
+      --  lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Lossless_Grayscale_Raw);
 
       function Decode_Lossless_Two_Component_Raw return Results.Result is
@@ -3119,6 +2996,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Lossless_Two_Component_Raw;
+      --  Retained as a component-specialized staging path while public raw
+      --  lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Lossless_Two_Component_Raw);
 
       function Decode_Lossless_Three_Component_Raw return Results.Result is
@@ -3359,6 +3238,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Lossless_Three_Component_Raw;
+      --  Retained as a component-specialized staging path while public raw
+      --  lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Lossless_Three_Component_Raw);
 
       function Decode_Lossless_Four_Component_Raw return Results.Result is
@@ -3599,6 +3480,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Lossless_Four_Component_Raw;
+      --  Retained as a component-specialized staging path while public raw
+      --  lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Lossless_Four_Component_Raw);
 
       function Decode_Arithmetic_Lossless_Grayscale_Raw return Results.Result is
@@ -3783,6 +3666,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Arithmetic_Lossless_Grayscale_Raw;
+      --  Retained as a component-specialized staging path while public raw
+      --  arithmetic-lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Arithmetic_Lossless_Grayscale_Raw);
 
       function Decode_Arithmetic_Lossless_Two_Component_Raw return Results.Result is
@@ -3994,6 +3879,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Arithmetic_Lossless_Two_Component_Raw;
+      --  Retained as a component-specialized staging path while public raw
+      --  arithmetic-lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Arithmetic_Lossless_Two_Component_Raw);
 
       function Decode_Arithmetic_Lossless_Three_Component_Raw return Results.Result is
@@ -4205,6 +4092,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Arithmetic_Lossless_Three_Component_Raw;
+      --  Retained as a component-specialized staging path while public raw
+      --  arithmetic-lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Arithmetic_Lossless_Three_Component_Raw);
 
       function Decode_Arithmetic_Lossless_Four_Component_Raw return Results.Result is
@@ -4416,6 +4305,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Arithmetic_Lossless_Four_Component_Raw;
+      --  Retained as a component-specialized staging path while public raw
+      --  arithmetic-lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Arithmetic_Lossless_Four_Component_Raw);
    begin
       if Object.Current_State not in Initialized | Header_Ready then
@@ -4968,6 +4859,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Lossless_Grayscale;
+      --  Retained as a component-specialized staging path while public image
+      --  lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Lossless_Grayscale);
 
       procedure Write_YCbCr_Pixel
@@ -5348,6 +5241,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Lossless_Three_Component;
+      --  Retained as a component-specialized staging path while public image
+      --  lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Lossless_Three_Component);
 
       function Decode_Lossless_Four_Component return Results.Result is
@@ -5662,6 +5557,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Lossless_Four_Component;
+      --  Retained as a component-specialized staging path while public image
+      --  lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Lossless_Four_Component);
 
       function Decode_Arithmetic_Lossless_Grayscale return Results.Result is
@@ -5850,6 +5747,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Arithmetic_Lossless_Grayscale;
+      --  Retained as a component-specialized staging path while public image
+      --  arithmetic-lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Arithmetic_Lossless_Grayscale);
 
       function Decode_Arithmetic_Lossless_Three_Component return Results.Result is
@@ -6082,6 +5981,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Arithmetic_Lossless_Three_Component;
+      --  Retained as a component-specialized staging path while public image
+      --  arithmetic-lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Arithmetic_Lossless_Three_Component);
 
       function Decode_Arithmetic_Lossless_Four_Component return Results.Result is
@@ -6367,6 +6268,8 @@ package body Jpeglib.Decoding is
 
          return Results.Success;
       end Decode_Arithmetic_Lossless_Four_Component;
+      --  Retained as a component-specialized staging path while public image
+      --  arithmetic-lossless dispatch uses the generalized component decoder below.
       pragma Unreferenced (Decode_Arithmetic_Lossless_Four_Component);
 
       procedure Write_CMYK_Pixel
@@ -7464,7 +7367,7 @@ package body Jpeglib.Decoding is
       end if;
 
       Components := Internal.Frames.Components (Header.Frame);
-      Header_Color_Model := Infer_Color_Model (Header);
+      Header_Color_Model := Internal.Decoding_Support.Infer_Color_Model (Header);
       if Object.Decode_Options.Apply_Exif_Orientation
         and then Header.Has_Exif_Orientation
         and then Swaps_Dimensions (Header.Exif_Orientation)

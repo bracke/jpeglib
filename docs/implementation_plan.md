@@ -1075,4 +1075,12 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
   baseline, optimized progressive, and arithmetic encode/decode loops that
   exercise FDCT/IDCT, color conversion, sampling, entropy, and pixel packing
   through public APIs with deterministic repeated output and broad runtime
-  thresholds.
+  thresholds. It also emits JSON-style evidence rows containing host identity,
+  acceleration backend/detail, output byte counts, iteration counts, elapsed
+  seconds, threshold values, and deterministic-output status so benchmark
+  history can be captured without scraping prose.
+- Follow-up maintainability work split decoder DNL/color-model/lossless-block
+  support and encoder optimized Huffman definition generation into dedicated
+  internal packages, moved capability/release and coefficient-encoding limit
+  coverage into separate AUnit cases, and made coefficient encoding enforce
+  caller-supplied limits rather than leaving that argument dormant.

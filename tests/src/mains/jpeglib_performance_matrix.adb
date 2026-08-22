@@ -170,6 +170,18 @@ procedure Jpeglib_Performance_Matrix is
          & " elapsed="
          & Duration'Image (Elapsed)
          & "s");
+      Ada.Text_IO.Put_Line
+        ("jpeglib_performance_matrix_json: {""case"":"""
+         & Label
+         & """,""bytes"":"
+         & Natural'Image (First_Length)
+         & ",""iterations"":"
+         & Positive'Image (Iterations)
+         & ",""elapsed_seconds"":"
+         & Duration'Image (Elapsed)
+         & ",""max_total_seconds"":"
+         & Duration'Image (Max_Total_Seconds)
+         & ",""deterministic"":true}");
    end Run_Case;
 begin
    Fill_Input;
@@ -179,7 +191,24 @@ begin
       & " machine="
       & Hostkit.Host.Machine_Name
       & " acceleration="
-      & Jpeglib.Internal.Colors.Acceleration_Profile'Image (Jpeglib.Internal.Colors.Active_Acceleration));
+      & Jpeglib.Internal.Colors.Acceleration_Profile'Image (Jpeglib.Internal.Colors.Active_Acceleration)
+      & " backend="
+      & Jpeglib.Internal.Colors.Active_Acceleration_Backend
+      & " detail="""
+      & Jpeglib.Internal.Colors.Active_Acceleration_Detail
+      & """");
+   Ada.Text_IO.Put_Line
+     ("jpeglib_performance_matrix_json: {""host"":"""
+      & Hostkit.Host.Kind'Image (Hostkit.Host.Current)
+      & """,""machine"":"""
+      & Hostkit.Host.Machine_Name
+      & """,""acceleration"":"""
+      & Jpeglib.Internal.Colors.Acceleration_Profile'Image (Jpeglib.Internal.Colors.Active_Acceleration)
+      & """,""backend"":"""
+      & Jpeglib.Internal.Colors.Active_Acceleration_Backend
+      & """,""detail"":"""
+      & Jpeglib.Internal.Colors.Active_Acceleration_Detail
+      & """}");
 
    Run_Case
      ("accelerated-baseline-420",

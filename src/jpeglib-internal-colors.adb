@@ -30,6 +30,16 @@ package body Jpeglib.Internal.Colors is
       return Compiler_Vectorized_SIMD;
    end Active_Acceleration;
 
+   function Active_Acceleration_Backend return String is
+   begin
+      return "compiler-vectorized";
+   end Active_Acceleration_Backend;
+
+   function Active_Acceleration_Detail return String is
+   begin
+      return "portable Ada row and block loops annotated with pragma Loop_Optimize (Vector)";
+   end Active_Acceleration_Detail;
+
    function RGB_Bytes_To_YCbCr (R_Byte, G_Byte, B_Byte : Byte) return YCbCr_Sample is
       R : constant Integer := Integer (R_Byte);
       G : constant Integer := Integer (G_Byte);

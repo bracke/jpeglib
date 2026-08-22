@@ -730,6 +730,9 @@ begin
    if Jpeglib.Internal.Colors.Active_Acceleration /= Jpeglib.Internal.Colors.Compiler_Vectorized_SIMD then
       Fail ("compiler-vectorized SIMD profile is not active");
    end if;
+   if Jpeglib.Internal.Colors.Active_Acceleration_Backend /= "compiler-vectorized" then
+      Fail ("compiler-vectorized SIMD backend is not reported precisely");
+   end if;
 
    Run_Format (Jpeglib.Images.RGB_24);
    Run_Format (Jpeglib.Images.BGR_24);
@@ -811,7 +814,12 @@ begin
       & " machine="
       & Hostkit.Host.Machine_Name
       & " acceleration="
-      & Jpeglib.Internal.Colors.Acceleration_Profile'Image (Jpeglib.Internal.Colors.Active_Acceleration));
+      & Jpeglib.Internal.Colors.Acceleration_Profile'Image (Jpeglib.Internal.Colors.Active_Acceleration)
+      & " backend="
+      & Jpeglib.Internal.Colors.Active_Acceleration_Backend
+      & " detail="""
+      & Jpeglib.Internal.Colors.Active_Acceleration_Detail
+      & """");
 
    if Failures = 0 then
       Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Success);
