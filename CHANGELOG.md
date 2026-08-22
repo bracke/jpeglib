@@ -10,6 +10,10 @@
   `jpeglib_complete` GitHub Actions matrix, including platform-local Alire lock
   refresh, explicit external dependency setup, and file-based raw oracle output
   for Windows-safe binary comparisons.
+- Close the expanded real-world corpus complete-plus gap by making
+  `jpeglib_real_world` verify a typed manifest with pinned file digests,
+  header/metadata fields, decoded output SHA-256 values, and deterministic
+  malformed rejection outcomes.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

@@ -993,6 +993,10 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
 
 ### Phase CP2: Expanded Real-World Corpus
 
+- Status: closed by `jpeglib_real_world`, which verifies a 19-row typed corpus
+  with valid camera/browser/editor/print-style decode rows, progressive,
+  arithmetic, differential, hierarchical, CMYK/YCCK, restart-heavy,
+  metadata-bearing rows, and malformed rejection rows with pinned error codes.
 - Add a broad manifest covering camera, phone, browser/web, editor, print
   CMYK/YCCK, metadata-heavy, progressive, restart-heavy, and malformed-common
   JPEGs.
