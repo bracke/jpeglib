@@ -136,6 +136,18 @@ package Jpeglib.Internal.Colors is
       K : Byte;
       Alpha : Byte := Byte'Last);
 
+   procedure Write_CMYK_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      C_Plane : Streams.Byte_Array;
+      M_Plane : Streams.Byte_Array;
+      Y_Plane : Streams.Byte_Array;
+      K_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Alpha : Byte := Byte'Last;
+      Written : out Natural);
+
    procedure Write_YCCK
      (Output : in out Images.Mutable_Image_View;
       Column : Natural;
@@ -145,4 +157,16 @@ package Jpeglib.Internal.Colors is
       Cr : Byte;
       K : Byte;
       Alpha : Byte := Byte'Last);
+
+   procedure Write_YCCK_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      Y_Plane : Streams.Byte_Array;
+      Cb_Plane : Streams.Byte_Array;
+      Cr_Plane : Streams.Byte_Array;
+      K_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Alpha : Byte := Byte'Last;
+      Written : out Natural);
 end Jpeglib.Internal.Colors;

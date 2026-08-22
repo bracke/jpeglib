@@ -834,6 +834,78 @@ package body Jpeglib.Internal.Colors is
       end case;
    end Write_CMYK;
 
+   procedure Write_CMYK_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      C_Plane : Streams.Byte_Array;
+      M_Plane : Streams.Byte_Array;
+      Y_Plane : Streams.Byte_Array;
+      K_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Alpha : Byte := Byte'Last;
+      Written : out Natural)
+   is
+      Descriptor : constant Images.Image_Descriptor := Output.Descriptor;
+      Output_Row_Base : constant Positive :=
+        Output.Storage'First + Natural (Row_Stride (Row) * Descriptor.Stride);
+      C_Input_Base : constant Positive := C_Plane'First + Input_Offset;
+      M_Input_Base : constant Positive := M_Plane'First + Input_Offset;
+      Y_Input_Base : constant Positive := Y_Plane'First + Input_Offset;
+      K_Input_Base : constant Positive := K_Plane'First + Input_Offset;
+      Output_Index : Positive;
+      C_Index : Positive;
+      M_Index : Positive;
+      Y_Index : Positive;
+      K_Index : Positive;
+      C : Byte;
+      M : Byte;
+      Y : Byte;
+      K : Byte;
+   begin
+      Written := 0;
+      if Pixels = 0
+        or else Row >= Natural (Descriptor.Height)
+        or else Pixels > Natural (Descriptor.Width)
+        or else Input_Offset + Pixels > Natural (C_Plane'Length)
+        or else Input_Offset + Pixels > Natural (M_Plane'Length)
+        or else Input_Offset + Pixels > Natural (Y_Plane'Length)
+        or else Input_Offset + Pixels > Natural (K_Plane'Length)
+      then
+         return;
+      end if;
+
+      case Descriptor.Format is
+         when Images.CMYK_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Output_Index := Output_Row_Base + Column * 4;
+               Output.Storage (Output_Index) := C_Plane (C_Input_Base + Column);
+               Output.Storage (Output_Index + 1) := M_Plane (M_Input_Base + Column);
+               Output.Storage (Output_Index + 2) := Y_Plane (Y_Input_Base + Column);
+               Output.Storage (Output_Index + 3) := K_Plane (K_Input_Base + Column);
+            end loop;
+         when others =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               C_Index := C_Input_Base + Column;
+               M_Index := M_Input_Base + Column;
+               Y_Index := Y_Input_Base + Column;
+               K_Index := K_Input_Base + Column;
+               C := C_Plane (C_Index);
+               M := M_Plane (M_Index);
+               Y := Y_Plane (Y_Index);
+               K := K_Plane (K_Index);
+               Write_CMYK (Output, Column, Row, C, M, Y, K, Alpha);
+            end loop;
+      end case;
+
+      Written := Pixels;
+   exception
+      when Constraint_Error =>
+         Written := 0;
+   end Write_CMYK_Row;
+
    procedure Write_YCCK
      (Output : in out Images.Mutable_Image_View;
       Column : Natural;
@@ -873,4 +945,76 @@ package body Jpeglib.Internal.Colors is
             Alpha);
       end if;
    end Write_YCCK;
+
+   procedure Write_YCCK_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      Y_Plane : Streams.Byte_Array;
+      Cb_Plane : Streams.Byte_Array;
+      Cr_Plane : Streams.Byte_Array;
+      K_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Alpha : Byte := Byte'Last;
+      Written : out Natural)
+   is
+      Descriptor : constant Images.Image_Descriptor := Output.Descriptor;
+      Output_Row_Base : constant Positive :=
+        Output.Storage'First + Natural (Row_Stride (Row) * Descriptor.Stride);
+      Y_Input_Base : constant Positive := Y_Plane'First + Input_Offset;
+      Cb_Input_Base : constant Positive := Cb_Plane'First + Input_Offset;
+      Cr_Input_Base : constant Positive := Cr_Plane'First + Input_Offset;
+      K_Input_Base : constant Positive := K_Plane'First + Input_Offset;
+      Output_Index : Positive;
+      Y_Index : Positive;
+      Cb_Index : Positive;
+      Cr_Index : Positive;
+      K_Index : Positive;
+      Y : Byte;
+      Cb : Byte;
+      Cr : Byte;
+      K : Byte;
+   begin
+      Written := 0;
+      if Pixels = 0
+        or else Row >= Natural (Descriptor.Height)
+        or else Pixels > Natural (Descriptor.Width)
+        or else Input_Offset + Pixels > Natural (Y_Plane'Length)
+        or else Input_Offset + Pixels > Natural (Cb_Plane'Length)
+        or else Input_Offset + Pixels > Natural (Cr_Plane'Length)
+        or else Input_Offset + Pixels > Natural (K_Plane'Length)
+      then
+         return;
+      end if;
+
+      case Descriptor.Format is
+         when Images.YCCK_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Output_Index := Output_Row_Base + Column * 4;
+               Output.Storage (Output_Index) := Y_Plane (Y_Input_Base + Column);
+               Output.Storage (Output_Index + 1) := Cb_Plane (Cb_Input_Base + Column);
+               Output.Storage (Output_Index + 2) := Cr_Plane (Cr_Input_Base + Column);
+               Output.Storage (Output_Index + 3) := K_Plane (K_Input_Base + Column);
+            end loop;
+         when others =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Y_Index := Y_Input_Base + Column;
+               Cb_Index := Cb_Input_Base + Column;
+               Cr_Index := Cr_Input_Base + Column;
+               K_Index := K_Input_Base + Column;
+               Y := Y_Plane (Y_Index);
+               Cb := Cb_Plane (Cb_Index);
+               Cr := Cr_Plane (Cr_Index);
+               K := K_Plane (K_Index);
+               Write_YCCK (Output, Column, Row, Y, Cb, Cr, K, Alpha);
+            end loop;
+      end case;
+
+      Written := Pixels;
+   exception
+      when Constraint_Error =>
+         Written := 0;
+   end Write_YCCK_Row;
 end Jpeglib.Internal.Colors;
