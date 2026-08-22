@@ -11,7 +11,7 @@ with Project_Tools.Processes;
 procedure Jpeglib_Complete_Plus is
    Root : constant String :=
      Project_Tools.Files.Find_Root_Upward
-       (Ada.Directories.Current_Directory, "alire.toml");
+       (Ada.Directories.Current_Directory, "jpeglib.gpr");
    Allow_Open : constant Boolean :=
      Ada.Command_Line.Argument_Count = 1 and then Ada.Command_Line.Argument (1) = "--allow-open";
    Manifest_Relative : constant String := "tests/fixtures/complete_plus/gap_matrix.txt";

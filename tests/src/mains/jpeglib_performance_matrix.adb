@@ -1,5 +1,8 @@
 with Ada.Calendar;
 with Ada.Command_Line;
+with Ada.Directories;
+with Ada.Strings;
+with Ada.Strings.Fixed;
 with Ada.Text_IO;
 
 with Hostkit.Host;
@@ -13,6 +16,7 @@ with Jpeglib.Results;
 with Jpeglib.Streams;
 
 with Jpeglib_Tools;
+with Project_Tools.Files;
 
 procedure Jpeglib_Performance_Matrix is
    use type Ada.Calendar.Time;
@@ -29,7 +33,14 @@ procedure Jpeglib_Performance_Matrix is
    First_Encoded : aliased Jpeglib.Streams.Byte_Array := [1 .. 262_144 => 0];
    Second_Encoded : aliased Jpeglib.Streams.Byte_Array := [1 .. 262_144 => 0];
    Decoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. Input_Bytes => 0];
+   Root : constant String :=
+     Project_Tools.Files.Find_Root_Upward
+       (Ada.Directories.Current_Directory, "jpeglib.gpr");
+   History_Relative : constant String := "tests/fixtures/performance/history.txt";
    Failures : Natural := 0;
+   Baseline_Observed : Boolean := False;
+   Progressive_Observed : Boolean := False;
+   Arithmetic_Observed : Boolean := False;
 
    procedure Fail (Message : String; Error : Jpeglib.Errors.Error_Code := Jpeglib.Errors.No_Error) is
    begin
@@ -42,6 +53,183 @@ procedure Jpeglib_Performance_Matrix is
       end if;
       Failures := Failures + 1;
    end Fail;
+
+   function Field
+     (Line : String;
+      Index : Positive) return String
+   is
+      Start : Positive := Line'First;
+      Current : Positive := 1;
+   begin
+      for I in Line'Range loop
+         if Line (I) = '|' then
+            if Current = Index then
+               return Line (Start .. I - 1);
+            end if;
+            Current := Current + 1;
+            Start := I + 1;
+         end if;
+      end loop;
+
+      if Current = Index then
+         return Line (Start .. Line'Last);
+      end if;
+
+      return "";
+   end Field;
+
+   function Separator_Count (Line : String) return Natural is
+      Count : Natural := 0;
+   begin
+      for Ch of Line loop
+         if Ch = '|' then
+            Count := Count + 1;
+         end if;
+      end loop;
+      return Count;
+   end Separator_Count;
+
+   procedure Mark_Observed (Label : String) is
+   begin
+      if Label = "accelerated-baseline-420" then
+         Baseline_Observed := True;
+      elsif Label = "accelerated-progressive-444" then
+         Progressive_Observed := True;
+      elsif Label = "accelerated-arithmetic-444" then
+         Arithmetic_Observed := True;
+      end if;
+   end Mark_Observed;
+
+   function Was_Observed (Label : String) return Boolean is
+     (if Label = "accelerated-baseline-420" then Baseline_Observed
+      elsif Label = "accelerated-progressive-444" then Progressive_Observed
+      elsif Label = "accelerated-arithmetic-444" then Arithmetic_Observed
+      else False);
+
+   procedure Check_History
+     (Label : String;
+      Actual_Bytes : Natural;
+      Actual_Iterations : Positive;
+      Actual_Elapsed : Duration)
+   is
+      Path : constant String := Project_Tools.Files.Join (Root, History_Relative);
+      File : Ada.Text_IO.File_Type;
+      Line : String (1 .. 1024);
+      Last : Natural;
+      Found : Boolean := False;
+   begin
+      if Root = "" then
+         Fail ("run below the jpeglib tree");
+         return;
+      elsif not Project_Tools.Files.File_Exists (Path) then
+         Fail ("missing performance history fixture: " & History_Relative);
+         return;
+      end if;
+
+      Ada.Text_IO.Open (File, Ada.Text_IO.In_File, Path);
+      while not Ada.Text_IO.End_Of_File (File) loop
+         Ada.Text_IO.Get_Line (File, Line, Last);
+         declare
+            Text : constant String :=
+              Ada.Strings.Fixed.Trim (Line (1 .. Last), Ada.Strings.Both);
+         begin
+            if Text'Length > 0 and then Text (Text'First) /= '#' then
+               if Separator_Count (Text) /= 3 then
+                  Fail ("performance history row has wrong column count: " & Text);
+               elsif Field (Text, 1) = Label then
+                  declare
+                     Expected_Bytes : constant Natural := Natural'Value (Field (Text, 2));
+                     Expected_Iterations : constant Positive := Positive'Value (Field (Text, 3));
+                     Max_Seconds : constant Duration := Duration'Value (Field (Text, 4));
+                  begin
+                     Found := True;
+                     Mark_Observed (Label);
+                     if Actual_Bytes /= Expected_Bytes then
+                        Fail
+                          (Label & " byte count changed: expected"
+                           & Natural'Image (Expected_Bytes)
+                           & " actual"
+                           & Natural'Image (Actual_Bytes));
+                     end if;
+                     if Actual_Iterations /= Expected_Iterations then
+                        Fail
+                          (Label & " iteration count changed: expected"
+                           & Positive'Image (Expected_Iterations)
+                           & " actual"
+                           & Positive'Image (Actual_Iterations));
+                     end if;
+                     if Actual_Elapsed > Max_Seconds then
+                        Fail
+                          (Label & " exceeded history threshold:"
+                           & Duration'Image (Actual_Elapsed)
+                           & " >"
+                           & Duration'Image (Max_Seconds));
+                     end if;
+                  exception
+                     when Constraint_Error =>
+                        Fail ("performance history row has invalid numeric field: " & Text);
+                  end;
+               end if;
+            end if;
+         end;
+      end loop;
+      Ada.Text_IO.Close (File);
+
+      if not Found then
+         Fail ("missing performance history row for " & Label);
+      end if;
+   exception
+      when Ada.Text_IO.Name_Error | Ada.Text_IO.Use_Error =>
+         Fail ("cannot read performance history fixture: " & History_Relative);
+      when others =>
+         if Ada.Text_IO.Is_Open (File) then
+            Ada.Text_IO.Close (File);
+         end if;
+         Fail ("cannot parse performance history fixture");
+   end Check_History;
+
+   procedure Check_History_Coverage is
+      Path : constant String := Project_Tools.Files.Join (Root, History_Relative);
+      File : Ada.Text_IO.File_Type;
+      Line : String (1 .. 1024);
+      Last : Natural;
+      Rows : Natural := 0;
+   begin
+      if Root = "" or else not Project_Tools.Files.File_Exists (Path) then
+         return;
+      end if;
+
+      Ada.Text_IO.Open (File, Ada.Text_IO.In_File, Path);
+      while not Ada.Text_IO.End_Of_File (File) loop
+         Ada.Text_IO.Get_Line (File, Line, Last);
+         declare
+            Text : constant String :=
+              Ada.Strings.Fixed.Trim (Line (1 .. Last), Ada.Strings.Both);
+         begin
+            if Text = "# case|bytes|iterations|max_total_seconds" then
+               null;
+            elsif Text'Length > 0 and then Text (Text'First) /= '#' then
+               Rows := Rows + 1;
+               if Separator_Count (Text) = 3 and then not Was_Observed (Field (Text, 1)) then
+                  Fail ("performance history row was not exercised: " & Field (Text, 1));
+               end if;
+            end if;
+         end;
+      end loop;
+      Ada.Text_IO.Close (File);
+
+      if Rows = 0 then
+         Fail ("performance history fixture has no rows");
+      end if;
+   exception
+      when Ada.Text_IO.Name_Error | Ada.Text_IO.Use_Error =>
+         Fail ("cannot read performance history fixture: " & History_Relative);
+      when others =>
+         if Ada.Text_IO.Is_Open (File) then
+            Ada.Text_IO.Close (File);
+         end if;
+         Fail ("cannot parse performance history fixture");
+   end Check_History_Coverage;
 
    procedure Fill_Input is
       Cursor : Positive := Input_Storage'First;
@@ -159,6 +347,7 @@ procedure Jpeglib_Performance_Matrix is
       if Elapsed > Max_Total_Seconds then
          Fail (Label & " exceeded scalar threshold:" & Duration'Image (Elapsed));
       end if;
+      Check_History (Label, First_Length, Iterations, Elapsed);
 
       Ada.Text_IO.Put_Line
         ("jpeglib_performance_matrix: "
@@ -228,6 +417,7 @@ begin
        Mode => Jpeglib.Encoding.Arithmetic_Sequential_DCT,
        Subsampling => Jpeglib.Encoding.Subsampling_444,
        others => <>));
+   Check_History_Coverage;
 
    if Failures = 0 then
       Ada.Command_Line.Set_Exit_Status (Ada.Command_Line.Success);

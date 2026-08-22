@@ -1,0 +1,4 @@
+# case|bytes|iterations|max_total_seconds
+accelerated-baseline-420|1254|25|10.0
+accelerated-progressive-444|1477|25|10.0
+accelerated-arithmetic-444|1367|25|10.0
