@@ -97,6 +97,7 @@ procedure Jpeglib_Prove is
       Run_Proof_Unit ("jpeglib-images.adb");
       Run_Proof_Unit ("jpeglib-internal-segments.adb");
       Run_Proof_Unit ("jpeglib-internal-ownership.adb");
+      Run_Proof_Unit ("jpeglib-capabilities.ads");
    end Run_Proof_Profile;
 begin
    if Root = "" then
@@ -153,6 +154,14 @@ begin
             "ownership invariant lacks runtime coverage");
          Require_Text
            (Registry,
+            "| ADV-001 |",
+            "missing capability-surface invariant");
+         Require_Text
+           (Registry,
+            "Jpeglib.Capabilities` | `foundation.capabilities.v1` | Proof-designated",
+            "capability invariant lacks proof-designated runtime coverage");
+         Require_Text
+           (Registry,
             "arithmetic CMYK/YCCK `Balanced_Progressive` as the corresponding 24-scan component-local script",
             "arithmetic CMYK/YCCK balanced-progressive invariant is missing");
          Require_Text
@@ -193,6 +202,10 @@ begin
            (Profile,
             "Jpeglib.Internal.Ownership",
             "proof profile does not document ownership target");
+         Require_Text
+           (Profile,
+            "Jpeglib.Capabilities",
+            "proof profile does not document capability target");
          Require_Text
            (Profile,
             "docs/limits_and_safety.md",

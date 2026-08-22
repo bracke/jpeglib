@@ -15,6 +15,7 @@ call GNATprove from the system `PATH`. The first executable proof profile uses
 - `Jpeglib.Images`
 - `Jpeglib.Internal.Segments`
 - `Jpeglib.Internal.Ownership`
+- `Jpeglib.Capabilities`
 
 The broader proof-designated invariant registry remains in `docs/invariants.md`.
 The caller-buffer and unsafe-boundary policy is documented in
@@ -31,7 +32,9 @@ validators stay outside SPARK because anonymous access components are not
 SPARK-legal and only delegate null-checked descriptors into that predicate.
 This means the proved boundary is descriptor arithmetic; access lifetime is a
 caller-buffer contract enforced at runtime by null checks and by descriptor
-validation before public decode/encode writes.
+validation before public decode/encode writes. `Jpeglib.Capabilities` is proved
+as the pure, constant public capability surface that the runtime
+`foundation.capabilities.v1` test keeps synchronized with implemented behavior.
 
 `jpeglib_prove --run` also checks the GNATprove summary for unproved checks,
 severity diagnostics, and declared SPARK bodies that were skipped. `jpeglib_release`

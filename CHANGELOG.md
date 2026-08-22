@@ -142,6 +142,8 @@
   `Jpeglib.Internal.Ownership`; the proof runner now fails on unproved checks,
   severity diagnostics, or skipped declared SPARK bodies in the GNATprove
   summary.
+- Add the pure public `Jpeglib.Capabilities` surface to the executable proof
+  profile and mark its V1 capability invariant as proof-designated.
 - Add `docs/limits_and_safety.md` to make the caller-buffer contract explicit,
   including the SPARK-proved descriptor arithmetic boundary and runtime-checked access-bearing views,
   configured output/metadata limits, and test-only `Unchecked_Access` usage.

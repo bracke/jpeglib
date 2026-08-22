@@ -1,5 +1,6 @@
 package Jpeglib.Capabilities is
    pragma Pure;
+   pragma SPARK_Mode (On);
 
    Baseline_Decode : constant Boolean := True;
    Baseline_Encode : constant Boolean := True;

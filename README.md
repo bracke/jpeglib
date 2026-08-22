@@ -107,8 +107,9 @@ grayscale/RGB conformance, including restarted artifacts with emitted restart
 markers, also requires `ffmpeg` as a third-party raw-byte oracle.
 `jpeglib_prove` audits proof-readiness by default; `jpeglib_prove --run` runs
 the current proof profile for checked arithmetic, descriptor-only image view
-bounds via `Jpeglib.Images.Descriptor_Is_Valid`, and segment boundary helpers
-through `alr exec -- gnatprove`. Caller-buffer limits and the boundary between
+bounds via `Jpeglib.Images.Descriptor_Is_Valid`, segment boundary helpers, and
+the pure public capability surface in `Jpeglib.Capabilities` through
+`alr exec -- gnatprove`. Caller-buffer limits and the boundary between
 SPARK-proved descriptor arithmetic and runtime-checked access-bearing views are
 documented in `docs/limits_and_safety.md`.
 
