@@ -1050,9 +1050,10 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
   output kernels. The encoder plane-filling path uses the input kernels for
   RGB-family, gray-alpha, and four-component DCT input, and direct full-size grayscale,
   two-component, three-component, four-component, lossless, plus 4:4:4 DCT
-  YCbCr/RGB/CMYK/YCCK image decode writes rows through output kernels while
-  reduced-IDCT, subsampled chroma, and EXIF-oriented output keep the scalar
-  coordinate-mapping path.
+  YCbCr/RGB/CMYK/YCCK image decode writes rows through output kernels.
+  Three-component subsampled DCT decode now stages direct-output rows after
+  chroma upsampling and writes them through the same row kernels, while
+  reduced-IDCT and EXIF-oriented output keep the scalar coordinate-mapping path.
   `Jpeglib.Capabilities.SIMD_Acceleration` advertises the acceleration surface.
 - `jpeglib_simd_matrix` uses `../hostkit` to report the host and verifies
   bit-exact row-kernel equivalence against scalar `Read_RGB` plus

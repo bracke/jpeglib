@@ -61,6 +61,10 @@
 - Add compiler-vectorized gray-alpha row input plane splitting, route
   gray-alpha DCT encoder plane assembly through row readers, and extend
   `jpeglib_simd_matrix` scalar-equivalence coverage for gray/alpha input rows.
+- Route direct-output three-component subsampled DCT image decode through
+  staged row writers after chroma upsampling, so 4:2:0, 4:2:2, and 4:1:1
+  YCbCr/RGB output uses the SIMD row packing path while reduced-IDCT and
+  EXIF-oriented coordinate mapping keep the scalar pixel path.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,
