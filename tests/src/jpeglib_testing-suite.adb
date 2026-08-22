@@ -6,6 +6,7 @@ with Jpeglib_Testing.Test_Coefficient_Encoding;
 with Jpeglib_Testing.Test_Core;
 with Jpeglib_Testing.Test_Entropy_Tables;
 with Jpeglib_Testing.Test_Foundation;
+with Jpeglib_Testing.Test_Image_Pipeline;
 with Jpeglib_Testing.Test_Writers_Streams;
 
 package body Jpeglib_Testing.Suite is
@@ -22,6 +23,8 @@ package body Jpeglib_Testing.Suite is
       Entropy_Tables : constant AUnit.Test_Cases.Test_Case_Access :=
         new Jpeglib_Testing.Test_Entropy_Tables.Test;
       Foundation : constant AUnit.Test_Cases.Test_Case_Access := new Jpeglib_Testing.Test_Foundation.Test;
+      Image_Pipeline : constant AUnit.Test_Cases.Test_Case_Access :=
+        new Jpeglib_Testing.Test_Image_Pipeline.Test;
       Writers_Streams : constant AUnit.Test_Cases.Test_Case_Access :=
         new Jpeglib_Testing.Test_Writers_Streams.Test;
    begin
@@ -31,6 +34,7 @@ package body Jpeglib_Testing.Suite is
       Suite.Add_Test (Coefficient_Encoding);
       Suite.Add_Test (Core);
       Suite.Add_Test (Entropy_Tables);
+      Suite.Add_Test (Image_Pipeline);
       Suite.Add_Test (Writers_Streams);
       Suite.Add_Test (Foundation);
       return Suite;
