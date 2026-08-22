@@ -4768,6 +4768,12 @@ package body Jpeglib.Decoding is
          end case;
       end Map_Output_Coordinate;
 
+      function Can_Write_Direct_Output_Rows (Width : Natural; Height : Natural) return Boolean is
+        (Reduction_Factor = 1
+         and then Active_Orientation in Metadata.Orientation_Normal | Metadata.Orientation_Unknown
+         and then Natural (Output.Descriptor.Width) = Width
+         and then Natural (Output.Descriptor.Height) = Height);
+
       procedure Write_Gray_Pixel
         (Source_X : Natural;
          Source_Y : Natural;
@@ -5308,29 +5314,72 @@ package body Jpeglib.Decoding is
             end if;
          end;
 
-         for Row in Natural range 0 .. Height - 1 loop
-            for Column in Natural range 0 .. Width - 1 loop
+         if Header_Color_Model = YCbCr and then Can_Write_Direct_Output_Rows (Width, Height) then
+            for Row in Natural range 0 .. Height - 1 loop
                declare
-                  Index : constant Natural := Samples'First (2) + Row * Width + Column;
+                  Y_Row : Streams.Byte_Array (1 .. Width);
+                  Cb_Row : Streams.Byte_Array (1 .. Width);
+                  Cr_Row : Streams.Byte_Array (1 .. Width);
+                  Written : Natural;
                begin
-                  if Header_Color_Model = YCbCr then
-                     Write_YCbCr_Pixel
-                       (Column,
-                        Row,
-                        Output_Byte (Samples (1, Index)),
-                        Output_Byte (Samples (2, Index)),
-                        Output_Byte (Samples (3, Index)));
-                  else
-                     Write_RGB_Pixel
-                       (Column,
-                        Row,
-                        Output_Byte (Samples (1, Index)),
-                        Output_Byte (Samples (2, Index)),
-                        Output_Byte (Samples (3, Index)));
+                  for Column in Natural range 0 .. Width - 1 loop
+                     declare
+                        Index : constant Natural := Samples'First (2) + Row * Width + Column;
+                     begin
+                        Y_Row (Y_Row'First + Column) := Output_Byte (Samples (1, Index));
+                        Cb_Row (Cb_Row'First + Column) := Output_Byte (Samples (2, Index));
+                        Cr_Row (Cr_Row'First + Column) := Output_Byte (Samples (3, Index));
+                     end;
+                  end loop;
+
+                  Internal.Colors.Write_YCbCr_Row
+                    (Output,
+                     Row,
+                     Y_Row,
+                     Cb_Row,
+                     Cr_Row,
+                     0,
+                     Width,
+                     Object.Decode_Options.Alpha_Fill,
+                     Written);
+
+                  if Written /= Width then
+                     for Column in Natural range 0 .. Width - 1 loop
+                        Write_YCbCr_Pixel
+                          (Column,
+                           Row,
+                           Y_Row (Y_Row'First + Column),
+                           Cb_Row (Cb_Row'First + Column),
+                           Cr_Row (Cr_Row'First + Column));
+                     end loop;
                   end if;
                end;
             end loop;
-         end loop;
+         else
+            for Row in Natural range 0 .. Height - 1 loop
+               for Column in Natural range 0 .. Width - 1 loop
+                  declare
+                     Index : constant Natural := Samples'First (2) + Row * Width + Column;
+                  begin
+                     if Header_Color_Model = YCbCr then
+                        Write_YCbCr_Pixel
+                          (Column,
+                           Row,
+                           Output_Byte (Samples (1, Index)),
+                           Output_Byte (Samples (2, Index)),
+                           Output_Byte (Samples (3, Index)));
+                     else
+                        Write_RGB_Pixel
+                          (Column,
+                           Row,
+                           Output_Byte (Samples (1, Index)),
+                           Output_Byte (Samples (2, Index)),
+                           Output_Byte (Samples (3, Index)));
+                     end if;
+                  end;
+               end loop;
+            end loop;
+         end if;
 
          return Results.Success;
       end Decode_Lossless_Three_Component;

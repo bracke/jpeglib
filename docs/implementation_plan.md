@@ -1045,7 +1045,10 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
 
 - Status: closed. `Jpeglib.Internal.Colors` exposes compiler-vectorized
   RGB-to-YCbCr row kernels and YCbCr-to-RGB-family row output kernels. The
-  encoder plane-filling path uses the input kernels for RGB-family DCT input.
+  encoder plane-filling path uses the input kernels for RGB-family DCT input,
+  and direct full-size lossless YCbCr image decode writes rows through the
+  output kernel while reduced-IDCT and EXIF-oriented output keep the scalar
+  coordinate-mapping path.
   `Jpeglib.Capabilities.SIMD_Acceleration` advertises the acceleration surface.
 - `jpeglib_simd_matrix` uses `../hostkit` to report the host and verifies
   bit-exact row-kernel equivalence against scalar `Read_RGB` plus

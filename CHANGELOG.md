@@ -41,6 +41,9 @@
 - Extend the SIMD color path with compiler-vectorized YCbCr-to-RGB-family row
   output kernels and expand `jpeglib_simd_matrix` to compare decode-side row
   packing against scalar `Write_YCbCr`.
+- Route direct full-size lossless YCbCr image decode output through the
+  YCbCr-to-RGB-family row output path, with the existing scalar pixel path kept
+  for reduced-IDCT and EXIF-oriented outputs.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,
