@@ -811,3 +811,149 @@ Open library-complete work remains beyond the current release gate:
   camera, editor, browser, and malformed-in-the-wild JPEG variants.
 - Keep `Jpeglib.Capabilities`, conformance policy, documentation, and release
   gates synchronized as each library-complete target lands.
+
+## Library-Complete Roadmap
+
+Goal: finish `jpeglib` as a complete JPEG library, not merely a scoped release.
+The end state is a production Ada JPEG implementation whose supported formats,
+limits, safety boundaries, and interoperability behavior are enforced by local
+and CI gates.
+
+### Phase LC1: External Oracle Closure
+
+Replace every diagnostic or sentinel external row with a hard compatibility
+outcome.
+
+Work:
+
+- Split `jpeglib_conformance` advanced rows into explicit outcomes:
+  required-positive, required-hard-failure, and unsupported-host diagnostics.
+- For arithmetic sequential/progressive DCT, differential DCT, hierarchical
+  DCT, and hierarchical lossless artifacts, add a stable raw-byte oracle when a
+  host tool can decode the mode. If no host tool can decode it, add a pinned
+  fixture and a hard-failure compatibility test documenting the exact external
+  rejection.
+- Make ImageMagick diagnostic CMYK/YCCK and advanced rows either required
+  byte-oracle checks or explicit hard-failure checks with stable stderr/status
+  expectations.
+- Extend `docs/external_reference_matrix.md` so every row has one of two final
+  statuses: required positive oracle or required hard-failure compatibility
+  check. No row may remain merely diagnostic.
+
+Exit criteria:
+
+- `jpeglib_conformance` has no optional external-support result that can hide
+  a compatibility regression.
+- The release gate fails when any external row changes behavior without the
+  matrix and tests being updated together.
+
+### Phase LC2: Real-World Corpus
+
+Add a representative real-world interoperability corpus with pinned expected
+behavior.
+
+Work:
+
+- Create a manifest-driven corpus under `tests/fixtures/real_world` with
+  source, license/provenance, mode classification, expected dimensions,
+  component model, metadata expectations, and output digests.
+- Cover camera, browser, editor, scanner, CMYK/YCCK, ICC, Exif-orientation,
+  progressive, restart-heavy, odd-size, malformed-in-the-wild, and metadata-rich
+  JPEG samples.
+- Add `jpeglib_real_world` or extend `jpeglib_fixtures` with corpus verification
+  that decodes each sample through public header/image/raw/coefficient paths as
+  appropriate.
+- Run external reference checks for corpus rows where an installed reference
+  tool has a stable byte or metadata interpretation.
+
+Exit criteria:
+
+- The aggregate gate verifies the real-world corpus by manifest, not by ad hoc
+  test code.
+- Fixture digests pin decoded bytes or expected deterministic failures for every
+  corpus item.
+
+### Phase LC3: Complete Public API Policy Matrix
+
+Make every public mode, format, option, state, limit, and error boundary
+explicitly tested.
+
+Work:
+
+- Generate a public API matrix that covers decode/header/coefficient/raw/image
+  entry points across all advertised entropy modes, frame families, color
+  models, output formats, metadata policies, restart policies, scaling options,
+  and resource limits.
+- Add negative-policy coverage for every unsupported combination, including
+  exact `Jpeglib.Errors` identifiers and no-output side effects.
+- Require the matrix from `jpeglib_docs` and `jpeglib_release` so capability
+  changes cannot land without policy coverage.
+
+Exit criteria:
+
+- `Jpeglib.Capabilities` is derivable from tested public behavior.
+- Unsupported combinations are intentional, documented, and regression-tested.
+
+### Phase LC4: Proof Expansion
+
+Move more safety-critical logic under SPARK while preserving the Ada API.
+
+Work:
+
+- Identify IO-free decode/encode state helpers, marker/segment validators,
+  limit arithmetic, metadata accounting, scan policy validation, and output-span
+  calculations that can be separated from stream and access-bearing code.
+- Add those units to `proof/jpeglib_proof.gpr` in small batches.
+- For each batch, add a proof-designated invariant in `docs/invariants.md` and a
+  release guard in `jpeglib_prove`.
+- Keep access-bearing view lifetimes and stream side effects runtime-checked
+  unless their data model is redesigned to be SPARK-legal.
+
+Exit criteria:
+
+- The proof profile covers all practical IO-free safety arithmetic and state
+  transitions.
+- Remaining runtime-only surfaces are justified by concrete Ada/SPARK boundary
+  reasons, not by missing refactoring.
+
+### Phase LC5: Streaming and Large-Image Completeness
+
+Validate behavior at production sizes and streaming boundaries.
+
+Work:
+
+- Add large-dimension and high-component stress fixtures that exercise resource
+  limits without requiring excessive CI memory.
+- Add chunked source/destination tests for short reads, short writes,
+  cancellation, restart boundaries across chunks, metadata callback limits, and
+  output-buffer exhaustion.
+- Add release-smoke thresholds for maximum allocations and deterministic failure
+  paths where full decode is intentionally refused by limits.
+
+Exit criteria:
+
+- Large or streaming inputs fail only through documented limits or decode
+  successfully without unbounded allocation.
+- Short IO progress cannot corrupt state or produce partial success.
+
+### Phase LC6: Release Completeness Gate
+
+Create a single gate that means "complete JPEG library" for this repository.
+
+Work:
+
+- Add a `jpeglib_complete` tool or extend `jpeglib_release` with a
+  library-complete mode that runs external oracle closure, real-world corpus,
+  public API matrix, proof expansion, streaming stress, docs, benchmarks, and
+  packaging checks.
+- Make CI run the library-complete gate once it is practical for normal pull
+  requests, or provide a scheduled workflow until runtime cost is acceptable.
+- Update `README.md`, `docs/external_reference_matrix.md`, `docs/proof_profile.md`,
+  and `docs/invariants.md` so "complete" has one enforceable meaning.
+
+Exit criteria:
+
+- `alr exec -- tests/bin/jpeglib_complete` succeeds locally and in CI.
+- There are no diagnostic-only compatibility rows, untracked public API policy
+  combinations, undocumented proof/runtime boundaries, or unmanifested
+  real-world corpus expectations.

@@ -142,6 +142,9 @@
 - Reopen library-complete scope beyond the current release gate: diagnostic
   external decoder rows, proof expansion, and real-world corpus coverage are
   tracked as remaining work instead of being hidden behind V1 boundary wording.
+- Add a library-complete implementation roadmap covering external oracle
+  closure, real-world corpus, public API policy matrix, proof expansion,
+  streaming/large-image behavior, and a final completeness gate.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.

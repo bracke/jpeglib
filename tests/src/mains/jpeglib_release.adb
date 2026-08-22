@@ -214,6 +214,13 @@ begin
    Require_Text ("docs/implementation_plan.md", "arithmetic CMYK/YCCK emits the corresponding 24-scan");
    Require_Text ("docs/implementation_plan.md", "Open library-complete work remains");
    Require_Text ("docs/implementation_plan.md", "real-world interoperability corpus");
+   Require_Text ("docs/implementation_plan.md", "Library-Complete Roadmap");
+   Require_Text ("docs/implementation_plan.md", "Phase LC1: External Oracle Closure");
+   Require_Text ("docs/implementation_plan.md", "Phase LC2: Real-World Corpus");
+   Require_Text ("docs/implementation_plan.md", "Phase LC3: Complete Public API Policy Matrix");
+   Require_Text ("docs/implementation_plan.md", "Phase LC4: Proof Expansion");
+   Require_Text ("docs/implementation_plan.md", "Phase LC5: Streaming and Large-Image Completeness");
+   Require_Text ("docs/implementation_plan.md", "Phase LC6: Release Completeness Gate");
    Require_Text ("docs/implementation_plan.md", "required `ffmpeg` limitation sentinels");
    Require_Text ("docs/implementation_plan.md", "native process oracle");
    Require_Text ("docs/implementation_plan.md", "ffmpeg");

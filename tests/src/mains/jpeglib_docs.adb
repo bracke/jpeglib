@@ -117,6 +117,13 @@ begin
    Require_Text ("docs/implementation_plan.md", "skipped declared SPARK bodies");
    Require_Text ("docs/implementation_plan.md", "Open library-complete work remains");
    Require_Text ("docs/implementation_plan.md", "real-world interoperability corpus");
+   Require_Text ("docs/implementation_plan.md", "Library-Complete Roadmap");
+   Require_Text ("docs/implementation_plan.md", "Phase LC1: External Oracle Closure");
+   Require_Text ("docs/implementation_plan.md", "Phase LC2: Real-World Corpus");
+   Require_Text ("docs/implementation_plan.md", "Phase LC3: Complete Public API Policy Matrix");
+   Require_Text ("docs/implementation_plan.md", "Phase LC4: Proof Expansion");
+   Require_Text ("docs/implementation_plan.md", "Phase LC5: Streaming and Large-Image Completeness");
+   Require_Text ("docs/implementation_plan.md", "Phase LC6: Release Completeness Gate");
    Require_Text ("docs/implementation_plan.md", "pin-free root Alire manifest");
    Require_Text ("docs/implementation_plan.md", "../project_tools");
    Require_Text ("docs/implementation_plan.md", "tests GPR main inventory");
