@@ -11,6 +11,7 @@ with Jpeglib.Images;
 with Jpeglib.Results;
 with Jpeglib.Streams;
 
+with Hostkit.FS;
 with Jpeglib_Tools;
 with Project_Tools.Files;
 with Project_Tools.Processes;
@@ -66,7 +67,9 @@ procedure Jpeglib_Conformance is
      Project_Tools.Files.Find_Root_Upward
        (Ada.Directories.Current_Directory, "alire.toml");
    Decode_Raw : constant String :=
-     (if Root = "" then "" else Project_Tools.Files.Join (Root, "tests/bin/jpeglib_decode_raw"));
+     (if Root = "" then ""
+      else Project_Tools.Files.Join
+        (Root, "tests/bin/jpeglib_decode_raw" & Hostkit.FS.Executable_Suffix));
    FFMPEG : constant String := Project_Tools.Processes.Locate_Command ("ffmpeg");
 
    function Image (Value : Natural) return String is
