@@ -6,11 +6,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  linux-complete-check:
-    name: Linux library-complete checklist
-    runs-on: ubuntu-latest
+  complete-check:
+    name: library-complete checklist (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     env:
       ALIRE_NONINTERACTIVE: "true"
+    strategy:
+      fail-fast: false
+      matrix:
+        # Match hostkit's supported runner set. macos-15-intel is deliberate:
+        # gnat_native=15.2.1 is pinned through Alire and is not available for
+        # the arm64 macOS runner.
+        os: [ubuntu-latest, macos-15-intel, windows-latest]
     steps:
       - name: Check out jpeglib
         uses: actions/checkout@v7
@@ -32,11 +40,14 @@ jobs:
         run: alr settings --global --set solver.timeout 600
 
       - name: Install GNATprove
+        shell: bash
         run: |
           alr install gnatprove
           echo "$HOME/.alire/bin" >> "$GITHUB_PATH"
 
-      - name: Install workflow dependencies
+      - name: Install Linux workflow dependencies
+        if: runner.os == 'Linux'
+        shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg imagemagick libaunit-dev \
@@ -49,14 +60,43 @@ jobs:
           fi
           magick -version
 
+      - name: Install macOS workflow dependencies
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew update
+          brew install ffmpeg imagemagick
+          magick -version
+
+      - name: Install Windows workflow dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ffmpeg imagemagick -y --no-progress
+          $magick = Get-ChildItem -Path "${env:ProgramFiles}\ImageMagick-*" -Filter magick.exe -Recurse |
+            Select-Object -First 1
+          if ($null -eq $magick) {
+            throw "ImageMagick magick.exe was not installed"
+          }
+          $magick.Directory.FullName | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          & $magick.FullName -version
+
       - name: Build library
         working-directory: jpeglib
+        shell: bash
         run: alr --non-interactive build
 
       - name: Build tests and tools
         working-directory: jpeglib/tests
+        shell: bash
         run: alr --non-interactive build
 
       - name: Run library-complete checks
         working-directory: jpeglib
-        run: alr exec -- tests/bin/jpeglib_complete
+        shell: bash
+        run: |
+          if [ -f tests/bin/jpeglib_complete.exe ]; then
+            alr exec -- tests/bin/jpeglib_complete.exe
+          else
+            alr exec -- tests/bin/jpeglib_complete
+          fi
