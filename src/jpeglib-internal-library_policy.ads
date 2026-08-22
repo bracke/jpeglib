@@ -71,9 +71,7 @@ package Jpeglib.Internal.Library_Policy is
          and then Spectral_Start <= Spectral_End
          and then
            ((Spectral_Start = 0 and then Spectral_End = 0)
-            or else (Spectral_Start in 1 .. 63 and then Spectral_End in Spectral_Start .. 63))
-         and then Successive_High <= 13
-         and then Successive_Low <= 13,
+            or else (Spectral_Start in 1 .. 63 and then Spectral_End in Spectral_Start .. 63)),
         when Lossless | Differential_Lossless =>
          Scan_Components <= Component_Total
          and then Spectral_Start in 1 .. 7

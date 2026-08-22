@@ -146,7 +146,7 @@ begin
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_benchmark");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_prove --run");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_complete");
-   Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_external_matrix --allow-open");
+   Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_external_matrix");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_real_world --allow-empty");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_policy_matrix --allow-open");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_proof_matrix --allow-open");
@@ -189,11 +189,11 @@ begin
    Require_Text ("docs/external_reference_matrix.md", "Required native process oracle");
    Require_Text ("docs/external_reference_matrix.md", "required third-party `ffmpeg` oracle");
    Require_Text ("docs/external_reference_matrix.md", "required third-party `ffmpeg` RGB-conversion oracle");
-   Require_Text ("docs/external_reference_matrix.md", "required `ffmpeg` limitation sentinel");
-   Require_Text ("docs/external_reference_matrix.md", "remaining library-complete interoperability work");
+   Require_Text ("docs/external_reference_matrix.md", "required compatibility-boundary check");
+   Require_Text ("docs/external_reference_matrix.md", "Every external row has a final");
    Require_Text ("docs/external_reference_matrix.md", "jpeglib_decode_raw");
    Require_Text ("docs/external_reference_matrix.md", "oracle_matrix.txt");
-   Require_Text ("docs/external_reference_matrix.md", "jpeglib_external_matrix --allow-open");
+   Require_Text ("docs/external_reference_matrix.md", "jpeglib_external_matrix");
    Require_Text ("docs/proof_profile.md", "alr exec -- tests/bin/jpeglib_prove --run");
    Require_Text ("docs/proof_profile.md", "current proof boundary");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Checked_Arithmetic");
@@ -223,11 +223,11 @@ begin
    Require_Text ("docs/invariants.md", "RELEASE-TOOLS-001");
    Require_Text ("docs/invariants.md", "arithmetic CMYK/YCCK `Balanced_Progressive`");
    Require_Text ("docs/implementation_plan.md", "arithmetic CMYK/YCCK emits the corresponding 24-scan");
-   Require_Text ("docs/implementation_plan.md", "Open library-complete work remains");
+   Require_Text ("docs/implementation_plan.md", "Library-Complete Status");
    Require_Text ("docs/implementation_plan.md", "real-world interoperability corpus");
    Require_Text ("docs/implementation_plan.md", "Library-Complete Roadmap");
    Require_Text ("docs/implementation_plan.md", "Phase LC1: External Oracle Closure");
-   Require_Text ("docs/implementation_plan.md", "jpeglib_external_matrix --allow-open");
+   Require_Text ("docs/implementation_plan.md", "jpeglib_external_matrix");
    Require_Text ("docs/implementation_plan.md", "Phase LC2: Real-World Corpus");
    Require_Text ("docs/implementation_plan.md", "jpeglib_real_world --allow-empty");
    Require_Text ("docs/implementation_plan.md", "Phase LC3: Complete Public API Policy Matrix");
@@ -237,8 +237,8 @@ begin
    Require_Text ("docs/implementation_plan.md", "Phase LC5: Streaming and Large-Image Completeness");
    Require_Text ("docs/implementation_plan.md", "jpeglib_stress_matrix --allow-open");
    Require_Text ("docs/implementation_plan.md", "Phase LC6: Release Completeness Gate");
-   Require_Text ("docs/implementation_plan.md", "Bootstrap `jpeglib_complete`");
-   Require_Text ("docs/implementation_plan.md", "required `ffmpeg` limitation sentinels");
+   Require_Text ("docs/implementation_plan.md", "Maintain `jpeglib_complete`");
+   Require_Text ("docs/implementation_plan.md", "compatibility-boundary checks");
    Require_Text ("docs/implementation_plan.md", "native process oracle");
    Require_Text ("docs/implementation_plan.md", "ffmpeg");
    Require_Text ("docs/implementation_plan.md", "baseline/progressive CMYK/YCCK rows require `ffmpeg`");

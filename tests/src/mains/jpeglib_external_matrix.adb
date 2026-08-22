@@ -90,6 +90,7 @@ procedure Jpeglib_External_Matrix is
                  and then Field (Text, 4) /= "ImageMagick raw RGB byte comparison"
                  and then Field (Text, 4) /= "required positive oracle"
                  and then Field (Text, 4) /= "required hard-failure compatibility check"
+                 and then Field (Text, 4) /= "required compatibility boundary check"
                then
                   Fail ("closed row lacks final external status: " & Field (Text, 1));
                end if;

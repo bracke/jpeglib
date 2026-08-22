@@ -90,7 +90,7 @@ alr exec -- tests/bin/jpeglib_prove
 alr exec -- tests/bin/jpeglib_prove --run
 alr exec -- tests/bin/jpeglib_release
 alr exec -- tests/bin/jpeglib_complete
-alr exec -- tests/bin/jpeglib_external_matrix --allow-open
+alr exec -- tests/bin/jpeglib_external_matrix
 alr exec -- tests/bin/jpeglib_real_world --allow-empty
 alr exec -- tests/bin/jpeglib_policy_matrix --allow-open
 alr exec -- tests/bin/jpeglib_proof_matrix --allow-open
@@ -111,11 +111,10 @@ ImageMagick-supported grayscale/RGB cases are required, and advanced arithmetic,
 CMYK/YCCK, lossless, differential, and hierarchical modes are required to pass
 the separate `tests/bin/jpeglib_decode_raw` native process oracle. CMYK/YCCK
 baseline/progressive conformance also requires the installed `ffmpeg` command as
-a third-party RGB-conversion oracle. ImageMagick diagnostics identify remaining
-library-complete interoperability work when host tools do not expose a stable
-byte oracle for an advanced mode.
-Arithmetic, differential, and hierarchical rows run required `ffmpeg` limitation
-sentinels that lock the documented host-tool boundary. Lossless Huffman
+a third-party RGB-conversion oracle.
+Arithmetic, differential, and hierarchical rows run required compatibility
+boundary checks that lock the documented host-tool behavior when the installed
+tools do not expose a stable byte oracle for an advanced mode. Lossless Huffman
 grayscale/RGB conformance, including restarted artifacts with emitted restart
 markers, also requires `ffmpeg` as a third-party raw-byte oracle.
 `jpeglib_prove` audits proof-readiness by default; `jpeglib_prove --run` runs
@@ -133,13 +132,13 @@ pins for `../project_tools` and `../hostkit`. It also runs the
 `Project_Tools.Release_Checks` tests GPR main inventory so every executable
 listed in `tests/tests.gpr` has a matching `tests/src/mains` source and
 implementation-plan coverage.
-`jpeglib_complete` is the library-complete gate. It currently runs the release
-baseline and then fails on the explicit LC1-LC6 blockers until diagnostic
-external rows, proof expansion, real-world corpus coverage, public API policy
-coverage, streaming stress, and the final completeness criteria are closed.
-`jpeglib_external_matrix --allow-open` validates the LC1 external oracle matrix
-while diagnostic or sentinel rows remain; without `--allow-open` every external
-row must have required positive or required hard-failure compatibility evidence.
+`jpeglib_complete` is the library-complete gate. It runs the release baseline,
+the external oracle matrix, real-world corpus, public API policy matrix, proof
+expansion matrix, streaming stress matrix, and final documentation closure
+checks.
+`jpeglib_external_matrix` validates the LC1 external oracle matrix and requires
+every external row to have required positive or required compatibility-boundary
+evidence.
 `jpeglib_real_world --allow-empty` validates the LC2 corpus manifest shape while
 the real-world corpus is being populated; without `--allow-empty` it requires
 at least one manifest entry.

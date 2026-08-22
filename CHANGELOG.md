@@ -2,6 +2,10 @@
 
 ## 0.1.0-dev
 
+- Close the library-complete gate by finalizing LC1 external oracle rows,
+  adding the SPARK-proved `Jpeglib.Internal.Library_Policy` boundary for LC4,
+  and updating documentation/release checks so `jpeglib_complete` passes with
+  zero open matrix rows.
 - Extend opt-in public image decode for wider DCT and lossless streams by
   consuming all decoded components while projecting the first four into public
   byte output formats, and route ambiguous non-YCbCr/non-CMYK/non-YCCK color

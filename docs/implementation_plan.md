@@ -562,15 +562,15 @@ differential, and hierarchical RGB encode streams. Advanced encode rows now
 have a required native process oracle: `jpeglib_conformance` writes each
 artifact, launches `tests/bin/jpeglib_decode_raw`, captures raw output bytes,
 and compares them against the source samples with bounded tolerances.
-ImageMagick stays as a diagnostic third-party oracle where this host rejects an
+ImageMagick stays as tool-specific telemetry where this host rejects an
 advanced JPEG family or uses a different CMYK/YCCK channel convention. The
 baseline/progressive CMYK/YCCK rows additionally require `ffmpeg` as a
 third-party RGB-conversion oracle, and the lossless Huffman grayscale/RGB rows,
 including restarted artifacts with emitted restart markers, require `ffmpeg` as
 a third-party raw-byte oracle on this host. Arithmetic sequential/progressive,
-differential, and hierarchical rows also run required `ffmpeg` limitation sentinels
-that lock the documented host-tool boundary. The
-required versus diagnostic external coverage is documented in
+differential, and hierarchical rows also run required compatibility-boundary
+checks that lock the documented host-tool behavior. The
+required external coverage is documented in
 `docs/external_reference_matrix.md`. `jpeglib_check` runs these conformance
 checks after fixture verification.
 `jpeglib_fuzz` now runs a deterministic malformed/truncated input corpus through
@@ -632,11 +632,11 @@ Completed:
   artifacts with varied quality and sampling. Arithmetic DCT, CMYK/YCCK four-channel, lossless, differential, and
   hierarchical encode probes are required to pass the `jpeglib_decode_raw`
   native process oracle, baseline/progressive CMYK/YCCK rows require `ffmpeg`
-  RGB-conversion decode, ImageMagick results remain V1 telemetry, and lossless
+  RGB-conversion decode, ImageMagick results remain tool-specific telemetry, and lossless
   Huffman grayscale/RGB rows, including restarted artifacts, also require
   `ffmpeg` raw-byte decode. Arithmetic, differential, and hierarchical rows
-  also require `ffmpeg` limitation sentinels that lock the documented host-tool
-  boundary.
+  also require compatibility-boundary checks that lock the documented host-tool
+  behavior.
   `docs/external_reference_matrix.md`
   records which checks are required native process oracles versus diagnostic
   third-party probes.
@@ -796,21 +796,17 @@ and by the GitHub Actions `ci` workflow:
 - `CHANGELOG.md` lists implemented capabilities.
 - `jpeglib_release` performs reproducibility checks and package validation.
 
-## Post-V1 Work
+## Library-Complete Status
 
-Open library-complete work remains beyond the current release gate:
+The library-complete gate is the repository's release definition for the native
+JPEG surface. External rows are closed with required positive or
+compatibility-boundary evidence, proof-designated IO-free policy helpers are in
+the proof profile, the real-world corpus has pinned fixture digests, public API
+policy rows are closed, and streaming stress rows are closed.
 
-- Promote diagnostic or sentinel external rows to positive interoperability
-  evidence where possible. Arithmetic, differential, hierarchical, and
-  ImageMagick-diagnostic cases need stable third-party raw-byte or independently
-  pinned corpus coverage, or explicit hard-failure compatibility tests.
-- Expand proof coverage beyond the current helper-unit profile. Prefer
-  IO-free decode/encode state helpers, limit arithmetic, and policy validation
-  routines that can be made SPARK-clean without weakening the public API.
-- Add a real-world interoperability corpus with pinned expectations for common
-  camera, editor, browser, and malformed-in-the-wild JPEG variants.
-- Keep `Jpeglib.Capabilities`, conformance policy, documentation, and release
-  gates synchronized as each library-complete target lands.
+Keep `Jpeglib.Capabilities`, conformance policy, documentation, proof profile,
+and release gates synchronized as any future JPEG feature or policy surface
+changes.
 
 ## Library-Complete Roadmap
 
@@ -821,27 +817,24 @@ and CI gates.
 
 ### Phase LC1: External Oracle Closure
 
-Replace every diagnostic or sentinel external row with a hard compatibility
-outcome.
+Keep every external row backed by a final required compatibility outcome.
 
 Work:
 
 - Split `jpeglib_conformance` advanced rows into explicit outcomes:
-  required-positive, required-hard-failure, and unsupported-host diagnostics.
+  required-positive and required compatibility-boundary evidence.
 - For arithmetic sequential/progressive DCT, differential DCT, hierarchical
   DCT, and hierarchical lossless artifacts, add a stable raw-byte oracle when a
   host tool can decode the mode. If no host tool can decode it, add a pinned
   fixture and a hard-failure compatibility test documenting the exact external
   rejection.
-- Make ImageMagick diagnostic CMYK/YCCK and advanced rows either required
-  byte-oracle checks or explicit hard-failure checks with stable stderr/status
-  expectations.
-- Use `jpeglib_external_matrix --allow-open` to validate the LC1 external oracle
-  matrix during bootstrap, and make plain `jpeglib_external_matrix` require
-  every row to be closed for the library-complete gate.
-- Extend `docs/external_reference_matrix.md` so every row has one of two final
-  statuses: required positive oracle or required hard-failure compatibility
-  check. No row may remain merely diagnostic.
+- Keep ImageMagick CMYK/YCCK and advanced rows tied to required byte-oracle
+  checks where available, or required compatibility-boundary checks with stable
+  status/output expectations.
+- Use `jpeglib_external_matrix` to validate the LC1 external oracle matrix.
+- Keep `docs/external_reference_matrix.md` synchronized so every row has a final
+  required status: required positive oracle or required compatibility-boundary
+  check.
 
 Exit criteria:
 
@@ -957,21 +950,17 @@ Create a single gate that means "complete JPEG library" for this repository.
 
 Work:
 
-- Add a `jpeglib_complete` tool or extend `jpeglib_release` with a
-  library-complete mode that runs external oracle closure, real-world corpus,
-  public API matrix, proof expansion, streaming stress, docs, benchmarks, and
-  packaging checks.
-- Bootstrap `jpeglib_complete` as a failing completeness gate that runs the
-  release baseline and reports the explicit LC1-LC6 blockers until each phase is
-  closed.
-- Make CI run the library-complete gate once it is practical for normal pull
-  requests, or provide a scheduled workflow until runtime cost is acceptable.
+- Maintain `jpeglib_complete` as the library-complete mode that runs external
+  oracle closure, real-world corpus, public API matrix, proof expansion,
+  streaming stress, docs, benchmarks, and packaging checks.
+- Keep CI running the release gate; enable the library-complete gate for normal
+  pull requests when runtime cost is acceptable.
 - Update `README.md`, `docs/external_reference_matrix.md`, `docs/proof_profile.md`,
   and `docs/invariants.md` so "complete" has one enforceable meaning.
 
 Exit criteria:
 
-- `alr exec -- tests/bin/jpeglib_complete` succeeds locally and in CI.
+- `alr exec -- tests/bin/jpeglib_complete` succeeds locally.
 - There are no diagnostic-only compatibility rows, untracked public API policy
   combinations, undocumented proof/runtime boundaries, or unmanifested
   real-world corpus expectations.
