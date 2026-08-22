@@ -97,7 +97,12 @@ jobs:
         shell: bash
         run: |
           alr install gnatprove
-          echo "$HOME/.alire/bin" >> "$GITHUB_PATH"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            alire_bin="$(cygpath -w "$HOME/.alire/bin")"
+            echo "$alire_bin" >> "$GITHUB_PATH"
+          else
+            echo "$HOME/.alire/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Run library-complete checks
         working-directory: jpeglib
