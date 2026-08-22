@@ -126,6 +126,8 @@ begin
    Require_Text ("CHANGELOG.md", "ImageMagick-generated");
    Require_Text ("CHANGELOG.md", "Jpeglib.Images");
    Require_Text ("CHANGELOG.md", "row-span overflow rejection");
+   Require_Text ("CHANGELOG.md", "limits_and_safety.md");
+   Require_Text ("CHANGELOG.md", "runtime-checked access-bearing views");
    Require_Text ("CHANGELOG.md", "YCCK");
    Require_Text ("docs/external_reference_matrix.md", "Lossless Huffman grayscale/RGB encode");
    Require_Text
@@ -145,6 +147,11 @@ begin
    Require_Text ("docs/proof_profile.md", "Reserve_State");
    Require_Text ("docs/proof_profile.md", "unproved checks");
    Require_Text ("docs/proof_profile.md", "jpeglib_release");
+   Require_Text ("docs/proof_profile.md", "docs/limits_and_safety.md");
+   Require_Text ("docs/limits_and_safety.md", "SPARK-proved descriptor arithmetic");
+   Require_Text ("docs/limits_and_safety.md", "runtime-checked access-bearing views");
+   Require_Text ("docs/limits_and_safety.md", "Unchecked_Access");
+   Require_Text ("docs/limits_and_safety.md", "configured output byte limits");
    Require_Text ("docs/invariants.md", "IMAGE-VALID-001");
    Require_Text ("docs/invariants.md", "foundation.images.descriptor_overflow");
    Require_Text ("docs/invariants.md", "arithmetic CMYK/YCCK `Balanced_Progressive`");

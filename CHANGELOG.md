@@ -140,6 +140,9 @@
   `Jpeglib.Internal.Ownership`; the proof runner now fails on unproved checks,
   severity diagnostics, or skipped declared SPARK bodies in the GNATprove
   summary.
+- Add `docs/limits_and_safety.md` to make the caller-buffer contract explicit,
+  including the SPARK-proved descriptor arithmetic boundary and runtime-checked access-bearing views,
+  configured output/metadata limits, and test-only `Unchecked_Access` usage.
 - Expand `jpeglib_benchmark` from one RGB baseline smoke case to a fixed matrix
   covering RGB baseline, progressive, arithmetic, lossless, plus CMYK baseline
   and lossless encode/decode timing.

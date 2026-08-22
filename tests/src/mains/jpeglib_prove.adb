@@ -108,6 +108,7 @@ begin
 
    Require_File ("proof/jpeglib_proof.gpr");
    Require_File ("docs/proof_profile.md");
+   Require_File ("docs/limits_and_safety.md");
 
    declare
       Registry_Path : constant String := Project_Tools.Files.Join (Root, "docs/invariants.md");
@@ -158,6 +159,10 @@ begin
            (Registry,
             "keeping arithmetic fixed-bin state scan-local",
             "arithmetic progressive fixed-bin state invariant is missing");
+         Require_Text
+           (Registry,
+            "access-bearing public views remain runtime-checked",
+            "image validation invariant does not document access-bearing runtime boundary");
       end if;
    end;
 
@@ -188,6 +193,36 @@ begin
            (Profile,
             "Jpeglib.Internal.Ownership",
             "proof profile does not document ownership target");
+         Require_Text
+           (Profile,
+            "docs/limits_and_safety.md",
+            "proof profile does not link caller-buffer safety boundary");
+      end if;
+   end;
+
+   declare
+      Safety_Path : constant String := Project_Tools.Files.Join (Root, "docs/limits_and_safety.md");
+      Safety : constant String := To_String (Project_Tools.Text.Read_Text_File (Safety_Path));
+   begin
+      if Safety = "" then
+         Fail ("missing or empty docs/limits_and_safety.md");
+      else
+         Require_Text
+           (Safety,
+            "SPARK-proved descriptor arithmetic",
+            "safety boundary does not document proved descriptor arithmetic");
+         Require_Text
+           (Safety,
+            "runtime-checked access-bearing views",
+            "safety boundary does not document runtime access-bearing views");
+         Require_Text
+           (Safety,
+            "Unchecked_Access",
+            "safety boundary does not document Unchecked_Access policy");
+         Require_Text
+           (Safety,
+            "configured output byte limits",
+            "safety boundary does not document output byte limits");
       end if;
    end;
 

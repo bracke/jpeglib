@@ -48,6 +48,7 @@ begin
    Require_File ("docs/implementation_plan.md");
    Require_File ("docs/invariants.md");
    Require_File ("docs/proof_profile.md");
+   Require_File ("docs/limits_and_safety.md");
    Require_File ("proof/jpeglib_proof.gpr");
 
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_check");
@@ -60,6 +61,7 @@ begin
    Require_Text ("README.md", "ImageMagick-backed conformance");
    Require_Text ("README.md", "descriptor-only image view");
    Require_Text ("README.md", "Descriptor_Is_Valid");
+   Require_Text ("README.md", "limits_and_safety.md");
    Require_Text ("README.md", "jpeglib_prove --run");
    Require_Text ("CONTRIBUTING.md", "alr exec -- tests/bin/jpeglib_check");
    Require_Text ("docs/external_reference_matrix.md", "Diagnostic");
@@ -81,6 +83,11 @@ begin
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Ownership");
    Require_Text ("docs/proof_profile.md", "Reserve_State");
    Require_Text ("docs/proof_profile.md", "unproved checks");
+   Require_Text ("docs/proof_profile.md", "docs/limits_and_safety.md");
+   Require_Text ("docs/limits_and_safety.md", "SPARK-proved descriptor arithmetic");
+   Require_Text ("docs/limits_and_safety.md", "runtime-checked access-bearing views");
+   Require_Text ("docs/limits_and_safety.md", "Unchecked_Access");
+   Require_Text ("docs/limits_and_safety.md", "configured output byte limits");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Capabilities.Baseline_Encode");
    Require_Text ("docs/implementation_plan.md", "jpeglib_conformance");
    Require_Text ("docs/implementation_plan.md", "native process oracle");

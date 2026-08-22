@@ -107,7 +107,9 @@ oracle.
 `jpeglib_prove` audits proof-readiness by default; `jpeglib_prove --run` runs
 the current proof profile for checked arithmetic, descriptor-only image view
 bounds via `Jpeglib.Images.Descriptor_Is_Valid`, and segment boundary helpers
-through `alr exec -- gnatprove`.
+through `alr exec -- gnatprove`. Caller-buffer limits and the boundary between
+SPARK-proved descriptor arithmetic and runtime-checked access-bearing views are
+documented in `docs/limits_and_safety.md`.
 
 Fixture files live under `tests/fixtures/coefficients` and
 `tests/fixtures/images`. Refresh them with:
