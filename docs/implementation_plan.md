@@ -1043,12 +1043,15 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
 
 ### Phase CP6: Performance Architecture
 
-- Status: closed. `jpeglib_performance_matrix` uses `../hostkit` to report the
-  build host and currently advertises the scalar-reference acceleration profile.
-  It runs baseline, optimized progressive, and arithmetic encode/decode loops
-  that exercise FDCT/IDCT, color conversion, sampling, entropy, and pixel
-  packing through public APIs.
-- The matrix enforces deterministic scalar output equivalence across repeated
-  encodes and broad runtime thresholds for each hot-path case. Future platform
-  acceleration rows must prove bit-equivalence to this scalar profile, or a
-  documented bounded lossy-transform drift, before they can replace it.
+- Status: closed. `Jpeglib.Internal.Colors` exposes compiler-vectorized
+  RGB-to-YCbCr row kernels and the encoder plane-filling path uses them for
+  RGB-family DCT input. `Jpeglib.Capabilities.SIMD_Acceleration` advertises the
+  acceleration surface.
+- `jpeglib_simd_matrix` uses `../hostkit` to report the host and verifies
+  bit-exact row-kernel equivalence against scalar `Read_RGB` plus
+  `Convert_RGB_To_YCbCr` across RGB, BGR, RGBA, and BGRA storage layouts.
+- `jpeglib_performance_matrix` reports the active acceleration profile and runs
+  baseline, optimized progressive, and arithmetic encode/decode loops that
+  exercise FDCT/IDCT, color conversion, sampling, entropy, and pixel packing
+  through public APIs with deterministic repeated output and broad runtime
+  thresholds.

@@ -126,6 +126,19 @@ procedure Jpeglib_Complete_Plus is
       end if;
    end Run_Performance_Gate;
 
+   procedure Run_SIMD_Gate is
+      Status : constant Integer :=
+        Project_Tools.Processes.Run_Status
+          ("complete-plus SIMD acceleration matrix",
+           Root,
+           Project_Tools.Files.Join (Root, "tests/bin/jpeglib_simd_matrix"),
+           Project_Tools.Processes.No_Arguments);
+   begin
+      if Status /= 0 then
+         Fail ("SIMD acceleration gate failed with status" & Integer'Image (Status));
+      end if;
+   end Run_SIMD_Gate;
+
    procedure Check_Manifest is
       Path : constant String := Project_Tools.Files.Join (Root, Manifest_Relative);
       File : Ada.Text_IO.File_Type;
@@ -200,6 +213,7 @@ begin
    Run_Encoder_Optimization_Gate;
    Run_Precision_Buffer_Gate;
    Run_Performance_Gate;
+   Run_SIMD_Gate;
    Check_Manifest;
 
    if Errors = 0 then

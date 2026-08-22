@@ -8,6 +8,7 @@ with Jpeglib.Decoding;
 with Jpeglib.Encoding;
 with Jpeglib.Errors;
 with Jpeglib.Images;
+with Jpeglib.Internal.Colors;
 with Jpeglib.Results;
 with Jpeglib.Streams;
 
@@ -177,22 +178,23 @@ begin
       & Hostkit.Host.Kind'Image (Hostkit.Host.Current)
       & " machine="
       & Hostkit.Host.Machine_Name
-      & " acceleration=scalar-reference");
+      & " acceleration="
+      & Jpeglib.Internal.Colors.Acceleration_Profile'Image (Jpeglib.Internal.Colors.Active_Acceleration));
 
    Run_Case
-     ("scalar-baseline-420",
+     ("accelerated-baseline-420",
       (Quality => 85,
        Subsampling => Jpeglib.Encoding.Subsampling_420,
        others => <>));
    Run_Case
-     ("scalar-progressive-444",
+     ("accelerated-progressive-444",
       (Quality => 85,
        Progressive => Jpeglib.Encoding.Fast_Preview_Progressive,
        Subsampling => Jpeglib.Encoding.Subsampling_444,
        Optimize_Huffman => True,
        others => <>));
    Run_Case
-     ("scalar-arithmetic-444",
+     ("accelerated-arithmetic-444",
       (Quality => 85,
        Mode => Jpeglib.Encoding.Arithmetic_Sequential_DCT,
        Subsampling => Jpeglib.Encoding.Subsampling_444,

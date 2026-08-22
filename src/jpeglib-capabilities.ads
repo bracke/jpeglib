@@ -23,4 +23,5 @@ package Jpeglib.Capabilities is
    Exif_Orientation : constant Boolean := True;
    ICC_Preservation : constant Boolean := True;
    Coefficient_Transforms : constant Boolean := True;
+   SIMD_Acceleration : constant Boolean := True;
 end Jpeglib.Capabilities;

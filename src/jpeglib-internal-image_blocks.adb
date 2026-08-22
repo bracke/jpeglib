@@ -169,8 +169,7 @@ package body Jpeglib.Internal.Image_Blocks is
       Samples_Needed : constant Byte_Count :=
         Byte_Count (Input.Descriptor.Width) * Byte_Count (Input.Descriptor.Height);
       Offset : Natural := 0;
-      RGB : Colors.RGB_Sample;
-      YCbCr : Colors.YCbCr_Sample;
+      Written : Natural;
    begin
       if not Images.Is_Valid (Input) then
          return (Outcome => Results.Failure (Errors.Frame_Invalid_Definition), Samples_Written => 0);
@@ -182,14 +181,19 @@ package body Jpeglib.Internal.Image_Blocks is
       end if;
 
       for Row in 0 .. Natural (Input.Descriptor.Height) - 1 loop
-         for Column in 0 .. Natural (Input.Descriptor.Width) - 1 loop
-            RGB := Colors.Read_RGB (Input, Column, Row);
-            YCbCr := Colors.Convert_RGB_To_YCbCr (RGB);
-            Y_Plane (Y_Plane'First + Offset) := YCbCr.Y;
-            Cb_Plane (Cb_Plane'First + Offset) := YCbCr.Cb;
-            Cr_Plane (Cr_Plane'First + Offset) := YCbCr.Cr;
-            Offset := Offset + 1;
-         end loop;
+         Colors.Convert_RGB_Row_To_YCbCr_Planes
+           (Input,
+            Row,
+            Y_Plane,
+            Cb_Plane,
+            Cr_Plane,
+            Offset,
+            Natural (Input.Descriptor.Width),
+            Written);
+         if Written /= Natural (Input.Descriptor.Width) then
+            return (Outcome => Results.Failure (Errors.Internal_Invariant_Failed), Samples_Written => 0);
+         end if;
+         Offset := Offset + Written;
       end loop;
 
       return (Outcome => Results.Success, Samples_Written => Samples_Needed);

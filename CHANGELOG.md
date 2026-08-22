@@ -32,8 +32,12 @@
   precision policies for scaling, clamping, source-precision preservation, and
   mismatch rejection, plus the `jpeglib_precision_buffer` matrix gate.
 - Close the performance-architecture complete-plus gap with a hostkit-backed
-  scalar reference performance matrix covering deterministic encode/decode
-  equivalence and broad runtime thresholds.
+  performance matrix covering deterministic encode/decode equivalence and broad
+  runtime thresholds.
+- Add compiler-vectorized SIMD RGB-to-YCbCr row kernels, route encoder
+  RGB-family plane filling through them, advertise `SIMD_Acceleration`, and add
+  `jpeglib_simd_matrix` scalar-equivalence coverage across RGB/BGR/RGBA/BGRA
+  layouts.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

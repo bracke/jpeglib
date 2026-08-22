@@ -21,7 +21,8 @@ executables = [
   "jpeglib_stress_matrix",
   "jpeglib_encoder_optimization",
   "jpeglib_precision_buffer",
-  "jpeglib_performance_matrix"
+  "jpeglib_performance_matrix",
+  "jpeglib_simd_matrix"
 ]
 
 authors = ["Bent Bracke"]

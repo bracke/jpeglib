@@ -1,4 +1,5 @@
 with Jpeglib.Images;
+with Jpeglib.Streams;
 
 package Jpeglib.Internal.Colors is
    pragma Preelaborate;
@@ -22,12 +23,26 @@ package Jpeglib.Internal.Colors is
       K : Byte;
    end record;
 
+   type Acceleration_Profile is (Scalar_Reference, Compiler_Vectorized_SIMD);
+
+   function Active_Acceleration return Acceleration_Profile;
+
    function Read_RGB
      (Input : Images.Image_View;
       Column : Natural;
       Row : Natural) return RGB_Sample;
 
    function Convert_RGB_To_YCbCr (Sample : RGB_Sample) return YCbCr_Sample;
+
+   procedure Convert_RGB_Row_To_YCbCr_Planes
+     (Input : Images.Image_View;
+      Row : Natural;
+      Y_Plane : in out Streams.Byte_Array;
+      Cb_Plane : in out Streams.Byte_Array;
+      Cr_Plane : in out Streams.Byte_Array;
+      Output_Offset : Natural;
+      Pixels : Natural;
+      Written : out Natural);
 
    function Read_CMYK
      (Input : Images.Image_View;
