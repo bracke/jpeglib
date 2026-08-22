@@ -43,6 +43,7 @@ jobs:
         shell: bash
         run: |
           alr install gnatprove
+          alr toolchain --select gnat_native=15.2.1 gprbuild=25.0.1
           echo "$HOME/.alire/bin" >> "$GITHUB_PATH"
 
       - name: Install Linux workflow dependencies
