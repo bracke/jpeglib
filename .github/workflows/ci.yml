@@ -40,6 +40,7 @@ jobs:
         run: alr settings --global --set solver.timeout 600
 
       - name: Refresh platform-local Alire locks
+        working-directory: jpeglib
         shell: bash
         run: |
           alr --non-interactive update gnat_native
