@@ -1,5 +1,4 @@
 with Jpeglib.Errors;
-with Jpeglib.Internal.Colors;
 with Jpeglib.Internal.Encoder_Headers;
 with Jpeglib.Internal.Encoder_Arithmetic_Scans;
 with Jpeglib.Internal.Encoder_Baseline_Scans;
@@ -11,7 +10,6 @@ with Jpeglib.Internal.Arithmetic;
 with Jpeglib.Internal.Huffman;
 with Jpeglib.Internal.Markers;
 with Jpeglib.Internal.Quantization;
-with Jpeglib.Internal.Restarts;
 with Jpeglib.Internal.Writers;
 
 package body Jpeglib.Internal.Baseline_Encoder is
@@ -1215,153 +1213,8 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
-      Restart_State : Restarts.Restart_State;
-      Restart_Base : Pixel_Count := 0;
-      Encoded : Pixel_Count := 0;
-      Total : constant Pixel_Count :=
-        Pixel_Count (Input.Descriptor.Width) * Pixel_Count (Input.Descriptor.Height);
-      Arithmetic_Encoder : Arithmetic.Encoder (Output'Unchecked_Access);
-      DC_Bins : Arithmetic.Probability_Bin_Array (0 .. 63) :=
-        [others => Arithmetic.Initial_Probability_Bin];
-      DC_Context : Arithmetic.DC_Context_Index := 0;
       Outcome : Results.Result;
-
-      function Sample (Column, Row : Natural) return Integer is
-         Index : constant Positive :=
-           Input.Storage'First + Row * Natural (Input.Descriptor.Stride) + Column;
-      begin
-         return Integer (Input.Storage (Index)) / (2 ** Natural (Point_Transform));
-      end Sample;
-
-      function Predicted (Column, Row : Natural) return Integer is
-         Ra : Integer;
-         Rb : Integer;
-         Rc : Integer;
-      begin
-         if Encoded = Restart_Base then
-            return 2 ** (7 - Natural (Point_Transform));
-         elsif Column = 0 then
-            return Sample (Column, Row - 1);
-         elsif Row = 0 then
-            return Sample (Column - 1, Row);
-         end if;
-
-         Ra := Sample (Column - 1, Row);
-         Rb := Sample (Column, Row - 1);
-         Rc := Sample (Column - 1, Row - 1);
-
-         case Predictor is
-            when 1 =>
-               return Ra;
-            when 2 =>
-               return Rb;
-            when 3 =>
-               return Rc;
-            when 4 =>
-               return Ra + Rb - Rc;
-            when 5 =>
-               return Ra + (Rb - Rc) / 2;
-            when 6 =>
-               return Rb + (Ra - Rc) / 2;
-            when 7 =>
-               return (Ra + Rb) / 2;
-         end case;
-      end Predicted;
-
-      function Write_Restart_When_Due (More_Samples : Boolean) return Results.Result is
-         Marker : Marker_Code;
-         Restart_Outcome : Results.Result;
-      begin
-         if Restart = 0 or else Restarts.MCUs_Until_Restart (Restart_State) /= 0 or else not More_Samples then
-            return Results.Success;
-         end if;
-
-         Marker := Restarts.Expected_Marker (Restart_State);
-         Restart_Outcome := Arithmetic.Finish (Arithmetic_Encoder);
-         if not Results.Succeeded (Restart_Outcome) then
-            return Restart_Outcome;
-         end if;
-
-         Restart_Outcome := Writers.Write_Marker (Output, Marker);
-         if not Results.Succeeded (Restart_Outcome) then
-            return Restart_Outcome;
-         end if;
-
-         Restart_Outcome := Restarts.Accept_Restart (Restart_State, Marker, 0);
-         if Results.Succeeded (Restart_Outcome) then
-            Arithmetic.Reset (Arithmetic_Encoder);
-            DC_Bins := [others => Arithmetic.Initial_Probability_Bin];
-            DC_Context := 0;
-            Restart_Base := Encoded;
-         end if;
-
-         return Restart_Outcome;
-      end Write_Restart_When_Due;
-
-      function Write_Difference (Difference : Integer) return Results.Result is
-         Events : Arithmetic.DC_Difference_Event_Result;
-      begin
-         Events :=
-           Arithmetic.Encode_DC_Difference_Events
-             (Arithmetic.DC_Difference (Difference),
-              DC_Context,
-              16#5A#);
-         if not Results.Succeeded (Events.Outcome) then
-            return Events.Outcome;
-         end if;
-
-         for Event_Index in 1 .. Events.Length loop
-            Outcome :=
-              Arithmetic.Encode_Bit
-                (Arithmetic_Encoder,
-                 DC_Bins (Events.Events (Event_Index).Bin_Index),
-                 Events.Events (Event_Index).Decision);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-         end loop;
-
-         DC_Context := Events.Final_Context;
-         return Results.Success;
-      end Write_Difference;
-
-      function Validate_Differences return Results.Result is
-         Marker : Marker_Code;
-      begin
-         Restarts.Configure (Restart_State, Restart);
-         for Row in Natural range 0 .. Natural (Input.Descriptor.Height) - 1 loop
-            for Column in Natural range 0 .. Natural (Input.Descriptor.Width) - 1 loop
-               Outcome := Restarts.Advance_MCU (Restart_State);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Encoded := Encoded + 1;
-               if Restart /= 0
-                 and then Restarts.MCUs_Until_Restart (Restart_State) = 0
-                 and then Encoded /= Total
-               then
-                  Marker := Restarts.Expected_Marker (Restart_State);
-                  Outcome := Restarts.Accept_Restart (Restart_State, Marker, 0);
-                  if not Results.Succeeded (Outcome) then
-                     return Outcome;
-                  end if;
-
-                  Restart_Base := Encoded;
-               end if;
-            end loop;
-         end loop;
-
-         return Results.Success;
-      end Validate_Differences;
    begin
-      Outcome := Validate_Differences;
-      if not Results.Succeeded (Outcome) then
-         return Outcome;
-      end if;
-
-      Restart_Base := 0;
-      Encoded := 0;
       Outcome := Write_SOI_And_Metadata (Output, Encoded_Metadata);
       if not Results.Succeeded (Outcome) then
          return Outcome;
@@ -1410,33 +1263,9 @@ package body Jpeglib.Internal.Baseline_Encoder is
          return Outcome;
       end if;
 
-      Restarts.Configure (Restart_State, Restart);
-      for Row in Natural range 0 .. Natural (Input.Descriptor.Height) - 1 loop
-         for Column in Natural range 0 .. Natural (Input.Descriptor.Width) - 1 loop
-            declare
-               Difference : constant Integer := Sample (Column, Row) - Predicted (Column, Row);
-            begin
-               Outcome := Write_Difference (Difference);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-            end;
-
-            Outcome := Restarts.Advance_MCU (Restart_State);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-
-            Encoded := Encoded + 1;
-            Outcome := Write_Restart_When_Due (Encoded /= Total);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-         end loop;
-      end loop;
-
-      Outcome := Arithmetic.Finish (Arithmetic_Encoder);
+      Outcome :=
+        Encode_Arithmetic_Lossless_Gray_Scan
+          (Output, Input, Restart, Predictor, Point_Transform);
       if not Results.Succeeded (Outcome) then
          return Outcome;
       end if;
@@ -1480,169 +1309,8 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
-      type Difference_Array is array (Component_Index range 1 .. 2) of Integer;
-      Restart_State : Restarts.Restart_State;
-      Restart_Base : Pixel_Count := 0;
-      Encoded : Pixel_Count := 0;
-      Total : constant Pixel_Count :=
-        Pixel_Count (Input.Descriptor.Width) * Pixel_Count (Input.Descriptor.Height);
-      Arithmetic_Encoder : Arithmetic.Encoder (Output'Unchecked_Access);
-      type DC_Bin_By_Component is array (Component_Index range 1 .. 2) of
-        Arithmetic.Probability_Bin_Array (0 .. 63);
-      DC_Bins : DC_Bin_By_Component := [others => [others => Arithmetic.Initial_Probability_Bin]];
-      DC_Contexts : Arithmetic.DC_Context_Array := [others => 0];
       Outcome : Results.Result;
-
-      function Sample (Component : Component_Index; Column, Row : Natural) return Integer is
-         Base : constant Positive :=
-           Input.Storage'First
-           + Row * Natural (Input.Descriptor.Stride)
-           + Column * 2;
-      begin
-         case Component is
-            when 1 =>
-               return Integer (Input.Storage (Base)) / (2 ** Natural (Point_Transform));
-            when 2 =>
-               return Integer (Input.Storage (Base + 1)) / (2 ** Natural (Point_Transform));
-            when others =>
-               return 0;
-         end case;
-      end Sample;
-
-      function Predicted (Component : Component_Index; Column, Row : Natural) return Integer is
-         Ra : Integer;
-         Rb : Integer;
-         Rc : Integer;
-      begin
-         if Encoded = Restart_Base then
-            return 2 ** (7 - Natural (Point_Transform));
-         elsif Column = 0 then
-            return Sample (Component, Column, Row - 1);
-         elsif Row = 0 then
-            return Sample (Component, Column - 1, Row);
-         end if;
-
-         Ra := Sample (Component, Column - 1, Row);
-         Rb := Sample (Component, Column, Row - 1);
-         Rc := Sample (Component, Column - 1, Row - 1);
-
-         case Predictor is
-            when 1 =>
-               return Ra;
-            when 2 =>
-               return Rb;
-            when 3 =>
-               return Rc;
-            when 4 =>
-               return Ra + Rb - Rc;
-            when 5 =>
-               return Ra + (Rb - Rc) / 2;
-            when 6 =>
-               return Rb + (Ra - Rc) / 2;
-            when 7 =>
-               return (Ra + Rb) / 2;
-         end case;
-      end Predicted;
-
-      function Write_Restart_When_Due (More_Samples : Boolean) return Results.Result is
-         Marker : Marker_Code;
-         Restart_Outcome : Results.Result;
-      begin
-         if Restart = 0 or else Restarts.MCUs_Until_Restart (Restart_State) /= 0 or else not More_Samples then
-            return Results.Success;
-         end if;
-
-         Marker := Restarts.Expected_Marker (Restart_State);
-         Restart_Outcome := Arithmetic.Finish (Arithmetic_Encoder);
-         if not Results.Succeeded (Restart_Outcome) then
-            return Restart_Outcome;
-         end if;
-
-         Restart_Outcome := Writers.Write_Marker (Output, Marker);
-         if not Results.Succeeded (Restart_Outcome) then
-            return Restart_Outcome;
-         end if;
-
-         Restart_Outcome := Restarts.Accept_Restart (Restart_State, Marker, 0);
-         if Results.Succeeded (Restart_Outcome) then
-            Arithmetic.Reset (Arithmetic_Encoder);
-            DC_Bins := [others => [others => Arithmetic.Initial_Probability_Bin]];
-            DC_Contexts := [others => 0];
-            Restart_Base := Encoded;
-         end if;
-
-         return Restart_Outcome;
-      end Write_Restart_When_Due;
-
-      function Write_Differences (Differences : Difference_Array) return Results.Result is
-         Outcome : Results.Result;
-         Events : Arithmetic.DC_Difference_Event_Result;
-      begin
-         for Component in Component_Index range 1 .. 2 loop
-            Events :=
-              Arithmetic.Encode_DC_Difference_Events
-                (Arithmetic.DC_Difference (Differences (Component)),
-                 DC_Contexts (Component),
-                 16#5A#);
-            if not Results.Succeeded (Events.Outcome) then
-               return Events.Outcome;
-            end if;
-
-            for Event_Index in 1 .. Events.Length loop
-               Outcome :=
-                 Arithmetic.Encode_Bit
-                   (Arithmetic_Encoder,
-                    DC_Bins (Component) (Events.Events (Event_Index).Bin_Index),
-                    Events.Events (Event_Index).Decision);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-            end loop;
-
-            DC_Contexts (Component) := Events.Final_Context;
-         end loop;
-
-         return Results.Success;
-      end Write_Differences;
-
-      function Validate_Differences return Results.Result is
-         Marker : Marker_Code;
-      begin
-         Restarts.Configure (Restart_State, Restart);
-         for Row in Natural range 0 .. Natural (Input.Descriptor.Height) - 1 loop
-            for Column in Natural range 0 .. Natural (Input.Descriptor.Width) - 1 loop
-               Outcome := Restarts.Advance_MCU (Restart_State);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Encoded := Encoded + 1;
-               if Restart /= 0
-                 and then Restarts.MCUs_Until_Restart (Restart_State) = 0
-                 and then Encoded /= Total
-               then
-                  Marker := Restarts.Expected_Marker (Restart_State);
-                  Outcome := Restarts.Accept_Restart (Restart_State, Marker, 0);
-                  if not Results.Succeeded (Outcome) then
-                     return Outcome;
-                  end if;
-
-                  Restart_Base := Encoded;
-               end if;
-            end loop;
-         end loop;
-
-         return Results.Success;
-      end Validate_Differences;
    begin
-      Outcome := Validate_Differences;
-      if not Results.Succeeded (Outcome) then
-         return Outcome;
-      end if;
-
-      Restart_Base := 0;
-      Encoded := 0;
-
       Outcome := Write_SOI_And_Metadata (Output, Encoded_Metadata);
       if not Results.Succeeded (Outcome) then
          return Outcome;
@@ -1691,36 +1359,9 @@ package body Jpeglib.Internal.Baseline_Encoder is
          return Outcome;
       end if;
 
-      Restarts.Configure (Restart_State, Restart);
-      for Row in Natural range 0 .. Natural (Input.Descriptor.Height) - 1 loop
-         for Column in Natural range 0 .. Natural (Input.Descriptor.Width) - 1 loop
-            declare
-               Differences : Difference_Array;
-            begin
-               for Component in Component_Index range 1 .. 2 loop
-                  Differences (Component) := Sample (Component, Column, Row) - Predicted (Component, Column, Row);
-               end loop;
-
-               Outcome := Write_Differences (Differences);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-            end;
-
-            Outcome := Restarts.Advance_MCU (Restart_State);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-
-            Encoded := Encoded + 1;
-            Outcome := Write_Restart_When_Due (Encoded /= Total);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-         end loop;
-      end loop;
-
-      Outcome := Arithmetic.Finish (Arithmetic_Encoder);
+      Outcome :=
+        Encode_Arithmetic_Lossless_Gray_Alpha_Scan
+          (Output, Input, Restart, Predictor, Point_Transform);
       if not Results.Succeeded (Outcome) then
          return Outcome;
       end if;
@@ -1764,176 +1405,8 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Hierarchical : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
-      type Difference_Array is array (Component_Index range 1 .. 3) of Integer;
-      Restart_State : Restarts.Restart_State;
-      Restart_Base : Pixel_Count := 0;
-      Encoded : Pixel_Count := 0;
-      Total : constant Pixel_Count :=
-        Pixel_Count (Input.Descriptor.Width) * Pixel_Count (Input.Descriptor.Height);
-      Arithmetic_Encoder : Arithmetic.Encoder (Output'Unchecked_Access);
-      type DC_Bin_By_Component is array (Component_Index range 1 .. 3) of
-        Arithmetic.Probability_Bin_Array (0 .. 63);
-      DC_Bins : DC_Bin_By_Component := [others => [others => Arithmetic.Initial_Probability_Bin]];
-      DC_Contexts : Arithmetic.DC_Context_Array := [others => 0];
       Outcome : Results.Result;
-
-      function RGB_At (Column, Row : Natural) return Colors.RGB_Sample is
-        (Colors.Read_RGB (Input, Column, Row));
-
-      function Component_Sample
-        (Sample : Colors.RGB_Sample;
-         Component : Component_Index) return Integer
-      is
-      begin
-         case Component is
-            when 1 =>
-               return Integer (Sample.R) / (2 ** Natural (Point_Transform));
-            when 2 =>
-               return Integer (Sample.G) / (2 ** Natural (Point_Transform));
-            when 3 =>
-               return Integer (Sample.B) / (2 ** Natural (Point_Transform));
-            when others =>
-               return 0;
-         end case;
-      end Component_Sample;
-
-      function Sample (Component : Component_Index; Column, Row : Natural) return Integer is
-        (Component_Sample (RGB_At (Column, Row), Component));
-
-      function Predicted (Component : Component_Index; Column, Row : Natural) return Integer is
-         Ra : Integer;
-         Rb : Integer;
-         Rc : Integer;
-      begin
-         if Encoded = Restart_Base then
-            return 2 ** (7 - Natural (Point_Transform));
-         elsif Column = 0 then
-            return Sample (Component, Column, Row - 1);
-         elsif Row = 0 then
-            return Sample (Component, Column - 1, Row);
-         end if;
-
-         Ra := Sample (Component, Column - 1, Row);
-         Rb := Sample (Component, Column, Row - 1);
-         Rc := Sample (Component, Column - 1, Row - 1);
-
-         case Predictor is
-            when 1 =>
-               return Ra;
-            when 2 =>
-               return Rb;
-            when 3 =>
-               return Rc;
-            when 4 =>
-               return Ra + Rb - Rc;
-            when 5 =>
-               return Ra + (Rb - Rc) / 2;
-            when 6 =>
-               return Rb + (Ra - Rc) / 2;
-            when 7 =>
-               return (Ra + Rb) / 2;
-         end case;
-      end Predicted;
-
-      function Write_Restart_When_Due (More_Samples : Boolean) return Results.Result is
-         Marker : Marker_Code;
-         Restart_Outcome : Results.Result;
-      begin
-         if Restart = 0 or else Restarts.MCUs_Until_Restart (Restart_State) /= 0 or else not More_Samples then
-            return Results.Success;
-         end if;
-
-         Marker := Restarts.Expected_Marker (Restart_State);
-         Restart_Outcome := Arithmetic.Finish (Arithmetic_Encoder);
-         if not Results.Succeeded (Restart_Outcome) then
-            return Restart_Outcome;
-         end if;
-
-         Restart_Outcome := Writers.Write_Marker (Output, Marker);
-         if not Results.Succeeded (Restart_Outcome) then
-            return Restart_Outcome;
-         end if;
-
-         Restart_Outcome := Restarts.Accept_Restart (Restart_State, Marker, 0);
-         if Results.Succeeded (Restart_Outcome) then
-            Arithmetic.Reset (Arithmetic_Encoder);
-            DC_Bins := [others => [others => Arithmetic.Initial_Probability_Bin]];
-            DC_Contexts := [others => 0];
-            Restart_Base := Encoded;
-         end if;
-
-         return Restart_Outcome;
-      end Write_Restart_When_Due;
-
-      function Write_Differences (Differences : Difference_Array) return Results.Result is
-         Outcome : Results.Result;
-         Events : Arithmetic.DC_Difference_Event_Result;
-      begin
-         for Component in Component_Index range 1 .. 3 loop
-            Events :=
-              Arithmetic.Encode_DC_Difference_Events
-                (Arithmetic.DC_Difference (Differences (Component)),
-                 DC_Contexts (Component),
-                 16#5A#);
-            if not Results.Succeeded (Events.Outcome) then
-               return Events.Outcome;
-            end if;
-
-            for Event_Index in 1 .. Events.Length loop
-               Outcome :=
-                 Arithmetic.Encode_Bit
-                   (Arithmetic_Encoder,
-                    DC_Bins (Component) (Events.Events (Event_Index).Bin_Index),
-                    Events.Events (Event_Index).Decision);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-            end loop;
-
-            DC_Contexts (Component) := Events.Final_Context;
-         end loop;
-
-         return Results.Success;
-      end Write_Differences;
-
-      function Validate_Differences return Results.Result is
-         Marker : Marker_Code;
-      begin
-         Restarts.Configure (Restart_State, Restart);
-         for Row in Natural range 0 .. Natural (Input.Descriptor.Height) - 1 loop
-            for Column in Natural range 0 .. Natural (Input.Descriptor.Width) - 1 loop
-               Outcome := Restarts.Advance_MCU (Restart_State);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Encoded := Encoded + 1;
-               if Restart /= 0
-                 and then Restarts.MCUs_Until_Restart (Restart_State) = 0
-                 and then Encoded /= Total
-               then
-                  Marker := Restarts.Expected_Marker (Restart_State);
-                  Outcome := Restarts.Accept_Restart (Restart_State, Marker, 0);
-                  if not Results.Succeeded (Outcome) then
-                     return Outcome;
-                  end if;
-
-                  Restart_Base := Encoded;
-               end if;
-            end loop;
-         end loop;
-
-         return Results.Success;
-      end Validate_Differences;
    begin
-      Outcome := Validate_Differences;
-      if not Results.Succeeded (Outcome) then
-         return Outcome;
-      end if;
-
-      Restart_Base := 0;
-      Encoded := 0;
-
       Outcome := Write_SOI_And_Metadata (Output, Encoded_Metadata);
       if not Results.Succeeded (Outcome) then
          return Outcome;
@@ -1982,36 +1455,9 @@ package body Jpeglib.Internal.Baseline_Encoder is
          return Outcome;
       end if;
 
-      Restarts.Configure (Restart_State, Restart);
-      for Row in Natural range 0 .. Natural (Input.Descriptor.Height) - 1 loop
-         for Column in Natural range 0 .. Natural (Input.Descriptor.Width) - 1 loop
-            declare
-               Differences : Difference_Array;
-            begin
-            for Component in Component_Index range 1 .. 3 loop
-               Differences (Component) := Sample (Component, Column, Row) - Predicted (Component, Column, Row);
-            end loop;
-
-            Outcome := Write_Differences (Differences);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-            end;
-
-            Outcome := Restarts.Advance_MCU (Restart_State);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-
-            Encoded := Encoded + 1;
-            Outcome := Write_Restart_When_Due (Encoded /= Total);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-         end loop;
-      end loop;
-
-      Outcome := Arithmetic.Finish (Arithmetic_Encoder);
+      Outcome :=
+        Encode_Arithmetic_Lossless_RGB_Scan
+          (Output, Input, Restart, Predictor, Point_Transform);
       if not Results.Succeeded (Outcome) then
          return Outcome;
       end if;
@@ -2056,139 +1502,7 @@ package body Jpeglib.Internal.Baseline_Encoder is
       YCCK : Boolean := False;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
-      type Difference_Array is array (Component_Index range 1 .. 4) of Integer;
-      Restart_State : Restarts.Restart_State;
-      Restart_Base : Pixel_Count := 0;
-      Encoded : Pixel_Count := 0;
-      Total : constant Pixel_Count :=
-        Pixel_Count (Input.Descriptor.Width) * Pixel_Count (Input.Descriptor.Height);
-      Arithmetic_Encoder : Arithmetic.Encoder (Output'Unchecked_Access);
-      type DC_Bin_By_Component is array (Component_Index range 1 .. 4) of
-        Arithmetic.Probability_Bin_Array (0 .. 63);
-      DC_Bins : DC_Bin_By_Component := [others => [others => Arithmetic.Initial_Probability_Bin]];
-      DC_Contexts : Arithmetic.DC_Context_Array := [others => 0];
       Outcome : Results.Result;
-
-      function CMYK_At (Column, Row : Natural) return Colors.CMYK_Sample is
-        ((if YCCK then Colors.Read_YCCK (Input, Column, Row) else Colors.Read_CMYK (Input, Column, Row)));
-
-      function Component_Sample
-        (Sample : Colors.CMYK_Sample;
-         Component : Component_Index) return Integer
-      is
-      begin
-         case Component is
-            when 1 =>
-               return Integer (Sample.C) / (2 ** Natural (Point_Transform));
-            when 2 =>
-               return Integer (Sample.M) / (2 ** Natural (Point_Transform));
-            when 3 =>
-               return Integer (Sample.Y) / (2 ** Natural (Point_Transform));
-            when 4 =>
-               return Integer (Sample.K) / (2 ** Natural (Point_Transform));
-            when others =>
-               return 0;
-         end case;
-      end Component_Sample;
-
-      function Sample (Component : Component_Index; Column, Row : Natural) return Integer is
-        (Component_Sample (CMYK_At (Column, Row), Component));
-
-      function Predicted (Component : Component_Index; Column, Row : Natural) return Integer is
-         Ra : Integer;
-         Rb : Integer;
-         Rc : Integer;
-      begin
-         if Encoded = Restart_Base then
-            return 2 ** (7 - Natural (Point_Transform));
-         elsif Column = 0 then
-            return Sample (Component, Column, Row - 1);
-         elsif Row = 0 then
-            return Sample (Component, Column - 1, Row);
-         end if;
-
-         Ra := Sample (Component, Column - 1, Row);
-         Rb := Sample (Component, Column, Row - 1);
-         Rc := Sample (Component, Column - 1, Row - 1);
-
-         case Predictor is
-            when 1 =>
-               return Ra;
-            when 2 =>
-               return Rb;
-            when 3 =>
-               return Rc;
-            when 4 =>
-               return Ra + Rb - Rc;
-            when 5 =>
-               return Ra + (Rb - Rc) / 2;
-            when 6 =>
-               return Rb + (Ra - Rc) / 2;
-            when 7 =>
-               return (Ra + Rb) / 2;
-         end case;
-      end Predicted;
-
-      function Write_Restart_When_Due (More_Samples : Boolean) return Results.Result is
-         Marker : Marker_Code;
-         Restart_Outcome : Results.Result;
-      begin
-         if Restart = 0 or else Restarts.MCUs_Until_Restart (Restart_State) /= 0 or else not More_Samples then
-            return Results.Success;
-         end if;
-
-         Marker := Restarts.Expected_Marker (Restart_State);
-         Restart_Outcome := Arithmetic.Finish (Arithmetic_Encoder);
-         if not Results.Succeeded (Restart_Outcome) then
-            return Restart_Outcome;
-         end if;
-
-         Restart_Outcome := Writers.Write_Marker (Output, Marker);
-         if not Results.Succeeded (Restart_Outcome) then
-            return Restart_Outcome;
-         end if;
-
-         Restart_Outcome := Restarts.Accept_Restart (Restart_State, Marker, 0);
-         if Results.Succeeded (Restart_Outcome) then
-            Arithmetic.Reset (Arithmetic_Encoder);
-            DC_Bins := [others => [others => Arithmetic.Initial_Probability_Bin]];
-            DC_Contexts := [others => 0];
-            Restart_Base := Encoded;
-         end if;
-
-         return Restart_Outcome;
-      end Write_Restart_When_Due;
-
-      function Write_Differences (Differences : Difference_Array) return Results.Result is
-         Outcome : Results.Result;
-         Events : Arithmetic.DC_Difference_Event_Result;
-      begin
-         for Component in Component_Index range 1 .. 4 loop
-            Events :=
-              Arithmetic.Encode_DC_Difference_Events
-                (Arithmetic.DC_Difference (Differences (Component)),
-                 DC_Contexts (Component),
-                 16#5A#);
-            if not Results.Succeeded (Events.Outcome) then
-               return Events.Outcome;
-            end if;
-
-            for Event_Index in 1 .. Events.Length loop
-               Outcome :=
-                 Arithmetic.Encode_Bit
-                   (Arithmetic_Encoder,
-                    DC_Bins (Component) (Events.Events (Event_Index).Bin_Index),
-                    Events.Events (Event_Index).Decision);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-            end loop;
-
-            DC_Contexts (Component) := Events.Final_Context;
-         end loop;
-
-         return Results.Success;
-      end Write_Differences;
    begin
       Outcome := Write_SOI_And_Metadata (Output, Encoded_Metadata);
       if not Results.Succeeded (Outcome) then
@@ -2245,36 +1559,9 @@ package body Jpeglib.Internal.Baseline_Encoder is
          return Outcome;
       end if;
 
-      Restarts.Configure (Restart_State, Restart);
-      for Row in Natural range 0 .. Natural (Input.Descriptor.Height) - 1 loop
-         for Column in Natural range 0 .. Natural (Input.Descriptor.Width) - 1 loop
-            declare
-               Differences : Difference_Array;
-            begin
-               for Component in Component_Index range 1 .. 4 loop
-                  Differences (Component) := Sample (Component, Column, Row) - Predicted (Component, Column, Row);
-               end loop;
-
-               Outcome := Write_Differences (Differences);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-            end;
-
-            Outcome := Restarts.Advance_MCU (Restart_State);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-
-            Encoded := Encoded + 1;
-            Outcome := Write_Restart_When_Due (Encoded /= Total);
-            if not Results.Succeeded (Outcome) then
-               return Outcome;
-            end if;
-         end loop;
-      end loop;
-
-      Outcome := Arithmetic.Finish (Arithmetic_Encoder);
+      Outcome :=
+        Encode_Arithmetic_Lossless_CMYK_Scan
+          (Output, Input, Restart, Predictor, Point_Transform, YCCK);
       if not Results.Succeeded (Outcome) then
          return Outcome;
       end if;
