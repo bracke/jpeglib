@@ -44,6 +44,7 @@ begin
    Require_File ("CONTRIBUTING.md");
    Require_File ("docs/ai_implementation_guide.md");
    Require_File ("docs/coefficient_decoding.md");
+   Require_File ("docs/competitive_gap_matrix.md");
    Require_File ("docs/external_reference_matrix.md");
    Require_File ("docs/implementation_plan.md");
    Require_File ("docs/invariants.md");
@@ -64,6 +65,7 @@ begin
    Require_Text ("README.md", "limits_and_safety.md");
    Require_Text ("README.md", "jpeglib_prove --run");
    Require_Text ("README.md", "jpeglib_complete");
+   Require_Text ("README.md", "jpeglib_complete_plus");
    Require_Text ("README.md", "jpeglib_external_matrix");
    Require_Text ("README.md", "jpeglib_real_world --allow-empty");
    Require_Text ("README.md", "jpeglib_policy_matrix --allow-open");
@@ -148,6 +150,10 @@ begin
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Segments");
    Require_Text ("docs/implementation_plan.md", "jpeglib_fuzz");
    Require_Text ("docs/implementation_plan.md", "jpeglib_benchmark");
+   Require_Text ("docs/implementation_plan.md", "jpeglib_complete_plus");
+   Require_Text ("docs/competitive_gap_matrix.md", "explicitly out of scope");
+   Require_Text ("docs/competitive_gap_matrix.md", "tests/fixtures/complete_plus/gap_matrix.txt");
+   Require_Text ("docs/competitive_gap_matrix.md", "Jpeglib.Transforms");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Encoding.Add_Metadata_Segment");
    Require_Text ("docs/invariants.md", "ARITH-001");
    Require_Text ("docs/invariants.md", "ARITH-002");

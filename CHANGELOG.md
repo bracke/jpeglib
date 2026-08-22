@@ -2,6 +2,10 @@
 
 ## 0.1.0-dev
 
+- Add the complete-plus competitive gap matrix and `jpeglib_complete_plus`
+  tracker for multi-platform CI, expanded corpus, transform, optimization,
+  precision/buffer, and performance work, explicitly excluding libjpeg API/ABI
+  compatibility.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

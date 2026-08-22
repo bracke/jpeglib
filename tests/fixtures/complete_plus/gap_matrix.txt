@@ -1,0 +1,10 @@
+# jpeglib complete-plus competitive gap matrix
+# Format:
+# id|scope|target|closure_policy|status|evidence
+#
+multiplatform-ci|Linux macOS Windows CI|jpeglib_complete passes on all supported CI operating systems|strict CI matrix with platform dependency setup|open|complete-plus
+expanded-real-world-corpus|camera phone web editor print malformed-common JPEG corpus|broad pinned manifest with header metadata decode and policy expectations|strict corpus manifest plus digest/output checks|open|complete-plus
+lossless-transform-api|jpegtran-style coefficient-domain transforms|rotate flip transpose crop optimize and valid baseline/progressive conversion|public API CLI AUnit and external jpegtran comparison where available|open|complete-plus
+encoder-optimization|competitive encoder optimization layer|optimized Huffman progressive scan optimization perceptual presets and target-size search|deterministic compression quality benchmark matrix|open|complete-plus
+precision-buffer-api|broader public precision and buffer support|high-bit-depth public views and legal lossless precision expansion|public API tests for preserve clamp scale reject policies|open|complete-plus
+performance-architecture|scalar/SIMD performance architecture|hot-path profiling scalar reference benchmarks and hostkit-backed optional platform hooks|benchmark thresholds plus scalar equivalence tests|open|complete-plus

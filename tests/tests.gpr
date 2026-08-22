@@ -20,6 +20,7 @@ project Tests is
       "jpeglib_prove.adb",
       "jpeglib_release.adb",
       "jpeglib_complete.adb",
+      "jpeglib_complete_plus.adb",
       "jpeglib_external_matrix.adb",
       "jpeglib_real_world.adb",
       "jpeglib_policy_matrix.adb",

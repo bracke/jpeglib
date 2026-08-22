@@ -964,3 +964,64 @@ Exit criteria:
 - There are no diagnostic-only compatibility rows, untracked public API policy
   combinations, undocumented proof/runtime boundaries, or unmanifested
   real-world corpus expectations.
+
+## Complete-Plus Roadmap
+
+Goal: close the remaining competitive gaps against mature JPEG ecosystems while
+keeping libjpeg-compatible API and ABI work out of scope.
+
+The executable tracker is:
+
+```sh
+alr exec -- tests/bin/jpeglib_complete_plus --allow-open
+```
+
+Plain `jpeglib_complete_plus` first runs `jpeglib_complete`, then requires every
+row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
+
+### Phase CP1: Multi-Platform CI
+
+- Extend CI to run `jpeglib_complete` on Linux, macOS, and Windows through
+  Alire-managed toolchains.
+- Keep platform dependency setup explicit for ImageMagick, `ffmpeg`, AUnit, and
+  GNATprove.
+- Close `multiplatform-ci` only when all platforms pass without system GNAT or
+  direct GPRBuild use.
+
+### Phase CP2: Expanded Real-World Corpus
+
+- Add a broad manifest covering camera, phone, browser/web, editor, print
+  CMYK/YCCK, metadata-heavy, progressive, restart-heavy, and malformed-common
+  JPEGs.
+- Pin file digests and expected header, metadata, decode, raw-component,
+  coefficient, or deterministic-failure outcomes.
+- Support externally mounted non-redistributable corpora by digest without
+  making release gates depend on unavailable files.
+
+### Phase CP3: Lossless Transform API
+
+- Add `Jpeglib.Transforms` for coefficient-domain rotate, flip, transpose,
+  crop, Huffman optimization, and valid baseline/progressive conversion.
+- Add `jpeglib_transform` for command-line coverage.
+- Compare against `jpegtran` where a stable external oracle exists.
+
+### Phase CP4: Encoder Optimization
+
+- Add optimized Huffman table generation, progressive scan optimization,
+  perceptual quantization presets, and target-size/quality search.
+- Add deterministic compression/quality benchmark rows before making optimized
+  modes public defaults.
+
+### Phase CP5: Precision And Buffer API
+
+- Add high-bit-depth public image views and legal lossless precision expansion.
+- Add preserve, clamp, scale, and reject conversion policies.
+- Cover public image/raw component encode and decode for each precision class.
+
+### Phase CP6: Performance Architecture
+
+- Add scalar reference benchmarks for IDCT/FDCT, color conversion, sampling,
+  entropy, and pixel packing.
+- Use `../hostkit` for optional platform dispatch hooks.
+- Close SIMD/platform rows only when accelerated paths are bit-equivalent to the
+  scalar reference or have documented bounded drift for lossy transforms.

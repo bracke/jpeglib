@@ -135,6 +135,7 @@ begin
    Require_File ("CONTRIBUTING.md");
    Require_File ("CHANGELOG.md");
    Require_File ("LICENSE");
+   Require_File ("docs/competitive_gap_matrix.md");
    Require_File ("docs/external_reference_matrix.md");
    Require_File ("docs/implementation_plan.md");
    Require_File ("docs/invariants.md");
@@ -146,6 +147,7 @@ begin
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_benchmark");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_prove --run");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_complete");
+   Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_complete_plus --allow-open");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_external_matrix");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_real_world --allow-empty");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_policy_matrix --allow-open");
@@ -256,9 +258,13 @@ begin
    Require_Text ("docs/implementation_plan.md", "runs 81 deterministic cases");
    Require_Text ("docs/implementation_plan.md", "fixed encode/decode timing matrix");
    Require_Text ("docs/implementation_plan.md", "proof profile");
+   Require_Text ("docs/implementation_plan.md", "jpeglib_complete_plus");
    Require_Text ("docs/implementation_plan.md", "pin-free root Alire manifest");
    Require_Text ("docs/implementation_plan.md", "../project_tools");
    Require_Text ("docs/implementation_plan.md", "tests GPR main inventory");
+   Require_Text ("docs/competitive_gap_matrix.md", "explicitly out of scope");
+   Require_Text ("docs/competitive_gap_matrix.md", "tests/fixtures/complete_plus/gap_matrix.txt");
+   Require_Text ("docs/competitive_gap_matrix.md", "Jpeglib.Transforms");
 
    Require_Manifest_Shape;
    Require_Tool_Inventory;

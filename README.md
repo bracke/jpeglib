@@ -90,6 +90,7 @@ alr exec -- tests/bin/jpeglib_prove
 alr exec -- tests/bin/jpeglib_prove --run
 alr exec -- tests/bin/jpeglib_release
 alr exec -- tests/bin/jpeglib_complete
+alr exec -- tests/bin/jpeglib_complete_plus --allow-open
 alr exec -- tests/bin/jpeglib_external_matrix
 alr exec -- tests/bin/jpeglib_real_world --allow-empty
 alr exec -- tests/bin/jpeglib_policy_matrix --allow-open
@@ -136,6 +137,12 @@ implementation-plan coverage.
 the external oracle matrix, real-world corpus, public API policy matrix, proof
 expansion matrix, streaming stress matrix, and final documentation closure
 checks.
+`jpeglib_complete_plus --allow-open` validates the out-of-scope-for-release
+competitive gap matrix in `docs/competitive_gap_matrix.md`. Plain
+`jpeglib_complete_plus` is strict and requires the multi-platform CI,
+expanded-corpus, lossless-transform, encoder-optimization, precision/buffer,
+and performance-architecture rows to be closed. libjpeg-compatible API or ABI
+compatibility is explicitly out of scope.
 `jpeglib_external_matrix` validates the LC1 external oracle matrix and requires
 every external row to have required positive or required compatibility-boundary
 evidence.
