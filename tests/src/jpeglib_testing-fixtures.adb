@@ -849,6 +849,18 @@ package body Jpeglib_Testing.Fixtures is
    function Read_File (Path : String) return Ada.Strings.Unbounded.Unbounded_String is
      (Ada.Strings.Unbounded.To_Unbounded_String (Project_Tools.Files.Read_Raw_File (Path)));
 
+   function Normalize_Manifest_Text (Text : String) return String is
+      use Ada.Strings.Unbounded;
+      Result : Unbounded_String;
+   begin
+      for Index in Text'Range loop
+         if Text (Index) /= ASCII.CR then
+            Append (Result, Text (Index));
+         end if;
+      end loop;
+      return To_String (Result);
+   end Normalize_Manifest_Text;
+
    function Line_For (Item : Fixture) return String is
      (Name_Of (Item.Id)
       & " bytes=" & Natural'Image (Payload_Of (Item.Id)'Length)
@@ -1075,7 +1087,9 @@ package body Jpeglib_Testing.Fixtures is
          return Failure ("missing fixture directory: " & Coefficient_Dir);
       end if;
 
-      if Project_Tools.Files.Read_Raw_File (Project_Tools.Files.Join (Coefficient_Dir, "manifest.txt")) /= Manifest then
+      if Normalize_Manifest_Text
+          (Project_Tools.Files.Read_Raw_File (Project_Tools.Files.Join (Coefficient_Dir, "manifest.txt"))) /= Manifest
+      then
          return Failure ("coefficient fixture manifest is stale");
       end if;
 
@@ -1099,7 +1113,9 @@ package body Jpeglib_Testing.Fixtures is
          return Failure ("missing fixture directory: " & Image_Dir);
       end if;
 
-      if Project_Tools.Files.Read_Raw_File (Project_Tools.Files.Join (Image_Dir, "manifest.txt")) /= Image_Manifest then
+      if Normalize_Manifest_Text
+          (Project_Tools.Files.Read_Raw_File (Project_Tools.Files.Join (Image_Dir, "manifest.txt"))) /= Image_Manifest
+      then
          return Failure ("image fixture manifest is stale");
       end if;
 
