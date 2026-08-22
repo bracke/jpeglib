@@ -15,7 +15,7 @@ Plain `jpeglib_complete_plus` is strict and requires every row in
 
 | Gap | Target | Closure Evidence |
 | --- | --- | --- |
-| Multi-platform CI | `jpeglib_complete` passes on Linux, macOS, and Windows with Alire-only toolchain use. | CI matrix and successful runs. |
+| Multi-platform CI | `jpeglib_complete` passes on Linux, macOS, and Windows with Alire-only toolchain use. | Closed by GitHub Actions `ci` run `32572734862`, with green `ubuntu-latest`, `macos-15-intel`, and `windows-latest` matrix jobs. |
 | Expanded real-world corpus | Camera, phone, web, editor, print, metadata-heavy, progressive, CMYK/YCCK, and malformed-common JPEGs have pinned expectations. | Strict corpus manifest with digests, header/metadata expectations, and decode checks. |
 | Lossless transform API | jpegtran-style rotate, flip, transpose, crop, optimize, and valid baseline/progressive conversion. | `Jpeglib.Transforms`, CLI coverage, AUnit coverage, and jpegtran comparison where available. |
 | Encoder optimization | Optimized Huffman tables, progressive scan optimization, perceptual presets, and target-size search. | Deterministic compression/quality benchmark matrix. |

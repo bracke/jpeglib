@@ -6,6 +6,10 @@
   tracker for multi-platform CI, expanded corpus, transform, optimization,
   precision/buffer, and performance work, explicitly excluding libjpeg API/ABI
   compatibility.
+- Close the multi-platform CI complete-plus gap with a Linux, macOS, and Windows
+  `jpeglib_complete` GitHub Actions matrix, including platform-local Alire lock
+  refresh, explicit external dependency setup, and file-based raw oracle output
+  for Windows-safe binary comparisons.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

@@ -981,6 +981,9 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
 
 ### Phase CP1: Multi-Platform CI
 
+- Status: closed by GitHub Actions `ci` run `32572734862`, with
+  `jpeglib_complete` passing on `ubuntu-latest`, `macos-15-intel`, and
+  `windows-latest`.
 - Extend CI to run `jpeglib_complete` on Linux, macOS, and Windows through
   Alire-managed toolchains.
 - Keep platform dependency setup explicit for ImageMagick, `ffmpeg`, AUnit, and
