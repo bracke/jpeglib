@@ -128,6 +128,7 @@ begin
    Require_Text ("CHANGELOG.md", "row-span overflow rejection");
    Require_Text ("CHANGELOG.md", "limits_and_safety.md");
    Require_Text ("CHANGELOG.md", "runtime-checked access-bearing views");
+   Require_Text ("CHANGELOG.md", "Photoshop_APP13");
    Require_Text ("CHANGELOG.md", "YCCK");
    Require_Text ("docs/external_reference_matrix.md", "Lossless Huffman grayscale/RGB encode");
    Require_Text

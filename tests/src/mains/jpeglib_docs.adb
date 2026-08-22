@@ -138,6 +138,10 @@ begin
    Require_Text ("README.md", "V1 mode/format matrix");
    Require_Text ("README.md", "SOF zero-height/DNL-defined images");
    Require_Text ("CHANGELOG.md", "public V1 encode mode/format matrix");
+   Require_Text ("CHANGELOG.md", "Photoshop_APP13");
+   Require_Text ("README.md", "APP13 Photoshop");
+   Require_Text ("docs/invariants.md", "APP13 Photoshop");
+   Require_Text ("docs/implementation_plan.md", "Photoshop APP13");
    Require_Text ("docs/invariants.md", "foundation.encoder.encode_rgb_roundtrip");
    Require_Text ("docs/coefficient_decoding.md", "Jpeglib.Capabilities.Coefficients");
 

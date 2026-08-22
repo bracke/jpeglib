@@ -19,10 +19,11 @@ is covered across the DCT and lossless mode families, including direct
 four-channel same-format round trips and Adobe APP14 transform 2 emission for
 YCCK.
 Decode-side metadata summaries, bounded caller-buffer retention, metadata
-callbacks, ICC fragment validation, and encoder-side queued APP/COM metadata
-emission are implemented. ICC APP2 fragments are preserved as assembled profile
-payload bytes when retained metadata is requested. Exif APP1/TIFF orientation
-is parsed into header information and can be applied during image decode. Raw
+callbacks, APP13 Photoshop resource classification, ICC fragment validation,
+and encoder-side queued APP/COM metadata emission are implemented. ICC APP2
+fragments are preserved as assembled profile payload bytes when retained
+metadata is requested. Exif APP1/TIFF orientation is parsed into header
+information and can be applied during image decode. Raw
 component access decodes reconstructed component sample planes into
 caller-provided buffers without color conversion; the default decode limits cap
 streams at four components, while callers can raise `Max_Components` for

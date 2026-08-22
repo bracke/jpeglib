@@ -178,6 +178,10 @@ package body Jpeglib.Internal.Decoder is
         and then Prefix_Matches (Prefix, Prefix_Length, "http://ns.adobe.com/xmp/extension/" & Character'Val (0))
       then
          return Metadata.Extended_XMP;
+      elsif Marker = Markers.APP13
+        and then Prefix_Matches (Prefix, Prefix_Length, "Photoshop 3.0" & Character'Val (0))
+      then
+         return Metadata.Photoshop_APP13;
       elsif Marker = Markers.APP14 then
          return Metadata.Adobe_APP14;
       elsif Marker = Markers.APP2

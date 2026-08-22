@@ -1205,6 +1205,9 @@ package body Jpeglib_Testing.Test_Foundation is
       16#65#, 16#2E#, 16#63#, 16#6F#, 16#6D#, 16#2F#, 16#78#,
       16#6D#, 16#70#, 16#2F#, 16#65#, 16#78#, 16#74#, 16#65#,
       16#6E#, 16#73#, 16#69#, 16#6F#, 16#6E#, 16#2F#, 0,
+      16#FF#, 16#ED#, 0, 16,
+      16#50#, 16#68#, 16#6F#, 16#74#, 16#6F#, 16#73#, 16#68#,
+      16#6F#, 16#70#, 16#20#, 16#33#, 16#2E#, 16#30#, 0,
       16#FF#, 16#C0#,
       0, 11,
       8, 0, 8, 0, 8, 1,
@@ -1217,7 +1220,7 @@ package body Jpeglib_Testing.Test_Foundation is
       16#00#];
    Unknown_Metadata_Header_Storage : aliased constant Jpeglib.Streams.Byte_Array :=
      [16#FF#, 16#D8#,
-      16#FF#, 16#ED#, 0, 5, 16#41#, 16#42#, 16#43#,
+      16#FF#, 16#EF#, 0, 5, 16#41#, 16#42#, 16#43#,
       16#FF#, 16#C0#,
       0, 11,
       8, 0, 8, 0, 8, 1,
@@ -7588,13 +7591,16 @@ package body Jpeglib_Testing.Test_Foundation is
       Outcome := Jpeglib.Decoding.Read_Header (Decoder);
       Assert (Jpeglib.Results.Succeeded (Outcome), "metadata kind header read failed");
       Header := Jpeglib.Decoding.Header (Decoder);
-      Assert (Header.Metadata_Segments = 5, "metadata kind segment count mismatch");
-      Assert (Header.Retained_Metadata_Summaries = 5, "metadata kind summary count mismatch");
+      Assert (Header.Metadata_Segments = 6, "metadata kind segment count mismatch");
+      Assert (Header.Retained_Metadata_Summaries = 6, "metadata kind summary count mismatch");
       Assert (Header.Metadata_Summaries (1).Kind = Jpeglib.Metadata.JFXX, "JFXX kind mismatch");
       Assert (Header.Metadata_Summaries (2).Kind = Jpeglib.Metadata.Exif, "Exif kind mismatch");
       Assert (Header.Metadata_Summaries (3).Kind = Jpeglib.Metadata.ICC, "ICC kind mismatch");
       Assert (Header.Metadata_Summaries (4).Kind = Jpeglib.Metadata.XMP, "XMP kind mismatch");
       Assert (Header.Metadata_Summaries (5).Kind = Jpeglib.Metadata.Extended_XMP, "Extended XMP kind mismatch");
+      Assert
+        (Header.Metadata_Summaries (6).Kind = Jpeglib.Metadata.Photoshop_APP13,
+         "Photoshop APP13 kind mismatch");
    end Decoder_Classifies_Metadata_Kinds;
 
    procedure Decoder_Honors_Discard_Metadata_Policy (T : in out AUnit.Test_Cases.Test_Case'Class) is

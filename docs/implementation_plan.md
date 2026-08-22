@@ -345,8 +345,8 @@ limits.
 Status: implemented for the V1 metadata scope. Header parsing now records
 bounded metadata summaries according to the public metadata policy and classifies
 COM, JFIF, JFXX, Exif, XMP,
-Extended XMP, ICC, and Adobe APP14 from marker-local prefix bytes without
-retaining full payloads. `Discard_All` suppresses retained summaries, the
+Extended XMP, ICC, Photoshop APP13, and Adobe APP14 from marker-local prefix
+bytes without retaining full payloads. `Discard_All` suppresses retained summaries, the
 default policy retains only known summary kinds, and `Preserve_All_Bounded`
 also retains unknown APP summaries. Segment count, per-segment byte, total
 metadata byte, and retained summary cap behavior are tested against

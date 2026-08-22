@@ -143,6 +143,8 @@
 - Add `docs/limits_and_safety.md` to make the caller-buffer contract explicit,
   including the SPARK-proved descriptor arithmetic boundary and runtime-checked access-bearing views,
   configured output/metadata limits, and test-only `Unchecked_Access` usage.
+- Classify APP13 Photoshop resource metadata as `Photoshop_APP13`, while
+  preserving unknown APP policy coverage on APP15.
 - Expand `jpeglib_benchmark` from one RGB baseline smoke case to a fixed matrix
   covering RGB baseline, progressive, arithmetic, lossless, plus CMYK baseline
   and lossless encode/decode timing.

@@ -11,7 +11,17 @@ package Jpeglib.Metadata is
       Preserve_All_Bounded,
       Stream_To_Callback);
 
-   type Metadata_Kind is (JFIF, JFXX, Adobe_APP14, ICC, Exif, XMP, Extended_XMP, Comment, Unknown_APP);
+   type Metadata_Kind is
+     (JFIF,
+      JFXX,
+      Adobe_APP14,
+      Photoshop_APP13,
+      ICC,
+      Exif,
+      XMP,
+      Extended_XMP,
+      Comment,
+      Unknown_APP);
    type Kind_Set is array (Metadata_Kind) of Boolean;
 
    type Exif_Orientation is

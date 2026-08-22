@@ -41,6 +41,7 @@ package Jpeglib.Internal.Markers is
    APP0 : constant Marker_Code := 16#E0#;
    APP1 : constant Marker_Code := 16#E1#;
    APP2 : constant Marker_Code := 16#E2#;
+   APP13 : constant Marker_Code := 16#ED#;
    APP14 : constant Marker_Code := 16#EE#;
    APP15 : constant Marker_Code := 16#EF#;
    JPG0 : constant Marker_Code := 16#F0#;
