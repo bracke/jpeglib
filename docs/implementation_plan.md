@@ -798,7 +798,16 @@ and by the GitHub Actions `ci` workflow:
 
 ## Post-V1 Work
 
-No open implementation work remains in this plan for the current V1 scope.
-Post-V1 expansion must start from a new, explicit capability or interoperability
-target and keep `Jpeglib.Capabilities`, conformance policy, documentation, and
-release gates synchronized.
+Open library-complete work remains beyond the current release gate:
+
+- Promote diagnostic or sentinel external rows to positive interoperability
+  evidence where possible. Arithmetic, differential, hierarchical, and
+  ImageMagick-diagnostic cases need stable third-party raw-byte or independently
+  pinned corpus coverage, or explicit hard-failure compatibility tests.
+- Expand proof coverage beyond the current helper-unit profile. Prefer
+  IO-free decode/encode state helpers, limit arithmetic, and policy validation
+  routines that can be made SPARK-clean without weakening the public API.
+- Add a real-world interoperability corpus with pinned expectations for common
+  camera, editor, browser, and malformed-in-the-wild JPEG variants.
+- Keep `Jpeglib.Capabilities`, conformance policy, documentation, and release
+  gates synchronized as each library-complete target lands.

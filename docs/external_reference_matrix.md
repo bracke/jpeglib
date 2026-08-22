@@ -2,10 +2,10 @@
 
 `jpeglib_conformance` uses external tools only as reference or diagnostic
 oracles. The library implementation and release gate must not depend on a
-system JPEG codec for production behavior. Diagnostic external rows are V1 telemetry,
-not incomplete release work: the required V1 oracle for advanced JPEG families
-is the process-isolated `tests/bin/jpeglib_decode_raw` path unless this matrix
-names a stable third-party byte oracle as required.
+system JPEG codec for production behavior. Diagnostic external rows are
+remaining library-complete interoperability work: the current release gate uses
+the process-isolated `tests/bin/jpeglib_decode_raw` path for advanced JPEG
+families unless this matrix names a stable third-party byte oracle as required.
 
 | JPEG scope | Current external tool | Gate policy | Notes |
 | --- | --- | --- | --- |
@@ -18,8 +18,8 @@ names a stable third-party byte oracle as required.
 | Lossless Huffman grayscale/RGB encode, including restarted artifacts | `tests/bin/jpeglib_decode_raw`; `ffmpeg`; ImageMagick `magick` | Required native process oracle; required third-party `ffmpeg` oracle; ImageMagick diagnostic | Encoded artifacts must decode through the separate raw-decoder process and `ffmpeg` raw gray/RGB output; restarted artifacts must contain emitted restart markers before the raw-byte oracles run; external ImageMagick acceptance is reported as telemetry. |
 | Differential DCT, hierarchical DCT, and hierarchical lossless encode | `tests/bin/jpeglib_decode_raw`; `ffmpeg`; ImageMagick `magick` | Required native process oracle; required `ffmpeg` limitation sentinel; ImageMagick diagnostic | Encoded artifacts must decode through the separate raw-decoder process and compare to source pixels. Installed third-party tools do not provide a stable raw-byte oracle for these marker families, so the `ffmpeg` check is a required sentinel that locks the documented host-tool boundary. |
 
-Diagnostic ImageMagick cases are V1 telemetry and are intentionally non-fatal
-for external decode rejection or channel convention differences. Advanced rows still fail if
+Diagnostic ImageMagick cases are intentionally non-fatal in the current release
+gate, but they are not considered library-complete. Advanced rows still fail if
 `jpeglib` cannot encode, in-process self-decode, or decode through the separate
 `jpeglib_decode_raw` process oracle. CMYK/YCCK rows also fail if the installed
 `ffmpeg` command cannot decode baseline/progressive artifacts to matching RGB
@@ -40,3 +40,9 @@ artifacts, including restarted artifacts with emitted restart markers, the gate
 also launches `ffmpeg` and requires matching raw gray/RGB bytes. Arithmetic,
 differential, and hierarchical rows launch `ffmpeg` as a required limitation
 sentinel, not a positive oracle.
+
+Library-complete external interoperability requires replacing diagnostic or
+sentinel rows with positive compatibility evidence. That can be a stable
+third-party raw-byte oracle, a broader real-world corpus whose expected output
+is independently pinned, or a documented hard incompatibility with a regression
+test that exercises the exact accepted failure.

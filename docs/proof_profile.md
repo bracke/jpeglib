@@ -8,8 +8,8 @@ alr exec -- tests/bin/jpeglib_prove --run
 ```
 
 `jpeglib_prove --run` invokes proof tooling only through `alr exec`; it does not
-call GNATprove from the system `PATH`. This executable proof profile is the V1 proof boundary.
-It uses `proof/jpeglib_proof.gpr` and targets these
+call GNATprove from the system `PATH`. This executable proof profile is the
+current proof boundary. It uses `proof/jpeglib_proof.gpr` and targets these
 proof-designated units:
 
 - `Jpeglib.Internal.Checked_Arithmetic`
@@ -49,3 +49,9 @@ depend on segment-reader IO and diagnostic construction.
 severity diagnostics, and declared SPARK bodies that were skipped. `jpeglib_release`
 runs this profile as its release proof gate. Direct GNATprove invocations are
 intentionally outside the project workflow; use the `alr` command above.
+
+Library-complete proof work remains open. The next proof expansions should move
+additional SPARK-clean decode/encode state helpers under `proof/jpeglib_proof.gpr`,
+split IO-free validation logic out of runtime-heavy paths where that reduces
+risk, and keep access-bearing public views documented as runtime-checked unless
+their data model changes to become SPARK-legal.

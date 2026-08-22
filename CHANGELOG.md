@@ -139,8 +139,9 @@
 - Add a `Project_Tools.Release_Checks` tests GPR main inventory check to the
   release gate so listed test executables require source and documentation
   coverage.
-- Classify diagnostic external decoder rows and the executable proof profile as
-  accepted V1 release boundaries instead of reporting them as missing work.
+- Reopen library-complete scope beyond the current release gate: diagnostic
+  external decoder rows, proof expansion, and real-world corpus coverage are
+  tracked as remaining work instead of being hidden behind V1 boundary wording.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.

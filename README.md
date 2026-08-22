@@ -1,9 +1,13 @@
 # jpeglib
 
-`jpeglib` is a native Ada 2022 JPEG codec library. The V1 target is complete
-general-purpose 8-bit JPEG decoding and encoding, including baseline,
+`jpeglib` is a native Ada 2022 JPEG codec library. The current release-gated
+scope covers broad 8-bit JPEG decoding and encoding, including baseline,
 progressive, metadata preservation, resource limits, streaming interfaces, and
-deterministic error reporting.
+deterministic error reporting. The library-complete target is stricter than the
+current release gate: diagnostic external rows must become required positive
+oracles or be replaced by a stronger compatibility gate, proof coverage must be
+expanded beyond the current helper-unit boundary where practical, and real-world
+interoperability must be represented by an explicit corpus.
 
 This repository supports baseline Huffman JPEG decode for grayscale, YCbCr,
 RGB JPEG, and plain CMYK inputs, progressive grayscale, YCbCr, and RGB JPEG
@@ -101,14 +105,15 @@ ImageMagick-supported grayscale/RGB cases are required, and advanced arithmetic,
 CMYK/YCCK, lossless, differential, and hierarchical modes are required to pass
 the separate `tests/bin/jpeglib_decode_raw` native process oracle. CMYK/YCCK
 baseline/progressive conformance also requires the installed `ffmpeg` command as
-a third-party RGB-conversion oracle. ImageMagick diagnostics are V1 telemetry
-when host tools do not expose a stable byte oracle for an advanced mode.
+a third-party RGB-conversion oracle. ImageMagick diagnostics identify remaining
+library-complete interoperability work when host tools do not expose a stable
+byte oracle for an advanced mode.
 Arithmetic, differential, and hierarchical rows run required `ffmpeg` limitation
 sentinels that lock the documented host-tool boundary. Lossless Huffman
 grayscale/RGB conformance, including restarted artifacts with emitted restart
 markers, also requires `ffmpeg` as a third-party raw-byte oracle.
 `jpeglib_prove` audits proof-readiness by default; `jpeglib_prove --run` runs
-the accepted V1 proof boundary for checked arithmetic, descriptor-only image view
+the current proof boundary for checked arithmetic, descriptor-only image view
 bounds via `Jpeglib.Images.Descriptor_Is_Valid`, segment boundary helpers,
 ownership budget/lease transitions, marker classification helpers,
 restart-state configuration, and the pure public capability surface in
