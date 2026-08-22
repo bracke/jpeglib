@@ -51,6 +51,42 @@ procedure Jpeglib_Conformance is
    function Image (Value : Natural) return String is
      (Ada.Strings.Fixed.Trim (Natural'Image (Value), Ada.Strings.Both));
 
+   function Generated_RGB_Input
+     (Width  : Jpeglib.Image_Width;
+      Height : Jpeglib.Image_Height) return Jpeglib.Streams.Byte_Array
+   is
+      Result : Jpeglib.Streams.Byte_Array (1 .. Natural (Width) * Natural (Height) * 3);
+      Cursor : Positive := Result'First;
+   begin
+      for Y in 0 .. Natural (Height) - 1 loop
+         for X in 0 .. Natural (Width) - 1 loop
+            Result (Cursor) := Jpeglib.Byte (24 + X * 5 + Y * 3);
+            Result (Cursor + 1) := Jpeglib.Byte (48 + X * 4 + Y * 6);
+            Result (Cursor + 2) := Jpeglib.Byte (72 + X * 3 + Y * 2);
+            Cursor := Cursor + 3;
+         end loop;
+      end loop;
+
+      return Result;
+   end Generated_RGB_Input;
+
+   function Generated_Gray_Input
+     (Width  : Jpeglib.Image_Width;
+      Height : Jpeglib.Image_Height) return Jpeglib.Streams.Byte_Array
+   is
+      Result : Jpeglib.Streams.Byte_Array (1 .. Natural (Width) * Natural (Height));
+      Cursor : Positive := Result'First;
+   begin
+      for Y in 0 .. Natural (Height) - 1 loop
+         for X in 0 .. Natural (Width) - 1 loop
+            Result (Cursor) := Jpeglib.Byte (20 + X * 7 + Y * 5);
+            Cursor := Cursor + 1;
+         end loop;
+      end loop;
+
+      return Result;
+   end Generated_Gray_Input;
+
    procedure Run_Process_Raw_Oracle
      (Label         : String;
       Artifact_Path : String;
@@ -1303,6 +1339,64 @@ begin
        108, 132, 156, 180],
       80,
       10,
+      Failed,
+      Progressive => True);
+
+   Run_Magick_Generated_RGB_Corpus_Case
+     ("ImageMagick-generated baseline RGB 17x9 q92 4:2:2 decode",
+      "jpeglib-conformance-magick-rgb-17x9-q92-422.jpg",
+      Magick,
+      17,
+      9,
+      Generated_RGB_Input (17, 9),
+      92,
+      "2x1",
+      24,
+      Failed);
+
+   Run_Magick_Generated_RGB_Corpus_Case
+     ("ImageMagick-generated baseline RGB 9x17 q90 4:4:4 decode",
+      "jpeglib-conformance-magick-rgb-9x17-q90-444.jpg",
+      Magick,
+      9,
+      17,
+      Generated_RGB_Input (9, 17),
+      90,
+      "1x1",
+      20,
+      Failed);
+
+   Run_Magick_Generated_Gray_Corpus_Case
+     ("ImageMagick-generated baseline grayscale 17x1 q88 decode",
+      "jpeglib-conformance-magick-gray-17x1-q88.jpg",
+      Magick,
+      17,
+      1,
+      Generated_Gray_Input (17, 1),
+      88,
+      12,
+      Failed);
+
+   Run_Magick_Generated_Gray_Corpus_Case
+     ("ImageMagick-generated baseline grayscale 2x17 q86 decode",
+      "jpeglib-conformance-magick-gray-2x17-q86.jpg",
+      Magick,
+      2,
+      17,
+      Generated_Gray_Input (2, 17),
+      86,
+      12,
+      Failed);
+
+   Run_Magick_Generated_Gray_Corpus_Case
+     ("ImageMagick-generated progressive grayscale 17x9 q84 decode",
+      "jpeglib-conformance-magick-progressive-gray-17x9-q84.jpg",
+      Magick,
+      17,
+      9,
+      Generated_Gray_Input (17, 9),
+      84,
+      14,
       Failed,
       Progressive => True);
 

@@ -130,8 +130,9 @@
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.
 - Expand that ImageMagick-generated decode corpus beyond 2x2 fixtures with
-  required RGB 4x3/5x2 and grayscale 5x3/4x4 artifacts at varied quality,
-  progressive, and RGB sampling settings.
+  required RGB 4x3/5x2/17x9/9x17 and grayscale 5x3/4x4/17x1/2x17
+  artifacts at varied quality, progressive, odd-dimension, edge-row, and RGB
+  sampling settings.
 - Expand the executable proof profile from checked arithmetic to include the
   SPARK-legal descriptor-only image validation layer in `Jpeglib.Images`
   including row-span overflow rejection, and the segment boundary helpers in

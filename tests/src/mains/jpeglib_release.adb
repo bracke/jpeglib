@@ -155,7 +155,8 @@ begin
    Require_Text ("docs/implementation_plan.md", "baseline/progressive CMYK/YCCK rows require `ffmpeg`");
    Require_Text ("docs/implementation_plan.md", "lossless Huffman grayscale/RGB");
    Require_Text ("docs/implementation_plan.md", "ImageMagick-generated baseline/progressive");
-   Require_Text ("docs/implementation_plan.md", "RGB 4x3/5x2 and grayscale 5x3/4x4");
+   Require_Text ("docs/implementation_plan.md", "RGB 4x3/5x2/17x9/9x17");
+   Require_Text ("docs/implementation_plan.md", "grayscale 5x3/4x4/17x1/2x17");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Images");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Internal.Ownership");
    Require_Text ("docs/implementation_plan.md", "skipped declared SPARK bodies");

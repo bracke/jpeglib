@@ -551,8 +551,9 @@ bounded tolerance, and leaving reproducible temp artifacts on failure. It also
 generates baseline/progressive gray and RGB JPEGs with ImageMagick from raw
 samples, decodes them through `jpeglib`, and compares the decoded pixels as a
 required third-party-generated interoperability corpus, including RGB 4x3/5x2
-and grayscale 5x3/4x4 artifacts at varied quality, progressive, and RGB
-sampling settings. It also
+and 17x9/9x17 artifacts plus grayscale 5x3/4x4 and 17x1/2x17 artifacts at
+varied quality, progressive, odd-dimension, edge-row, and RGB sampling settings.
+It also
 probes arithmetic sequential/progressive grayscale and RGB DCT output plus
 baseline/progressive CMYK and YCCK four-channel output through self-decode and
 reports whether the host ImageMagick stack accepts those optional external
@@ -617,8 +618,8 @@ Completed:
   baseline/progressive grayscale plus RGB 4:4:4/4:2:2/4:2:0/4:1:1 encode
   output via ImageMagick, plus ImageMagick-generated baseline/progressive gray
   and RGB JPEGs decoded by `jpeglib` as required external-generated corpus
-  coverage across RGB 4x3/5x2 and grayscale 5x3/4x4 artifacts with varied
-  quality and sampling. Arithmetic DCT, CMYK/YCCK four-channel, lossless, differential, and
+  coverage across RGB 4x3/5x2/17x9/9x17 and grayscale 5x3/4x4/17x1/2x17
+  artifacts with varied quality and sampling. Arithmetic DCT, CMYK/YCCK four-channel, lossless, differential, and
   hierarchical encode probes are required to pass the `jpeglib_decode_raw`
   native process oracle, baseline/progressive CMYK/YCCK rows require `ffmpeg`
   RGB-conversion decode, while ImageMagick results remain
@@ -788,7 +789,8 @@ capability flags and docs kept tied to tested behavior. The first post-V1
 expansions broaden ImageMagick-backed conformance from RGB-only 4:2:0 output to
 generated baseline/progressive grayscale plus RGB 4:4:4/4:2:2/4:2:0/4:1:1
 encode output, add required ImageMagick-generated baseline/progressive gray and
-RGB decode artifacts including RGB 4x3/5x2 and grayscale 5x3/4x4 cases, add a
+RGB decode artifacts including RGB 4x3/5x2/17x9/9x17 and grayscale
+5x3/4x4/17x1/2x17 cases, add a
 required native process oracle for advanced encode
 families, require `ffmpeg` for baseline/progressive CMYK/YCCK RGB-conversion
 third-party decode and lossless Huffman grayscale/RGB raw-byte third-party

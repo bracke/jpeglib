@@ -91,9 +91,10 @@ gate: it verifies the AUnit suite inventory with `project_tools`, runs the root
 and tests crate builds through Alire, verifies the coefficient and image fixture
 corpora, runs the ImageMagick-backed conformance check, including generated
 baseline/progressive gray and RGB JPEGs decoded by `jpeglib` across 2x2, 4x3,
-5x2, 5x3, and 4x4 samples with varied quality and sampling, runs the
-deterministic fuzz corpus, checks documentation policy, and then runs the AUnit
-suite. The conformance step requires the `magick` command on `PATH`.
+5x2, 5x3, 4x4, 17x9, 9x17, 17x1, and 2x17 samples with varied quality and
+sampling, runs the deterministic fuzz corpus, checks documentation policy, and
+then runs the AUnit suite. The conformance step requires the `magick` command on
+`PATH`.
 The external reference policy is tracked in `docs/external_reference_matrix.md`;
 ImageMagick-supported grayscale/RGB cases are required, and advanced arithmetic,
 CMYK/YCCK, lossless, differential, and hierarchical modes are required to pass
