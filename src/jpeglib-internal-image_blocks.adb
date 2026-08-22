@@ -268,11 +268,146 @@ package body Jpeglib.Internal.Image_Blocks is
       Source_Index : Positive;
       Sum : Natural;
       Count : Natural;
+
+      function Average_Sample
+        (Target_X : Natural;
+         Target_Y : Natural) return Byte
+      is
+         Local_Sum : Natural := 0;
+         Local_Count : Natural := 0;
+         Local_Source_X : Natural;
+         Local_Source_Y : Natural;
+         Local_Source_Index : Positive;
+      begin
+         for Local_Y in 0 .. Vertical_Factor - 1 loop
+            Local_Source_Y := Target_Y * Vertical_Factor + Local_Y;
+            if Local_Source_Y < Natural (Source_Height) then
+               for Local_X in 0 .. Horizontal_Factor - 1 loop
+                  Local_Source_X := Target_X * Horizontal_Factor + Local_X;
+                  if Local_Source_X < Natural (Source_Width) then
+                     Local_Source_Index := Source'First + Local_Source_Y * Natural (Source_Width) + Local_Source_X;
+                     Local_Sum := Local_Sum + Natural (Source (Local_Source_Index));
+                     Local_Count := Local_Count + 1;
+                  end if;
+               end loop;
+            end if;
+         end loop;
+
+         return Byte ((Local_Sum + Local_Count / 2) / Local_Count);
+      end Average_Sample;
    begin
       if Byte_Count (Source'Length) < Byte_Count (Source_Width) * Byte_Count (Source_Height)
         or else Byte_Count (Target'Length) < Samples_Needed
       then
          return (Outcome => Results.Failure (Errors.Output_Limit_Exceeded), Samples_Written => 0);
+      end if;
+
+      if Horizontal_Factor = 1 and then Vertical_Factor = 1 then
+         for Index in 0 .. Natural (Samples_Needed) - 1 loop
+            pragma Loop_Optimize (Vector);
+            Target (Target'First + Index) := Source (Source'First + Index);
+         end loop;
+
+         return (Outcome => Results.Success, Samples_Written => Samples_Needed);
+      elsif Horizontal_Factor = 2 and then Vertical_Factor = 1 then
+         declare
+            Full_Target_Width : constant Natural := Natural (Source_Width) / 2;
+            Source_Row_Base : Positive;
+            Target_Row_Base : Positive;
+            Source_Base : Positive;
+         begin
+            for Target_Y in 0 .. Target_Height - 1 loop
+               Source_Row_Base := Source'First + Target_Y * Natural (Source_Width);
+               Target_Row_Base := Target'First + Target_Y * Target_Width;
+
+               for Target_X in 0 .. Full_Target_Width - 1 loop
+                  pragma Loop_Optimize (Vector);
+                  Source_Base := Source_Row_Base + Target_X * 2;
+                  Target (Target_Row_Base + Target_X) :=
+                    Byte ((Natural (Source (Source_Base)) + Natural (Source (Source_Base + 1)) + 1) / 2);
+               end loop;
+
+               if Full_Target_Width < Target_Width then
+                  Target (Target_Row_Base + Full_Target_Width) := Average_Sample (Full_Target_Width, Target_Y);
+               end if;
+            end loop;
+
+            return (Outcome => Results.Success, Samples_Written => Samples_Needed);
+         end;
+      elsif Horizontal_Factor = 4 and then Vertical_Factor = 1 then
+         declare
+            Full_Target_Width : constant Natural := Natural (Source_Width) / 4;
+            Source_Row_Base : Positive;
+            Target_Row_Base : Positive;
+            Source_Base : Positive;
+         begin
+            for Target_Y in 0 .. Target_Height - 1 loop
+               Source_Row_Base := Source'First + Target_Y * Natural (Source_Width);
+               Target_Row_Base := Target'First + Target_Y * Target_Width;
+
+               for Target_X in 0 .. Full_Target_Width - 1 loop
+                  pragma Loop_Optimize (Vector);
+                  Source_Base := Source_Row_Base + Target_X * 4;
+                  Target (Target_Row_Base + Target_X) :=
+                    Byte
+                      ((Natural (Source (Source_Base))
+                        + Natural (Source (Source_Base + 1))
+                        + Natural (Source (Source_Base + 2))
+                        + Natural (Source (Source_Base + 3))
+                        + 2)
+                       / 4);
+               end loop;
+
+               if Full_Target_Width < Target_Width then
+                  Target (Target_Row_Base + Full_Target_Width) := Average_Sample (Full_Target_Width, Target_Y);
+               end if;
+            end loop;
+
+            return (Outcome => Results.Success, Samples_Written => Samples_Needed);
+         end;
+      elsif Horizontal_Factor = 2 and then Vertical_Factor = 2 then
+         declare
+            Full_Target_Width : constant Natural := Natural (Source_Width) / 2;
+            Full_Target_Height : constant Natural := Natural (Source_Height) / 2;
+            Top_Row_Base : Positive;
+            Bottom_Row_Base : Positive;
+            Target_Row_Base : Positive;
+            Top_Base : Positive;
+            Bottom_Base : Positive;
+         begin
+            for Target_Y in 0 .. Full_Target_Height - 1 loop
+               Top_Row_Base := Source'First + Target_Y * 2 * Natural (Source_Width);
+               Bottom_Row_Base := Top_Row_Base + Natural (Source_Width);
+               Target_Row_Base := Target'First + Target_Y * Target_Width;
+
+               for Target_X in 0 .. Full_Target_Width - 1 loop
+                  pragma Loop_Optimize (Vector);
+                  Top_Base := Top_Row_Base + Target_X * 2;
+                  Bottom_Base := Bottom_Row_Base + Target_X * 2;
+                  Target (Target_Row_Base + Target_X) :=
+                    Byte
+                      ((Natural (Source (Top_Base))
+                        + Natural (Source (Top_Base + 1))
+                        + Natural (Source (Bottom_Base))
+                        + Natural (Source (Bottom_Base + 1))
+                        + 2)
+                       / 4);
+               end loop;
+
+               if Full_Target_Width < Target_Width then
+                  Target (Target_Row_Base + Full_Target_Width) := Average_Sample (Full_Target_Width, Target_Y);
+               end if;
+            end loop;
+
+            for Target_Y in Full_Target_Height .. Target_Height - 1 loop
+               Target_Row_Base := Target'First + Target_Y * Target_Width;
+               for Target_X in 0 .. Target_Width - 1 loop
+                  Target (Target_Row_Base + Target_X) := Average_Sample (Target_X, Target_Y);
+               end loop;
+            end loop;
+
+            return (Outcome => Results.Success, Samples_Written => Samples_Needed);
+         end;
       end if;
 
       for Target_Y in 0 .. Target_Height - 1 loop

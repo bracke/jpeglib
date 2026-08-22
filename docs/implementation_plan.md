@@ -1048,7 +1048,9 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
   YCbCr-to-RGB-family row output kernels, direct RGB row output kernels, gray
   row output kernels, gray-alpha row output kernels, plus CMYK and YCCK row
   output kernels. The encoder plane-filling path uses the input kernels for
-  RGB-family, gray-alpha, and four-component DCT input, and direct full-size grayscale,
+  RGB-family, gray-alpha, and four-component DCT input. Encoder chroma
+  downsampling uses compiler-vectorized row kernels for the supported 4:4:4,
+  4:2:2, 4:2:0, and 4:1:1 layouts, and direct full-size grayscale,
   two-component, three-component, four-component, lossless, plus 4:4:4 DCT
   YCbCr/RGB/CMYK/YCCK image decode writes rows through output kernels.
   Three-component subsampled DCT decode now stages direct-output rows after
@@ -1059,6 +1061,7 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
   bit-exact row-kernel equivalence against scalar `Read_RGB` plus
   `Convert_RGB_To_YCbCr` input conversion, scalar gray-alpha input splitting,
   scalar `Read_CMYK` and `Read_YCCK` four-component input conversion, scalar
+  plane downsampling for 4:4:4, 4:2:2, 4:2:0, and 4:1:1 layouts, scalar
   `Write_YCbCr` output packing, scalar
   `Write_RGB` output packing, scalar `Write_Gray` output packing, scalar
   `Write_Gray_Alpha` output packing, scalar `Write_CMYK` output packing, and

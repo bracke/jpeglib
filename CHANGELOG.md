@@ -65,6 +65,9 @@
   staged row writers after chroma upsampling, so 4:2:0, 4:2:2, and 4:1:1
   YCbCr/RGB output uses the SIMD row packing path while reduced-IDCT and
   EXIF-oriented coordinate mapping keep the scalar pixel path.
+- Add compiler-vectorized encoder chroma downsampling paths for 4:4:4, 4:2:2,
+  4:2:0, and 4:1:1 plane layouts, with `jpeglib_simd_matrix`
+  scalar-equivalence coverage for odd-width and odd-height edge handling.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

@@ -7,6 +7,8 @@ with Jpeglib.Capabilities;
 with Jpeglib.Errors;
 with Jpeglib.Images;
 with Jpeglib.Internal.Colors;
+with Jpeglib.Internal.Image_Blocks;
+with Jpeglib.Results;
 with Jpeglib.Streams;
 
 with Jpeglib_Tools;
@@ -626,6 +628,100 @@ procedure Jpeglib_SIMD_Matrix is
          Fail (Jpeglib.Images.Pixel_Format'Image (Format) & " YCCK output row differs from scalar reference");
       end if;
    end Run_YCCK_Output_Format;
+
+   procedure Build_Source_Plane is
+      Offset : Natural := 0;
+   begin
+      Y_Plane := [others => 0];
+      for Row in 0 .. Natural (Height) - 1 loop
+         for Column in 0 .. Natural (Width) - 1 loop
+            Y_Plane (Y_Plane'First + Offset) := Jpeglib.Byte ((Row * 43 + Column * 17 + Row * Column + 29) mod 256);
+            Offset := Offset + 1;
+         end loop;
+      end loop;
+   end Build_Source_Plane;
+
+   function Scalar_Downsample_Sample
+     (Source : Jpeglib.Streams.Byte_Array;
+      Source_Width : Jpeglib.Image_Width;
+      Source_Height : Jpeglib.Image_Height;
+      Horizontal_Factor : Positive;
+      Vertical_Factor : Positive;
+      Target_X : Natural;
+      Target_Y : Natural) return Jpeglib.Byte
+   is
+      Sum : Natural := 0;
+      Count : Natural := 0;
+      Source_X : Natural;
+      Source_Y : Natural;
+   begin
+      for Local_Y in 0 .. Vertical_Factor - 1 loop
+         Source_Y := Target_Y * Vertical_Factor + Local_Y;
+         if Source_Y < Natural (Source_Height) then
+            for Local_X in 0 .. Horizontal_Factor - 1 loop
+               Source_X := Target_X * Horizontal_Factor + Local_X;
+               if Source_X < Natural (Source_Width) then
+                  Sum := Sum + Natural (Source (Source'First + Source_Y * Natural (Source_Width) + Source_X));
+                  Count := Count + 1;
+               end if;
+            end loop;
+         end if;
+      end loop;
+
+      return Jpeglib.Byte ((Sum + Count / 2) / Count);
+   end Scalar_Downsample_Sample;
+
+   procedure Run_Downsample_Format
+     (Horizontal_Factor : Positive;
+      Vertical_Factor : Positive;
+      Label : String)
+   is
+      Target_Width : constant Natural := (Natural (Width) + Horizontal_Factor - 1) / Horizontal_Factor;
+      Target_Height : constant Natural := (Natural (Height) + Vertical_Factor - 1) / Vertical_Factor;
+      Target_Samples : constant Natural := Target_Width * Target_Height;
+      Result : Jpeglib.Internal.Image_Blocks.Plane_Result;
+      Offset : Natural := 0;
+   begin
+      Build_Source_Plane;
+      Cb_Plane := [others => 0];
+      Expected_Cb := [others => 0];
+
+      Result :=
+        Jpeglib.Internal.Image_Blocks.Downsample_Plane
+          (Y_Plane,
+           Source_Width => Width,
+           Source_Height => Height,
+           Horizontal_Factor => Horizontal_Factor,
+           Vertical_Factor => Vertical_Factor,
+           Target => Cb_Plane);
+
+      if not Jpeglib.Results.Succeeded (Result.Outcome) then
+         Fail (Label & " downsample row kernel failed");
+      elsif Natural (Result.Samples_Written) /= Target_Samples then
+         Fail (Label & " downsample row kernel wrote wrong count");
+      end if;
+
+      for Target_Y in 0 .. Target_Height - 1 loop
+         for Target_X in 0 .. Target_Width - 1 loop
+            Expected_Cb (Expected_Cb'First + Offset) :=
+              Scalar_Downsample_Sample
+                (Y_Plane,
+                 Source_Width => Width,
+                 Source_Height => Height,
+                 Horizontal_Factor => Horizontal_Factor,
+                 Vertical_Factor => Vertical_Factor,
+                 Target_X => Target_X,
+                 Target_Y => Target_Y);
+            Offset := Offset + 1;
+         end loop;
+      end loop;
+
+      if Cb_Plane (Cb_Plane'First .. Cb_Plane'First + Target_Samples - 1)
+        /= Expected_Cb (Expected_Cb'First .. Expected_Cb'First + Target_Samples - 1)
+      then
+         Fail (Label & " downsample row kernel differs from scalar reference");
+      end if;
+   end Run_Downsample_Format;
 begin
    if not Jpeglib.Capabilities.SIMD_Acceleration then
       Fail ("SIMD acceleration capability is not advertised");
@@ -704,6 +800,10 @@ begin
    Run_YCCK_Output_Format (Jpeglib.Images.BGRA_32);
    Run_YCCK_Output_Format (Jpeglib.Images.CMYK_32);
    Run_YCCK_Output_Format (Jpeglib.Images.YCCK_32);
+   Run_Downsample_Format (1, 1, "4:4:4");
+   Run_Downsample_Format (2, 1, "4:2:2");
+   Run_Downsample_Format (4, 1, "4:1:1");
+   Run_Downsample_Format (2, 2, "4:2:0");
 
    Ada.Text_IO.Put_Line
      ("jpeglib_simd_matrix: host="
