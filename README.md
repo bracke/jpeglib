@@ -110,7 +110,8 @@ markers, also requires `ffmpeg` as a third-party raw-byte oracle.
 `jpeglib_prove` audits proof-readiness by default; `jpeglib_prove --run` runs
 the current proof profile for checked arithmetic, descriptor-only image view
 bounds via `Jpeglib.Images.Descriptor_Is_Valid`, segment boundary helpers,
-marker classification helpers, and the pure public capability surface in
+ownership budget/lease transitions, marker classification helpers,
+restart-state configuration, and the pure public capability surface in
 `Jpeglib.Capabilities` through `alr exec -- gnatprove`. Caller-buffer limits and
 the boundary between
 SPARK-proved descriptor arithmetic and runtime-checked access-bearing views are

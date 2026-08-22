@@ -7,6 +7,7 @@ package body Jpeglib.Internal.Restarts is
       Source : Source_Offset;
       Detail : Long_Long_Integer := 0) return Results.Result
    is
+      pragma SPARK_Mode (Off);
    begin
       return
         Results.Failure
@@ -16,6 +17,7 @@ package body Jpeglib.Internal.Restarts is
    end Invalid;
 
    function Read_DRI (Segment : in out Segments.Segment_Reader) return DRI_Result is
+      pragma SPARK_Mode (Off);
       High : constant Bytes.Read_Byte_Result := Segments.Read_Byte (Segment);
       Low : Bytes.Read_Byte_Result;
    begin
@@ -38,40 +40,29 @@ package body Jpeglib.Internal.Restarts is
    end Read_DRI;
 
    function Parse_DRI (Segment : in out Segments.Segment_Reader) return Results.Result is
+      pragma SPARK_Mode (Off);
       Result : constant DRI_Result := Read_DRI (Segment);
    begin
       return Result.Outcome;
    end Parse_DRI;
 
    function Interval_From_DRI (Segment : in out Segments.Segment_Reader) return Restart_Interval is
+      pragma SPARK_Mode (Off);
       Result : constant DRI_Result := Read_DRI (Segment);
    begin
       return Result.Interval;
    end Interval_From_DRI;
 
-   procedure Configure (State : in out Restart_State; Interval : Restart_Interval) is
+   procedure Configure (State : out Restart_State; Interval : Restart_Interval) is
+      pragma SPARK_Mode (On);
    begin
       State.Restart_Every := Interval;
       State.Remaining := Interval;
       State.Expected := Markers.RST0;
    end Configure;
 
-   function Interval (State : Restart_State) return Restart_Interval is
-   begin
-      return State.Restart_Every;
-   end Interval;
-
-   function MCUs_Until_Restart (State : Restart_State) return Restart_Interval is
-   begin
-      return State.Remaining;
-   end MCUs_Until_Restart;
-
-   function Expected_Marker (State : Restart_State) return Marker_Code is
-   begin
-      return State.Expected;
-   end Expected_Marker;
-
    function Advance_MCU (State : in out Restart_State) return Results.Result is
+      pragma SPARK_Mode (Off);
    begin
       if State.Restart_Every = 0 then
          return Results.Success;
@@ -88,6 +79,7 @@ package body Jpeglib.Internal.Restarts is
       Marker : Marker_Code;
       Source : Source_Offset := 0) return Results.Result
    is
+      pragma SPARK_Mode (Off);
    begin
       if State.Restart_Every = 0 then
          return Invalid (Marker, Source);

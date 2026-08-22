@@ -41,9 +41,8 @@ procedure Jpeglib_Prove is
 
    procedure Run_Proof_Unit (Unit : String) is
       Alr : constant String := Project_Tools.Processes.Locate_Command ("alr");
-      Proof_Log_Path : constant String :=
-        Project_Tools.Files.Join (Root, "obj/proof/gnatprove/gnatprove.out");
       Status : Integer;
+      Output : Unbounded_String;
    begin
       if Alr = "" then
          Fail ("alr command not found for proof profile");
@@ -63,26 +62,27 @@ procedure Jpeglib_Prove is
                Project_Tools.Processes.Argument ("proof/jpeglib_proof.gpr"),
                Project_Tools.Processes.Argument ("-u"),
                Project_Tools.Processes.Argument (Unit),
-               Project_Tools.Processes.Argument ("--level=0")]));
+               Project_Tools.Processes.Argument ("--level=0")]),
+           Output);
       if Status /= 0 then
          Fail ("proof profile failed for " & Unit & " with status" & Integer'Image (Status));
          return;
       end if;
 
       declare
-         Proof_Log : constant String := To_String (Project_Tools.Text.Read_Text_File (Proof_Log_Path));
+         Proof_Output : constant String := To_String (Output);
       begin
-         if Project_Tools.Text.Contains (Proof_Log, "might fail") then
+         if Project_Tools.Text.Contains (Proof_Output, "might fail") then
             Fail ("proof profile left unproved checks in " & Unit);
          end if;
 
-         if Project_Tools.Text.Contains (Proof_Log, "medium:")
-           or else Project_Tools.Text.Contains (Proof_Log, "high:")
+         if Project_Tools.Text.Contains (Proof_Output, "medium:")
+           or else Project_Tools.Text.Contains (Proof_Output, "high:")
         then
             Fail ("proof profile reported proof severity diagnostics in " & Unit);
          end if;
 
-         if Project_Tools.Text.Contains (Proof_Log, "skipped; body is SPARK_Mode => Off") then
+         if Project_Tools.Text.Contains (Proof_Output, "skipped; body is SPARK_Mode => Off") then
             Fail ("proof profile skipped a declared SPARK body in " & Unit);
          end if;
       end;
@@ -99,6 +99,7 @@ procedure Jpeglib_Prove is
       Run_Proof_Unit ("jpeglib-internal-ownership.adb");
       Run_Proof_Unit ("jpeglib-capabilities.ads");
       Run_Proof_Unit ("jpeglib-internal-markers.adb");
+      Run_Proof_Unit ("jpeglib-internal-restarts.adb");
    end Run_Proof_Profile;
 begin
    if Root = "" then
@@ -171,6 +172,14 @@ begin
             "marker invariant lacks proof-designated runtime coverage");
          Require_Text
            (Registry,
+            "| RESTART-001 |",
+            "missing restart-state proof-designated invariant");
+         Require_Text
+           (Registry,
+            "Jpeglib.Internal.Restarts` | `foundation.restarts.dri`, `foundation.restarts.sequence` | Proof-designated",
+            "restart invariant lacks proof-designated runtime coverage");
+         Require_Text
+           (Registry,
             "arithmetic CMYK/YCCK `Balanced_Progressive` as the corresponding 24-scan component-local script",
             "arithmetic CMYK/YCCK balanced-progressive invariant is missing");
          Require_Text
@@ -219,6 +228,10 @@ begin
            (Profile,
             "Jpeglib.Internal.Markers",
             "proof profile does not document marker target");
+         Require_Text
+           (Profile,
+            "Jpeglib.Internal.Restarts",
+            "proof profile does not document restart target");
          Require_Text
            (Profile,
             "docs/limits_and_safety.md",

@@ -131,6 +131,8 @@
 - Add required `ffmpeg` limitation probes for arithmetic, differential, and
   hierarchical conformance artifacts so a future matching external decode is
   caught and promoted to a positive oracle.
+- Expand the executable proof profile to include restart-state configuration
+  and expected-marker bounds in `Jpeglib.Internal.Restarts`.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.

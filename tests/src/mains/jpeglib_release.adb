@@ -151,6 +151,7 @@ begin
    Require_Text ("docs/proof_profile.md", "Reserve_State");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Capabilities");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Markers");
+   Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Restarts");
    Require_Text ("docs/proof_profile.md", "unproved checks");
    Require_Text ("docs/proof_profile.md", "jpeglib_release");
    Require_Text ("docs/proof_profile.md", "docs/limits_and_safety.md");
@@ -173,6 +174,7 @@ begin
    Require_Text ("docs/implementation_plan.md", "grayscale 5x3/4x4/17x1/2x17");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Images");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Internal.Ownership");
+   Require_Text ("docs/implementation_plan.md", "Jpeglib.Internal.Restarts");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Capabilities");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Internal.Markers");
    Require_Text ("docs/implementation_plan.md", "skipped declared SPARK bodies");

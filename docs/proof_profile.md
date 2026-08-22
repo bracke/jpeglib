@@ -17,6 +17,7 @@ call GNATprove from the system `PATH`. The first executable proof profile uses
 - `Jpeglib.Internal.Ownership`
 - `Jpeglib.Capabilities`
 - `Jpeglib.Internal.Markers`
+- `Jpeglib.Internal.Restarts`
 
 The broader proof-designated invariant registry remains in `docs/invariants.md`.
 The caller-buffer and unsafe-boundary policy is documented in
@@ -38,9 +39,12 @@ as the pure, constant public capability surface that the runtime
 `foundation.capabilities.v1` test keeps synchronized with implemented behavior.
 `Jpeglib.Internal.Markers` is proved for its marker classification helpers; the
 stream-backed marker reader remains runtime-checked because it depends on
-class-wide source IO.
+class-wide source IO. `Jpeglib.Internal.Restarts` is proved for restart-state
+configuration and expected-marker bounds; DRI segment parsing and restart
+acceptance failure diagnostics remain runtime-checked because they depend on
+segment-reader IO and diagnostic construction.
 
-`jpeglib_prove --run` also checks the GNATprove summary for unproved checks,
+`jpeglib_prove --run` also checks current GNATprove output for unproved checks,
 severity diagnostics, and declared SPARK bodies that were skipped. `jpeglib_release`
 runs this profile as its release proof gate. Direct GNATprove invocations are
 intentionally outside the project workflow; use the `alr` command above.

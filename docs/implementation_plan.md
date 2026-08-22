@@ -603,9 +603,10 @@ overflow-safe row-span rejection before stride-height multiplication, and the
 segment boundary helpers in
 `Jpeglib.Internal.Segments`, the SPARK-visible ownership budget/lease
 transitions in `Jpeglib.Internal.Ownership`, marker classification helpers in
-`Jpeglib.Internal.Markers`, plus the pure public capability surface in
+`Jpeglib.Internal.Markers`, restart-state configuration helpers in
+`Jpeglib.Internal.Restarts`, plus the pure public capability surface in
 `Jpeglib.Capabilities`, and invokes GNATprove only through `alr exec`.
-The proof runner fails the gate when the GNATprove summary reports unproved
+The proof runner fails the gate when the current GNATprove output reports unproved
 checks, severity diagnostics, or skipped declared SPARK bodies.
 `jpeglib_release` runs that proof profile before the aggregate gate.
 
