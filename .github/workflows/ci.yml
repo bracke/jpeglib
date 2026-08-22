@@ -39,13 +39,6 @@ jobs:
         shell: bash
         run: alr settings --global --set solver.timeout 600
 
-      - name: Install GNATprove
-        shell: bash
-        run: |
-          alr install gnatprove
-          alr toolchain --select gnat_native=15.2.1 gprbuild=25.0.1
-          echo "$HOME/.alire/bin" >> "$GITHUB_PATH"
-
       - name: Install Linux workflow dependencies
         if: runner.os == 'Linux'
         shell: bash
@@ -91,6 +84,12 @@ jobs:
         working-directory: jpeglib/tests
         shell: bash
         run: alr --non-interactive build
+
+      - name: Install GNATprove
+        shell: bash
+        run: |
+          alr install gnatprove
+          echo "$HOME/.alire/bin" >> "$GITHUB_PATH"
 
       - name: Run library-complete checks
         working-directory: jpeglib
