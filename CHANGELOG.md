@@ -148,6 +148,8 @@
 - Add `jpeglib_complete` as the executable library-complete gate scaffold; it
   runs the release baseline and reports explicit LC blockers until the complete
   JPEG-library criteria are closed.
+- Add the `jpeglib_external_matrix` checker and initial LC1 external oracle
+  matrix with explicit open rows for diagnostic/sentinel interoperability work.
 - Add the `jpeglib_real_world` manifest checker and initial LC2 manifest
   location for the real-world interoperability corpus.
 - Add the `jpeglib_policy_matrix` checker and initial LC3 public API policy

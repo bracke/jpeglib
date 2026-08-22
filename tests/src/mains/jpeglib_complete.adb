@@ -38,6 +38,19 @@ procedure Jpeglib_Complete is
       end if;
    end Run_Release_Gate;
 
+   procedure Run_External_Matrix is
+      Status : constant Integer :=
+        Project_Tools.Processes.Run_Status
+          ("library-complete external oracle matrix",
+           Root,
+           Project_Tools.Files.Join (Root, "tests/bin/jpeglib_external_matrix"),
+           Project_Tools.Processes.No_Arguments);
+   begin
+      if Status /= 0 then
+         Fail ("LC1 external oracle matrix failed with status" & Integer'Image (Status));
+      end if;
+   end Run_External_Matrix;
+
    procedure Run_Real_World_Manifest is
       Status : constant Integer :=
         Project_Tools.Processes.Run_Status
@@ -98,6 +111,7 @@ begin
    end if;
 
    Run_Release_Gate;
+   Run_External_Matrix;
    Run_Real_World_Manifest;
    Run_Policy_Matrix;
    Run_Proof_Matrix;

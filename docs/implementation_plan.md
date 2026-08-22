@@ -836,6 +836,9 @@ Work:
 - Make ImageMagick diagnostic CMYK/YCCK and advanced rows either required
   byte-oracle checks or explicit hard-failure checks with stable stderr/status
   expectations.
+- Use `jpeglib_external_matrix --allow-open` to validate the LC1 external oracle
+  matrix during bootstrap, and make plain `jpeglib_external_matrix` require
+  every row to be closed for the library-complete gate.
 - Extend `docs/external_reference_matrix.md` so every row has one of two final
   statuses: required positive oracle or required hard-failure compatibility
   check. No row may remain merely diagnostic.

@@ -1,0 +1,12 @@
+# jpeglib library-complete external oracle matrix
+# Format:
+# id|jpeg_scope|oracle_policy|final_status|status|evidence
+#
+baseline-gray-imagemagick|baseline grayscale encode|required positive oracle|ImageMagick raw gray byte comparison|closed|jpeglib_conformance
+progressive-gray-imagemagick|progressive grayscale encode|required positive oracle|ImageMagick raw gray byte comparison|closed|jpeglib_conformance
+baseline-rgb-imagemagick|baseline RGB encode 4:4:4/4:2:2/4:2:0/4:1:1|required positive oracle|ImageMagick raw RGB byte comparison|closed|jpeglib_conformance
+progressive-rgb-imagemagick|progressive RGB encode 4:4:4/4:2:2/4:2:0/4:1:1|required positive oracle|ImageMagick raw RGB byte comparison|closed|jpeglib_conformance
+arithmetic-dct-third-party|arithmetic sequential/progressive DCT encode|required native oracle plus ffmpeg limitation sentinel plus ImageMagick diagnostic|required positive oracle or required hard-failure compatibility check|open|LC1
+cmyk-ycck-imagemagick|CMYK/YCCK four-channel encode|required native oracle plus ffmpeg RGB conversion plus ImageMagick diagnostic|required positive oracle or required hard-failure compatibility check|open|LC1
+lossless-huffman-imagemagick|lossless Huffman grayscale/RGB encode including restarted artifacts|required native oracle plus ffmpeg raw-byte oracle plus ImageMagick diagnostic|required positive oracle or required hard-failure compatibility check|open|LC1
+differential-hierarchical-third-party|differential DCT hierarchical DCT and hierarchical lossless encode|required native oracle plus ffmpeg limitation sentinel plus ImageMagick diagnostic|required positive oracle or required hard-failure compatibility check|open|LC1

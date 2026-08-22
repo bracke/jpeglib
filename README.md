@@ -90,6 +90,7 @@ alr exec -- tests/bin/jpeglib_prove
 alr exec -- tests/bin/jpeglib_prove --run
 alr exec -- tests/bin/jpeglib_release
 alr exec -- tests/bin/jpeglib_complete
+alr exec -- tests/bin/jpeglib_external_matrix --allow-open
 alr exec -- tests/bin/jpeglib_real_world --allow-empty
 alr exec -- tests/bin/jpeglib_policy_matrix --allow-open
 alr exec -- tests/bin/jpeglib_proof_matrix --allow-open
@@ -136,6 +137,9 @@ implementation-plan coverage.
 baseline and then fails on the explicit LC1-LC6 blockers until diagnostic
 external rows, proof expansion, real-world corpus coverage, public API policy
 coverage, streaming stress, and the final completeness criteria are closed.
+`jpeglib_external_matrix --allow-open` validates the LC1 external oracle matrix
+while diagnostic or sentinel rows remain; without `--allow-open` every external
+row must have required positive or required hard-failure compatibility evidence.
 `jpeglib_real_world --allow-empty` validates the LC2 corpus manifest shape while
 the real-world corpus is being populated; without `--allow-empty` it requires
 at least one manifest entry.

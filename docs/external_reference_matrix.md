@@ -46,3 +46,9 @@ sentinel rows with positive compatibility evidence. That can be a stable
 third-party raw-byte oracle, a broader real-world corpus whose expected output
 is independently pinned, or a documented hard incompatibility with a regression
 test that exercises the exact accepted failure.
+The executable LC1 manifest is `tests/fixtures/external/oracle_matrix.txt`; it
+is validated during bootstrap with:
+
+```sh
+alr exec -- tests/bin/jpeglib_external_matrix --allow-open
+```

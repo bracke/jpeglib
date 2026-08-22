@@ -64,6 +64,7 @@ begin
    Require_Text ("README.md", "limits_and_safety.md");
    Require_Text ("README.md", "jpeglib_prove --run");
    Require_Text ("README.md", "jpeglib_complete");
+   Require_Text ("README.md", "jpeglib_external_matrix --allow-open");
    Require_Text ("README.md", "jpeglib_real_world --allow-empty");
    Require_Text ("README.md", "jpeglib_policy_matrix --allow-open");
    Require_Text ("README.md", "jpeglib_proof_matrix --allow-open");
@@ -79,6 +80,8 @@ begin
    Require_Text ("docs/external_reference_matrix.md", "required `ffmpeg` limitation sentinel");
    Require_Text ("docs/external_reference_matrix.md", "remaining library-complete interoperability work");
    Require_Text ("docs/external_reference_matrix.md", "jpeglib_decode_raw");
+   Require_Text ("docs/external_reference_matrix.md", "oracle_matrix.txt");
+   Require_Text ("docs/external_reference_matrix.md", "jpeglib_external_matrix --allow-open");
    Require_Text ("docs/external_reference_matrix.md", "Arithmetic sequential/progressive DCT encode");
    Require_Text ("docs/external_reference_matrix.md", "including restarted artifacts");
    Require_Text ("docs/external_reference_matrix.md", "emitted restart markers");
@@ -126,6 +129,7 @@ begin
    Require_Text ("docs/implementation_plan.md", "real-world interoperability corpus");
    Require_Text ("docs/implementation_plan.md", "Library-Complete Roadmap");
    Require_Text ("docs/implementation_plan.md", "Phase LC1: External Oracle Closure");
+   Require_Text ("docs/implementation_plan.md", "jpeglib_external_matrix --allow-open");
    Require_Text ("docs/implementation_plan.md", "Phase LC2: Real-World Corpus");
    Require_Text ("docs/implementation_plan.md", "jpeglib_real_world --allow-empty");
    Require_Text ("docs/implementation_plan.md", "Phase LC3: Complete Public API Policy Matrix");
