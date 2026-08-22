@@ -365,6 +365,133 @@ package body Jpeglib.Internal.Colors is
       Write_RGB_Channels (Output, Column, Row, R, G, B, Alpha);
    end Write_YCbCr;
 
+   procedure YCbCr_Bytes_To_RGB
+     (Y : Byte;
+      Cb : Byte;
+      Cr : Byte;
+      R : out Byte;
+      G : out Byte;
+      B : out Byte)
+   is
+      Y_Int : constant Integer := Integer (Y);
+      Cb_Delta : constant Integer := Integer (Cb) - 128;
+      Cr_Delta : constant Integer := Integer (Cr) - 128;
+   begin
+      R := Clamp (Y_Int + Rounded_Scaled (91_881 * Cr_Delta));
+      G := Clamp (Y_Int - Rounded_Scaled (22_554 * Cb_Delta + 46_802 * Cr_Delta));
+      B := Clamp (Y_Int + Rounded_Scaled (116_130 * Cb_Delta));
+   end YCbCr_Bytes_To_RGB;
+
+   procedure Write_YCbCr_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      Y_Plane : Streams.Byte_Array;
+      Cb_Plane : Streams.Byte_Array;
+      Cr_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Alpha : Byte := Byte'Last;
+      Written : out Natural)
+   is
+      Descriptor : constant Images.Image_Descriptor := Output.Descriptor;
+      Output_Row_Base : constant Positive :=
+        Output.Storage'First + Natural (Row_Stride (Row) * Descriptor.Stride);
+      Y_Input_Base : constant Positive := Y_Plane'First + Input_Offset;
+      Cb_Input_Base : constant Positive := Cb_Plane'First + Input_Offset;
+      Cr_Input_Base : constant Positive := Cr_Plane'First + Input_Offset;
+      Output_Index : Positive;
+      Y_Index : Positive;
+      Cb_Index : Positive;
+      Cr_Index : Positive;
+      R : Byte;
+      G : Byte;
+      B : Byte;
+   begin
+      Written := 0;
+      if Pixels = 0
+        or else Row >= Natural (Descriptor.Height)
+        or else Pixels > Natural (Descriptor.Width)
+        or else Input_Offset + Pixels > Natural (Y_Plane'Length)
+        or else Input_Offset + Pixels > Natural (Cb_Plane'Length)
+        or else Input_Offset + Pixels > Natural (Cr_Plane'Length)
+      then
+         return;
+      end if;
+
+      case Descriptor.Format is
+         when Images.RGB_24 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Y_Index := Y_Input_Base + Column;
+               Cb_Index := Cb_Input_Base + Column;
+               Cr_Index := Cr_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 3;
+               YCbCr_Bytes_To_RGB (Y_Plane (Y_Index), Cb_Plane (Cb_Index), Cr_Plane (Cr_Index), R, G, B);
+               Output.Storage (Output_Index) := R;
+               Output.Storage (Output_Index + 1) := G;
+               Output.Storage (Output_Index + 2) := B;
+            end loop;
+         when Images.BGR_24 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Y_Index := Y_Input_Base + Column;
+               Cb_Index := Cb_Input_Base + Column;
+               Cr_Index := Cr_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 3;
+               YCbCr_Bytes_To_RGB (Y_Plane (Y_Index), Cb_Plane (Cb_Index), Cr_Plane (Cr_Index), R, G, B);
+               Output.Storage (Output_Index) := B;
+               Output.Storage (Output_Index + 1) := G;
+               Output.Storage (Output_Index + 2) := R;
+            end loop;
+         when Images.RGBA_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Y_Index := Y_Input_Base + Column;
+               Cb_Index := Cb_Input_Base + Column;
+               Cr_Index := Cr_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 4;
+               YCbCr_Bytes_To_RGB (Y_Plane (Y_Index), Cb_Plane (Cb_Index), Cr_Plane (Cr_Index), R, G, B);
+               Output.Storage (Output_Index) := R;
+               Output.Storage (Output_Index + 1) := G;
+               Output.Storage (Output_Index + 2) := B;
+               Output.Storage (Output_Index + 3) := Alpha;
+            end loop;
+         when Images.BGRA_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Y_Index := Y_Input_Base + Column;
+               Cb_Index := Cb_Input_Base + Column;
+               Cr_Index := Cr_Input_Base + Column;
+               Output_Index := Output_Row_Base + Column * 4;
+               YCbCr_Bytes_To_RGB (Y_Plane (Y_Index), Cb_Plane (Cb_Index), Cr_Plane (Cr_Index), R, G, B);
+               Output.Storage (Output_Index) := B;
+               Output.Storage (Output_Index + 1) := G;
+               Output.Storage (Output_Index + 2) := R;
+               Output.Storage (Output_Index + 3) := Alpha;
+            end loop;
+         when others =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Y_Index := Y_Input_Base + Column;
+               Cb_Index := Cb_Input_Base + Column;
+               Cr_Index := Cr_Input_Base + Column;
+               Write_YCbCr
+                 (Output,
+                  Column,
+                  Row,
+                  Y_Plane (Y_Index),
+                  Cb_Plane (Cb_Index),
+                  Cr_Plane (Cr_Index),
+                  Alpha);
+            end loop;
+      end case;
+
+      Written := Pixels;
+   exception
+      when Constraint_Error =>
+         Written := 0;
+   end Write_YCbCr_Row;
+
    procedure Write_RGB
      (Output : in out Images.Mutable_Image_View;
       Column : Natural;

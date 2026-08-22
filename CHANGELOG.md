@@ -38,6 +38,9 @@
   RGB-family plane filling through them, advertise `SIMD_Acceleration`, and add
   `jpeglib_simd_matrix` scalar-equivalence coverage across RGB/BGR/RGBA/BGRA
   layouts.
+- Extend the SIMD color path with compiler-vectorized YCbCr-to-RGB-family row
+  output kernels and expand `jpeglib_simd_matrix` to compare decode-side row
+  packing against scalar `Write_YCbCr`.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

@@ -1044,12 +1044,13 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
 ### Phase CP6: Performance Architecture
 
 - Status: closed. `Jpeglib.Internal.Colors` exposes compiler-vectorized
-  RGB-to-YCbCr row kernels and the encoder plane-filling path uses them for
-  RGB-family DCT input. `Jpeglib.Capabilities.SIMD_Acceleration` advertises the
-  acceleration surface.
+  RGB-to-YCbCr row kernels and YCbCr-to-RGB-family row output kernels. The
+  encoder plane-filling path uses the input kernels for RGB-family DCT input.
+  `Jpeglib.Capabilities.SIMD_Acceleration` advertises the acceleration surface.
 - `jpeglib_simd_matrix` uses `../hostkit` to report the host and verifies
   bit-exact row-kernel equivalence against scalar `Read_RGB` plus
-  `Convert_RGB_To_YCbCr` across RGB, BGR, RGBA, and BGRA storage layouts.
+  `Convert_RGB_To_YCbCr` input conversion and scalar `Write_YCbCr` output
+  packing across RGB, BGR, RGBA, and BGRA storage layouts.
 - `jpeglib_performance_matrix` reports the active acceleration profile and runs
   baseline, optimized progressive, and arithmetic encode/decode loops that
   exercise FDCT/IDCT, color conversion, sampling, entropy, and pixel packing
