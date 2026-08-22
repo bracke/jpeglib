@@ -946,6 +946,9 @@ Work:
   library-complete mode that runs external oracle closure, real-world corpus,
   public API matrix, proof expansion, streaming stress, docs, benchmarks, and
   packaging checks.
+- Bootstrap `jpeglib_complete` as a failing completeness gate that runs the
+  release baseline and reports the explicit LC1-LC6 blockers until each phase is
+  closed.
 - Make CI run the library-complete gate once it is practical for normal pull
   requests, or provide a scheduled workflow until runtime cost is acceptable.
 - Update `README.md`, `docs/external_reference_matrix.md`, `docs/proof_profile.md`,

@@ -89,6 +89,7 @@ alr exec -- tests/bin/jpeglib_docs
 alr exec -- tests/bin/jpeglib_prove
 alr exec -- tests/bin/jpeglib_prove --run
 alr exec -- tests/bin/jpeglib_release
+alr exec -- tests/bin/jpeglib_complete
 ```
 
 `jpeglib_tests` is the AUnit test runner. `jpeglib_check` is the aggregate local
@@ -127,6 +128,10 @@ pins for `../project_tools` and `../hostkit`. It also runs the
 `Project_Tools.Release_Checks` tests GPR main inventory so every executable
 listed in `tests/tests.gpr` has a matching `tests/src/mains` source and
 implementation-plan coverage.
+`jpeglib_complete` is the library-complete gate. It currently runs the release
+baseline and then fails on the explicit LC1-LC6 blockers until diagnostic
+external rows, proof expansion, real-world corpus coverage, public API policy
+coverage, streaming stress, and the final completeness criteria are closed.
 
 Fixture files live under `tests/fixtures/coefficients` and
 `tests/fixtures/images`. Refresh them with:
