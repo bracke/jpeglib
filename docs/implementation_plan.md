@@ -1050,7 +1050,10 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
   output kernels. The encoder plane-filling path uses the input kernels for
   RGB-family, gray-alpha, and four-component DCT input. Encoder chroma
   downsampling uses compiler-vectorized row kernels for the supported 4:4:4,
-  4:2:2, 4:2:0, and 4:1:1 layouts, and direct full-size grayscale,
+  4:2:2, 4:2:0, and 4:1:1 layouts. Encoder grayscale and component-plane DCT
+  block extraction uses compiler-vectorized full-block row loaders while
+  preserving scalar replicated-edge handling for partial right/bottom blocks,
+  and direct full-size grayscale,
   two-component, three-component, four-component, lossless, plus 4:4:4 DCT
   YCbCr/RGB/CMYK/YCCK image decode writes rows through output kernels.
   Three-component subsampled DCT decode now stages direct-output rows after

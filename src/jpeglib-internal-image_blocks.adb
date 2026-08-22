@@ -52,6 +52,38 @@ package body Jpeglib.Internal.Image_Blocks is
       return Input.Storage (Index);
    end Gray_Sample;
 
+   procedure Fill_Gray_Sample_Block
+     (Input : Images.Image_View;
+      Block_X : Natural;
+      Block_Y : Natural;
+      Samples : out Transforms.Sample_Block)
+   is
+      Source_X : constant Natural := Block_X * 8;
+      Source_Y : constant Natural := Block_Y * 8;
+      Row_Base : Positive;
+   begin
+      if Source_X + 7 < Natural (Input.Descriptor.Width)
+        and then Source_Y + 7 < Natural (Input.Descriptor.Height)
+      then
+         for Local_Y in 0 .. 7 loop
+            Row_Base :=
+              Input.Storage'First
+              + Natural ((Row_Stride (Source_Y + Local_Y) * Input.Descriptor.Stride) + Row_Stride (Source_X));
+            for Local_X in 0 .. 7 loop
+               pragma Loop_Optimize (Vector);
+               Samples (Coefficient_Index (Local_Y * 8 + Local_X)) := Input.Storage (Row_Base + Local_X);
+            end loop;
+         end loop;
+      else
+         for Local_Y in 0 .. 7 loop
+            for Local_X in 0 .. 7 loop
+               Samples (Coefficient_Index (Local_Y * 8 + Local_X)) :=
+                 Gray_Sample (Input, Source_X + Local_X, Source_Y + Local_Y);
+            end loop;
+         end loop;
+      end if;
+   end Fill_Gray_Sample_Block;
+
    function Encode_Gray_Blocks
      (Input : Images.Image_View;
       Table : Quantization.Quantization_Table;
@@ -73,12 +105,7 @@ package body Jpeglib.Internal.Image_Blocks is
 
       for Block_Y in 0 .. Ceil_Divide_By_8 (Natural (Input.Descriptor.Height)) - 1 loop
          for Block_X in 0 .. Ceil_Divide_By_8 (Natural (Input.Descriptor.Width)) - 1 loop
-            for Local_Y in 0 .. 7 loop
-               for Local_X in 0 .. 7 loop
-                  Samples (Coefficient_Index (Local_Y * 8 + Local_X)) :=
-                    Gray_Sample (Input, Block_X * 8 + Local_X, Block_Y * 8 + Local_Y);
-               end loop;
-            end loop;
+            Fill_Gray_Sample_Block (Input, Block_X, Block_Y, Samples);
 
             case Mode is
                when DC_Only =>
@@ -116,6 +143,38 @@ package body Jpeglib.Internal.Image_Blocks is
       return Plane (Index);
    end Plane_Sample;
 
+   procedure Fill_Plane_Sample_Block
+     (Plane : Streams.Byte_Array;
+      Width : Image_Width;
+      Height : Image_Height;
+      Block_X : Natural;
+      Block_Y : Natural;
+      Samples : out Transforms.Sample_Block)
+   is
+      Source_X : constant Natural := Block_X * 8;
+      Source_Y : constant Natural := Block_Y * 8;
+      Row_Base : Positive;
+   begin
+      if Source_X + 7 < Natural (Width)
+        and then Source_Y + 7 < Natural (Height)
+      then
+         for Local_Y in 0 .. 7 loop
+            Row_Base := Plane'First + (Source_Y + Local_Y) * Natural (Width) + Source_X;
+            for Local_X in 0 .. 7 loop
+               pragma Loop_Optimize (Vector);
+               Samples (Coefficient_Index (Local_Y * 8 + Local_X)) := Plane (Row_Base + Local_X);
+            end loop;
+         end loop;
+      else
+         for Local_Y in 0 .. 7 loop
+            for Local_X in 0 .. 7 loop
+               Samples (Coefficient_Index (Local_Y * 8 + Local_X)) :=
+                 Plane_Sample (Plane, Width, Height, Source_X + Local_X, Source_Y + Local_Y);
+            end loop;
+         end loop;
+      end if;
+   end Fill_Plane_Sample_Block;
+
    function Encode_Plane_Blocks
      (Plane : Streams.Byte_Array;
       Width : Image_Width;
@@ -137,12 +196,7 @@ package body Jpeglib.Internal.Image_Blocks is
 
       for Block_Y in 0 .. Ceil_Divide_By_8 (Natural (Height)) - 1 loop
          for Block_X in 0 .. Ceil_Divide_By_8 (Natural (Width)) - 1 loop
-            for Local_Y in 0 .. 7 loop
-               for Local_X in 0 .. 7 loop
-                  Samples (Coefficient_Index (Local_Y * 8 + Local_X)) :=
-                    Plane_Sample (Plane, Width, Height, Block_X * 8 + Local_X, Block_Y * 8 + Local_Y);
-               end loop;
-            end loop;
+            Fill_Plane_Sample_Block (Plane, Width, Height, Block_X, Block_Y, Samples);
 
             case Mode is
                when DC_Only =>

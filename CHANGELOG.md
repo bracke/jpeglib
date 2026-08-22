@@ -68,6 +68,9 @@
 - Add compiler-vectorized encoder chroma downsampling paths for 4:4:4, 4:2:2,
   4:2:0, and 4:1:1 plane layouts, with `jpeglib_simd_matrix`
   scalar-equivalence coverage for odd-width and odd-height edge handling.
+- Add compiler-vectorized full-block sample loaders for grayscale and component
+  plane DCT block extraction, keeping scalar edge-padding semantics for
+  right/bottom partial blocks.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,
