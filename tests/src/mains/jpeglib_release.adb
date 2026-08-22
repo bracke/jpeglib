@@ -7,6 +7,7 @@ with Jpeglib_Tools.Release_Digests;
 with Project_Tools.Alire_Manifests;
 with Project_Tools.Files;
 with Project_Tools.Processes;
+with Project_Tools.Release_Checks;
 
 procedure Jpeglib_Release is
    Root : constant String :=
@@ -59,6 +60,18 @@ procedure Jpeglib_Release is
       when Program_Error =>
          Fail ("project_tools manifest validation failed");
    end Require_Manifest_Shape;
+
+   procedure Require_Tool_Inventory is
+   begin
+      Project_Tools.Release_Checks.Require_GPR_Main_Inventory
+        (Project_File       => Project_Tools.Files.Join (Root, "tests/tests.gpr"),
+         Documentation_File => Project_Tools.Files.Join (Root, "docs/implementation_plan.md"),
+         Source_Directory   => Project_Tools.Files.Join (Root, "tests/src/mains"),
+         Quiet              => True);
+   exception
+      when Program_Error =>
+         Fail ("project_tools tests main inventory validation failed");
+   end Require_Tool_Inventory;
 
    procedure Run_Step (Label : String; Program : String) is
       Status : constant Integer :=
@@ -158,7 +171,9 @@ begin
    Require_Text ("CHANGELOG.md", "Photoshop_APP13");
    Require_Text ("CHANGELOG.md", "YCCK");
    Require_Text ("CHANGELOG.md", "project_tools` manifest validation");
+   Require_Text ("CHANGELOG.md", "tests GPR main inventory");
    Require_Text ("README.md", "`project_tools` manifest checks");
+   Require_Text ("README.md", "`Project_Tools.Release_Checks` tests GPR main inventory");
    Require_Text ("README.md", "../hostkit");
    Require_Text ("docs/external_reference_matrix.md", "including restarted artifacts");
    Require_Text ("docs/external_reference_matrix.md", "emitted restart markers");
@@ -192,6 +207,7 @@ begin
    Require_Text ("docs/invariants.md", "IMAGE-VALID-001");
    Require_Text ("docs/invariants.md", "foundation.images.descriptor_overflow");
    Require_Text ("docs/invariants.md", "RELEASE-MANIFEST-001");
+   Require_Text ("docs/invariants.md", "RELEASE-TOOLS-001");
    Require_Text ("docs/invariants.md", "arithmetic CMYK/YCCK `Balanced_Progressive`");
    Require_Text ("docs/implementation_plan.md", "arithmetic CMYK/YCCK emits the corresponding 24-scan");
    Require_Text ("docs/implementation_plan.md", "optional external-support diagnostics");
@@ -214,8 +230,10 @@ begin
    Require_Text ("docs/implementation_plan.md", "proof profile");
    Require_Text ("docs/implementation_plan.md", "pin-free root Alire manifest");
    Require_Text ("docs/implementation_plan.md", "../project_tools");
+   Require_Text ("docs/implementation_plan.md", "tests GPR main inventory");
 
    Require_Manifest_Shape;
+   Require_Tool_Inventory;
 
    if Errors = 0 then
       Report_Release_Digests;

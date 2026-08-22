@@ -118,7 +118,10 @@ SPARK-proved descriptor arithmetic and runtime-checked access-bearing views are
 documented in `docs/limits_and_safety.md`.
 The release gate also uses `project_tools` manifest checks to keep the root
 crate publishable without local pins and to require the tests crate's sibling
-pins for `../project_tools` and `../hostkit`.
+pins for `../project_tools` and `../hostkit`. It also runs the
+`Project_Tools.Release_Checks` tests GPR main inventory so every executable
+listed in `tests/tests.gpr` has a matching `tests/src/mains` source and
+implementation-plan coverage.
 
 Fixture files live under `tests/fixtures/coefficients` and
 `tests/fixtures/images`. Refresh them with:

@@ -592,8 +592,10 @@ gate.
 coverage, reports `cryptolib` SHA-256 manifest lines for the core release
 inputs, enforces the pin-free root Alire manifest and required tests-crate
 sibling pins for `../project_tools` and `../hostkit` through `project_tools`
-manifest checks, then runs the aggregate gate and benchmark smoke as a release
-readiness wrapper.
+manifest checks, enforces the tests GPR main inventory through
+`Project_Tools.Release_Checks` for `tests/tests.gpr` executable sources and
+documentation coverage,
+then runs the aggregate gate and benchmark smoke as a release readiness wrapper.
 `jpeglib_generate` now refreshes generated fixture artifacts by invoking
 `jpeglib_fixtures --generate` and verifying the resulting corpus.
 `jpeglib_prove` now performs a proof-readiness audit over proof-designated

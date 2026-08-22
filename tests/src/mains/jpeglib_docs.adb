@@ -64,6 +64,7 @@ begin
    Require_Text ("README.md", "limits_and_safety.md");
    Require_Text ("README.md", "jpeglib_prove --run");
    Require_Text ("README.md", "`project_tools` manifest checks");
+   Require_Text ("README.md", "`Project_Tools.Release_Checks` tests GPR main inventory");
    Require_Text ("README.md", "../hostkit");
    Require_Text ("CONTRIBUTING.md", "alr exec -- tests/bin/jpeglib_check");
    Require_Text ("docs/external_reference_matrix.md", "Diagnostic");
@@ -114,7 +115,9 @@ begin
    Require_Text ("docs/implementation_plan.md", "skipped declared SPARK bodies");
    Require_Text ("docs/implementation_plan.md", "pin-free root Alire manifest");
    Require_Text ("docs/implementation_plan.md", "../project_tools");
+   Require_Text ("docs/implementation_plan.md", "tests GPR main inventory");
    Require_Text ("docs/invariants.md", "RELEASE-MANIFEST-001");
+   Require_Text ("docs/invariants.md", "RELEASE-TOOLS-001");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Segments");
    Require_Text ("docs/implementation_plan.md", "jpeglib_fuzz");
    Require_Text ("docs/implementation_plan.md", "jpeglib_benchmark");

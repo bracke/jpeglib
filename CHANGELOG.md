@@ -136,6 +136,9 @@
 - Add `project_tools` manifest validation to the release gate so the root crate
   stays pin-free and tests keep the required `../project_tools` and `../hostkit`
   sibling pins.
+- Add a `Project_Tools.Release_Checks` tests GPR main inventory check to the
+  release gate so listed test executables require source and documentation
+  coverage.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.
