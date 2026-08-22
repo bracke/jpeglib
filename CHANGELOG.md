@@ -58,6 +58,9 @@
 - Add compiler-vectorized CMYK/YCCK row input plane filling, route
   four-component DCT encoder plane assembly through row readers, and extend
   `jpeglib_simd_matrix` scalar-equivalence coverage for CMYK/YCCK input rows.
+- Add compiler-vectorized gray-alpha row input plane splitting, route
+  gray-alpha DCT encoder plane assembly through row readers, and extend
+  `jpeglib_simd_matrix` scalar-equivalence coverage for gray/alpha input rows.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

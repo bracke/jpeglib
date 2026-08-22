@@ -34,6 +34,15 @@ package Jpeglib.Internal.Colors is
 
    function Convert_RGB_To_YCbCr (Sample : RGB_Sample) return YCbCr_Sample;
 
+   procedure Convert_Gray_Alpha_Row_To_Planes
+     (Input : Images.Image_View;
+      Row : Natural;
+      Gray_Plane : in out Streams.Byte_Array;
+      Alpha_Plane : in out Streams.Byte_Array;
+      Output_Offset : Natural;
+      Pixels : Natural;
+      Written : out Natural);
+
    procedure Convert_RGB_Row_To_YCbCr_Planes
      (Input : Images.Image_View;
       Row : Natural;

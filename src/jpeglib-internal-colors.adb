@@ -93,6 +93,45 @@ package body Jpeglib.Internal.Colors is
       return RGB_Bytes_To_YCbCr (Sample.R, Sample.G, Sample.B);
    end Convert_RGB_To_YCbCr;
 
+   procedure Convert_Gray_Alpha_Row_To_Planes
+     (Input : Images.Image_View;
+      Row : Natural;
+      Gray_Plane : in out Streams.Byte_Array;
+      Alpha_Plane : in out Streams.Byte_Array;
+      Output_Offset : Natural;
+      Pixels : Natural;
+      Written : out Natural)
+   is
+      Descriptor : constant Images.Image_Descriptor := Input.Descriptor;
+      Input_Row_Base : constant Positive :=
+        Input.Storage'First + Natural (Row_Stride (Row) * Descriptor.Stride);
+      Gray_Output_Base : constant Positive := Gray_Plane'First + Output_Offset;
+      Alpha_Output_Base : constant Positive := Alpha_Plane'First + Output_Offset;
+      Input_Index : Positive;
+   begin
+      Written := 0;
+      if Pixels = 0
+        or else Descriptor.Format /= Images.Gray_Alpha_16
+        or else Row >= Natural (Descriptor.Height)
+        or else Output_Offset + Pixels > Natural (Gray_Plane'Length)
+        or else Output_Offset + Pixels > Natural (Alpha_Plane'Length)
+      then
+         return;
+      end if;
+
+      for Column in 0 .. Pixels - 1 loop
+         pragma Loop_Optimize (Vector);
+         Input_Index := Input_Row_Base + Column * 2;
+         Gray_Plane (Gray_Output_Base + Column) := Input.Storage (Input_Index);
+         Alpha_Plane (Alpha_Output_Base + Column) := Input.Storage (Input_Index + 1);
+      end loop;
+
+      Written := Pixels;
+   exception
+      when Constraint_Error =>
+         Written := 0;
+   end Convert_Gray_Alpha_Row_To_Planes;
+
    procedure Store_YCbCr
      (Y_Plane : in out Streams.Byte_Array;
       Cb_Plane : in out Streams.Byte_Array;

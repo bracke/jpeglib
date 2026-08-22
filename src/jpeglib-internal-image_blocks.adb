@@ -210,6 +210,7 @@ package body Jpeglib.Internal.Image_Blocks is
       Samples_Needed : constant Byte_Count :=
         Byte_Count (Input.Descriptor.Width) * Byte_Count (Input.Descriptor.Height);
       Offset : Natural := 0;
+      Written : Natural;
       Base : Positive;
    begin
       if not Images.Is_Valid (Input) or else Input.Descriptor.Format /= Images.Gray_Alpha_16 then
@@ -221,15 +222,27 @@ package body Jpeglib.Internal.Image_Blocks is
       end if;
 
       for Row in 0 .. Natural (Input.Descriptor.Height) - 1 loop
-         for Column in 0 .. Natural (Input.Descriptor.Width) - 1 loop
-            Base :=
-              Input.Storage'First
-              + Row * Natural (Input.Descriptor.Stride)
-              + Column * 2;
-            Gray_Plane (Gray_Plane'First + Offset) := Input.Storage (Base);
-            Alpha_Plane (Alpha_Plane'First + Offset) := Input.Storage (Base + 1);
-            Offset := Offset + 1;
-         end loop;
+         Colors.Convert_Gray_Alpha_Row_To_Planes
+           (Input,
+            Row,
+            Gray_Plane,
+            Alpha_Plane,
+            Offset,
+            Natural (Input.Descriptor.Width),
+            Written);
+
+         if Written /= Natural (Input.Descriptor.Width) then
+            for Column in 0 .. Natural (Input.Descriptor.Width) - 1 loop
+               Base :=
+                 Input.Storage'First
+                 + Row * Natural (Input.Descriptor.Stride)
+                 + Column * 2;
+               Gray_Plane (Gray_Plane'First + Offset + Column) := Input.Storage (Base);
+               Alpha_Plane (Alpha_Plane'First + Offset + Column) := Input.Storage (Base + 1);
+            end loop;
+            Written := Natural (Input.Descriptor.Width);
+         end if;
+         Offset := Offset + Written;
       end loop;
 
       return (Outcome => Results.Success, Samples_Written => Samples_Needed * 2);

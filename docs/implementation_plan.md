@@ -1044,11 +1044,11 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
 ### Phase CP6: Performance Architecture
 
 - Status: closed. `Jpeglib.Internal.Colors` exposes compiler-vectorized
-  RGB-to-YCbCr row kernels, CMYK/YCCK row input kernels,
+  RGB-to-YCbCr row kernels, gray-alpha row input kernels, CMYK/YCCK row input kernels,
   YCbCr-to-RGB-family row output kernels, direct RGB row output kernels, gray
   row output kernels, gray-alpha row output kernels, plus CMYK and YCCK row
   output kernels. The encoder plane-filling path uses the input kernels for
-  RGB-family and four-component DCT input, and direct full-size grayscale,
+  RGB-family, gray-alpha, and four-component DCT input, and direct full-size grayscale,
   two-component, three-component, four-component, lossless, plus 4:4:4 DCT
   YCbCr/RGB/CMYK/YCCK image decode writes rows through output kernels while
   reduced-IDCT, subsampled chroma, and EXIF-oriented output keep the scalar
@@ -1056,8 +1056,9 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
   `Jpeglib.Capabilities.SIMD_Acceleration` advertises the acceleration surface.
 - `jpeglib_simd_matrix` uses `../hostkit` to report the host and verifies
   bit-exact row-kernel equivalence against scalar `Read_RGB` plus
-  `Convert_RGB_To_YCbCr` input conversion, scalar `Read_CMYK` and `Read_YCCK`
-  four-component input conversion, scalar `Write_YCbCr` output packing, scalar
+  `Convert_RGB_To_YCbCr` input conversion, scalar gray-alpha input splitting,
+  scalar `Read_CMYK` and `Read_YCCK` four-component input conversion, scalar
+  `Write_YCbCr` output packing, scalar
   `Write_RGB` output packing, scalar `Write_Gray` output packing, scalar
   `Write_Gray_Alpha` output packing, scalar `Write_CMYK` output packing, and
   scalar `Write_YCCK` output packing across every public input and output

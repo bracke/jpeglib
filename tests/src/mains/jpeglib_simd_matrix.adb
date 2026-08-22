@@ -32,6 +32,7 @@ procedure Jpeglib_SIMD_Matrix is
    Expected_Cb : aliased Jpeglib.Streams.Byte_Array := [1 .. Plane_Bytes => 0];
    Expected_Cr : aliased Jpeglib.Streams.Byte_Array := [1 .. Plane_Bytes => 0];
    Expected_K : aliased Jpeglib.Streams.Byte_Array := [1 .. Plane_Bytes => 0];
+   Expected_Alpha : aliased Jpeglib.Streams.Byte_Array := [1 .. Plane_Bytes => 0];
    Failures : Natural := 0;
 
    procedure Fail (Message : String) is
@@ -165,6 +166,25 @@ procedure Jpeglib_SIMD_Matrix is
       end loop;
    end Build_Expected_CMYK_Input;
 
+   procedure Build_Expected_Gray_Alpha_Input (Input : Jpeglib.Images.Image_View) is
+      Offset : Natural := 0;
+      Base : Positive;
+   begin
+      Expected_Y := [others => 0];
+      Expected_Alpha := [others => 0];
+      for Row in 0 .. Natural (Height) - 1 loop
+         for Column in 0 .. Natural (Width) - 1 loop
+            Base :=
+              Input.Storage'First
+              + Row * Natural (Input.Descriptor.Stride)
+              + Column * 2;
+            Expected_Y (Expected_Y'First + Offset) := Input.Storage (Base);
+            Expected_Alpha (Expected_Alpha'First + Offset) := Input.Storage (Base + 1);
+            Offset := Offset + 1;
+         end loop;
+      end loop;
+   end Build_Expected_Gray_Alpha_Input;
+
    procedure Run_Format (Format : Jpeglib.Images.Pixel_Format) is
       Input : Jpeglib.Images.Image_View;
       Written : Natural;
@@ -250,6 +270,40 @@ procedure Jpeglib_SIMD_Matrix is
          Fail (Jpeglib.Images.Pixel_Format'Image (Format) & Label & " K plane differs from scalar reference");
       end if;
    end Run_CMYK_Input_Format;
+
+   procedure Run_Gray_Alpha_Input_Format is
+      Input : Jpeglib.Images.Image_View;
+      Written : Natural;
+      Offset : Natural := 0;
+   begin
+      Fill_Input (Jpeglib.Images.Gray_Alpha_16);
+      Input := View (Jpeglib.Images.Gray_Alpha_16);
+      Build_Expected_Gray_Alpha_Input (Input);
+      Y_Plane := [others => 0];
+      K_Plane := [others => 0];
+
+      for Row in 0 .. Natural (Height) - 1 loop
+         Jpeglib.Internal.Colors.Convert_Gray_Alpha_Row_To_Planes
+           (Input,
+            Row,
+            Y_Plane,
+            K_Plane,
+            Offset,
+            Natural (Width),
+            Written);
+         if Written /= Natural (Width) then
+            Fail ("GRAY_ALPHA_16 gray-alpha input row conversion wrote wrong count");
+         end if;
+         Offset := Offset + Written;
+      end loop;
+
+      if Y_Plane /= Expected_Y then
+         Fail ("GRAY_ALPHA_16 gray plane differs from scalar reference");
+      end if;
+      if K_Plane /= Expected_Alpha then
+         Fail ("GRAY_ALPHA_16 alpha plane differs from scalar reference");
+      end if;
+   end Run_Gray_Alpha_Input_Format;
 
    procedure Fill_YCbCr_Planes is
       Offset : Natural := 0;
@@ -585,6 +639,7 @@ begin
    Run_Format (Jpeglib.Images.BGR_24);
    Run_Format (Jpeglib.Images.RGBA_32);
    Run_Format (Jpeglib.Images.BGRA_32);
+   Run_Gray_Alpha_Input_Format;
    Run_CMYK_Input_Format (Jpeglib.Images.Gray_8, False);
    Run_CMYK_Input_Format (Jpeglib.Images.Gray_Alpha_16, False);
    Run_CMYK_Input_Format (Jpeglib.Images.RGB_24, False);
