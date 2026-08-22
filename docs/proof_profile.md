@@ -49,6 +49,12 @@ depend on segment-reader IO and diagnostic construction.
 severity diagnostics, and declared SPARK bodies that were skipped. `jpeglib_release`
 runs this profile as its release proof gate. Direct GNATprove invocations are
 intentionally outside the project workflow; use the `alr` command above.
+The library-complete proof expansion matrix is tracked in
+`tests/fixtures/proof/proof_expansion_matrix.txt` and validated by:
+
+```sh
+alr exec -- tests/bin/jpeglib_proof_matrix --allow-open
+```
 
 Library-complete proof work remains open. The next proof expansions should move
 additional SPARK-clean decode/encode state helpers under `proof/jpeglib_proof.gpr`,

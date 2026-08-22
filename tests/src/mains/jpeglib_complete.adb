@@ -64,6 +64,19 @@ procedure Jpeglib_Complete is
       end if;
    end Run_Policy_Matrix;
 
+   procedure Run_Proof_Matrix is
+      Status : constant Integer :=
+        Project_Tools.Processes.Run_Status
+          ("library-complete proof expansion matrix",
+           Root,
+           Project_Tools.Files.Join (Root, "tests/bin/jpeglib_proof_matrix"),
+           Project_Tools.Processes.No_Arguments);
+   begin
+      if Status /= 0 then
+         Fail ("LC4 proof expansion matrix failed with status" & Integer'Image (Status));
+      end if;
+   end Run_Proof_Matrix;
+
    procedure Run_Stress_Matrix is
       Status : constant Integer :=
         Project_Tools.Processes.Run_Status
@@ -87,6 +100,7 @@ begin
    Run_Release_Gate;
    Run_Real_World_Manifest;
    Run_Policy_Matrix;
+   Run_Proof_Matrix;
    Run_Stress_Matrix;
 
    if Errors = 0 then

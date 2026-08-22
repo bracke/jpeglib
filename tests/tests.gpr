@@ -22,6 +22,7 @@ project Tests is
       "jpeglib_complete.adb",
       "jpeglib_real_world.adb",
       "jpeglib_policy_matrix.adb",
+      "jpeglib_proof_matrix.adb",
       "jpeglib_stress_matrix.adb");
    for Object_Dir use "obj/tests";
    for Exec_Dir use "bin";

@@ -152,6 +152,8 @@
   location for the real-world interoperability corpus.
 - Add the `jpeglib_policy_matrix` checker and initial LC3 public API policy
   matrix with explicit open rows for library-complete coverage.
+- Add the `jpeglib_proof_matrix` checker and initial LC4 proof expansion matrix
+  with explicit open rows for library-complete coverage.
 - Add the `jpeglib_stress_matrix` checker and initial LC5 streaming/large-image
   stress matrix with explicit open rows for library-complete coverage.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode

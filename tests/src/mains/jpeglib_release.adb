@@ -148,6 +148,7 @@ begin
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_complete");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_real_world --allow-empty");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_policy_matrix --allow-open");
+   Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_proof_matrix --allow-open");
    Require_Text ("README.md", "alr exec -- tests/bin/jpeglib_stress_matrix --allow-open");
    Require_Text ("README.md", "descriptor-only image view");
    Require_Text ("CONTRIBUTING.md", "alr exec -- tests/bin/jpeglib_check");
@@ -206,6 +207,8 @@ begin
    Require_Text ("docs/proof_profile.md", "unproved checks");
    Require_Text ("docs/proof_profile.md", "jpeglib_release");
    Require_Text ("docs/proof_profile.md", "docs/limits_and_safety.md");
+   Require_Text ("docs/proof_profile.md", "proof_expansion_matrix.txt");
+   Require_Text ("docs/proof_profile.md", "jpeglib_proof_matrix --allow-open");
    Require_Text ("docs/limits_and_safety.md", "SPARK-proved descriptor arithmetic");
    Require_Text ("docs/limits_and_safety.md", "runtime-checked access-bearing views");
    Require_Text ("docs/limits_and_safety.md", "Unchecked_Access");
@@ -225,6 +228,7 @@ begin
    Require_Text ("docs/implementation_plan.md", "Phase LC3: Complete Public API Policy Matrix");
    Require_Text ("docs/implementation_plan.md", "jpeglib_policy_matrix --allow-open");
    Require_Text ("docs/implementation_plan.md", "Phase LC4: Proof Expansion");
+   Require_Text ("docs/implementation_plan.md", "jpeglib_proof_matrix --allow-open");
    Require_Text ("docs/implementation_plan.md", "Phase LC5: Streaming and Large-Image Completeness");
    Require_Text ("docs/implementation_plan.md", "jpeglib_stress_matrix --allow-open");
    Require_Text ("docs/implementation_plan.md", "Phase LC6: Release Completeness Gate");

@@ -92,6 +92,7 @@ alr exec -- tests/bin/jpeglib_release
 alr exec -- tests/bin/jpeglib_complete
 alr exec -- tests/bin/jpeglib_real_world --allow-empty
 alr exec -- tests/bin/jpeglib_policy_matrix --allow-open
+alr exec -- tests/bin/jpeglib_proof_matrix --allow-open
 alr exec -- tests/bin/jpeglib_stress_matrix --allow-open
 ```
 
@@ -141,6 +142,9 @@ at least one manifest entry.
 `jpeglib_policy_matrix --allow-open` validates the LC3 public API policy matrix
 while open rows remain; without `--allow-open` it requires every row to be
 closed by evidence.
+`jpeglib_proof_matrix --allow-open` validates the LC4 proof expansion matrix
+while open rows remain; without `--allow-open` it requires every proof row to be
+closed by evidence or an explicit runtime-boundary policy.
 `jpeglib_stress_matrix --allow-open` validates the LC5 streaming and large-image
 stress matrix while open rows remain; without `--allow-open` every stress row
 must be closed.

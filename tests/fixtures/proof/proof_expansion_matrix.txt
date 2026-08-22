@@ -1,0 +1,16 @@
+# jpeglib library-complete proof expansion matrix
+# Format:
+# id|unit_or_surface|proof_scope|boundary_policy|status|evidence
+#
+checked-arithmetic-core|Jpeglib.Internal.Checked_Arithmetic|overflow-safe addition multiplication and span arithmetic|SPARK proved|closed|proof/jpeglib_proof.gpr
+image-descriptor-core|Jpeglib.Images|descriptor-only image view validation and row-span overflow rejection|SPARK proved runtime access lifetime|closed|proof/jpeglib_proof.gpr
+segment-boundary-core|Jpeglib.Internal.Segments|segment length and bounded skip state transitions|SPARK proved stream IO runtime|closed|proof/jpeglib_proof.gpr
+ownership-core|Jpeglib.Internal.Ownership|budget lease reserve and release transitions|SPARK proved|closed|proof/jpeglib_proof.gpr
+capabilities-core|Jpeglib.Capabilities|pure public capability constants|SPARK proved runtime synchronized|closed|proof/jpeglib_proof.gpr
+marker-classification-core|Jpeglib.Internal.Markers|marker classification helpers|SPARK proved stream reader runtime|closed|proof/jpeglib_proof.gpr
+restart-state-core|Jpeglib.Internal.Restarts|restart interval and expected marker state helpers|SPARK proved DRI IO runtime|closed|proof/jpeglib_proof.gpr
+decode-state-validation|Jpeglib.Decoding internals|IO-free decode state transitions and marker progression|SPARK proved or documented runtime boundary|open|LC4
+encode-state-validation|Jpeglib.Encoding internals|IO-free encode state transitions scan planning and restart progression|SPARK proved or documented runtime boundary|open|LC4
+metadata-accounting|Jpeglib metadata internals|APP/COM/ICC/Exif/APP13/APP14 size accounting and callback limits|SPARK proved or documented runtime boundary|open|LC4
+scan-policy-validation|Jpeglib scan policy internals|baseline progressive arithmetic lossless and differential scan legality|SPARK proved or documented runtime boundary|open|LC4
+output-span-calculations|Jpeglib image IO internals|destination span stride row count and resource-limit arithmetic|SPARK proved or documented runtime boundary|open|LC4

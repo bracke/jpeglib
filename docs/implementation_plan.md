@@ -909,6 +909,9 @@ Work:
 - Identify IO-free decode/encode state helpers, marker/segment validators,
   limit arithmetic, metadata accounting, scan policy validation, and output-span
   calculations that can be separated from stream and access-bearing code.
+- Use `jpeglib_proof_matrix --allow-open` to validate the proof expansion matrix
+  during bootstrap, and make plain `jpeglib_proof_matrix` require every row to
+  be closed for the library-complete gate.
 - Add those units to `proof/jpeglib_proof.gpr` in small batches.
 - For each batch, add a proof-designated invariant in `docs/invariants.md` and a
   release guard in `jpeglib_prove`.
