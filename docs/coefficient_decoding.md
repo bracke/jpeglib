@@ -122,11 +122,14 @@ output block storage.
 Huffman grayscale JPEG stream from quantized coefficient blocks.
 `Encode_YCbCr_Baseline` emits a baseline Huffman YCbCr JPEG stream from
 component-major Y, Cb, and Cr coefficient blocks and layout metadata.
-`Encode_Grayscale_Progressive` emits the covered progressive Huffman grayscale
-DC-only coefficient stream. These entry points validate block counts against the
-image dimensions and component layouts, reject coefficients outside the baseline
-encoding range, preserve restart interval signaling, and are covered by public
-encode/decode coefficient round-trip tests.
+`Encode_Grayscale_Progressive` emits a progressive Huffman grayscale JPEG
+stream from quantized coefficient blocks, including AC coefficients.
+`Encode_YCbCr_Progressive` emits a progressive Huffman YCbCr JPEG stream from
+component-major Y, Cb, and Cr coefficient blocks and layout metadata. These
+entry points validate block counts against the image dimensions and component
+layouts, reject coefficients outside the baseline encoding range, preserve
+restart interval signaling, and are covered by public encode/decode coefficient
+round-trip tests.
 
 ## State Transitions
 
@@ -181,6 +184,11 @@ Current public AUnit contract coverage:
 - `foundation.decoder.public_progressive_coefficients_restart`
 - `foundation.decoder.public_progressive_coefficients_interleaved_color`
 - `foundation.coefficients.public_transforms`
+- `foundation.coefficients.public_image_transforms`
+- `foundation.coefficients.public_encode_grayscale_baseline`
+- `foundation.coefficients.public_encode_grayscale_progressive`
+- `foundation.coefficients.public_encode_ycbcr_baseline`
+- `foundation.coefficients.public_encode_ycbcr_progressive`
 - `foundation.decoder.public_coefficients_small_output`
 - `foundation.decoder.public_coefficients_invalid_state`
 - `foundation.decoder.public_coefficients_restart_wrong_marker`

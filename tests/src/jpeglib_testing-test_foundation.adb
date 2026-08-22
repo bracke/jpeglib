@@ -1573,6 +1573,8 @@ package body Jpeglib_Testing.Test_Foundation is
      (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Coefficient_Encoding_YCbCr_Baseline
      (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Coefficient_Encoding_YCbCr_Progressive
+     (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Rejects_Too_Few_Coefficient_Blocks (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Rejects_Coefficients_In_Invalid_State (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Rejects_Wrong_Restart_Marker (T : in out AUnit.Test_Cases.Test_Case'Class);
@@ -2468,6 +2470,10 @@ package body Jpeglib_Testing.Test_Foundation is
         (T,
          Public_Coefficient_Encoding_YCbCr_Baseline'Access,
          "foundation.coefficients.public_encode_ycbcr_baseline");
+      Register_Routine
+        (T,
+         Public_Coefficient_Encoding_YCbCr_Progressive'Access,
+         "foundation.coefficients.public_encode_ycbcr_progressive");
       Register_Routine
         (T,
          Public_Decoder_Rejects_Too_Few_Coefficient_Blocks'Access,
@@ -9465,8 +9471,8 @@ package body Jpeglib_Testing.Test_Foundation is
       Source : aliased Jpeglib.Streams.Memory_Source;
       Decoder : Jpeglib.Decoding.Decoder;
       Input_Blocks : constant Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) :=
-        [1 => [0 => 3, others => 0],
-         2 => [0 => 5, others => 0]];
+        [1 => [0 => 3, 1 => 2, 8 => -1, others => 0],
+         2 => [0 => 5, 16 => 1, 9 => -2, others => 0]];
       Decoded_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) := [others => [others => 0]];
       Encoded_Length : Natural;
       Blocks_Decoded : Jpeglib.Block_Count := 0;
@@ -9568,16 +9574,7 @@ package body Jpeglib_Testing.Test_Foundation is
       Assert (Header.Progressive, "public progressive coefficient output not marked progressive");
       Assert (Header.Coefficient_Blocks = 2, "public progressive coefficient output header block count mismatch");
       Assert (Blocks_Decoded >= 2, "public progressive coefficient output decoded no final block pass");
-      for Block_Index in Decoded_Blocks'Range loop
-         Assert
-           (Decoded_Blocks (Block_Index) (0) = Input_Blocks (Block_Index) (0),
-            "public progressive coefficient output DC changed");
-         for Coefficient in Jpeglib.Coefficient_Index range 1 .. 63 loop
-            Assert
-              (Decoded_Blocks (Block_Index) (Coefficient) = 0,
-               "public progressive DC-only coefficient output produced AC data");
-         end loop;
-      end loop;
+      Assert (Decoded_Blocks = Input_Blocks, "public progressive coefficient output blocks changed");
    end Public_Coefficient_Encoding_Grayscale_Progressive;
 
    procedure Public_Coefficient_Encoding_YCbCr_Baseline
@@ -9649,6 +9646,61 @@ package body Jpeglib_Testing.Test_Foundation is
         (Encode_Result.First_Error.Code = Jpeglib.Errors.Output_Limit_Exceeded,
          "public YCbCr coefficient encode used wrong block-count error");
    end Public_Coefficient_Encoding_YCbCr_Baseline;
+
+   procedure Public_Coefficient_Encoding_YCbCr_Progressive
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Decoder_State;
+
+      Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 4096 => 0];
+      Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+      Source : aliased Jpeglib.Streams.Memory_Source;
+      Decoder : Jpeglib.Decoding.Decoder;
+      Layouts : constant Jpeglib.Coefficients.Component_Block_Layout_Array (1 .. 3) :=
+        [others => (Width_In_Blocks => 1, Height_In_Blocks => 1)];
+      Input_Blocks : constant Jpeglib.Coefficients.DCT_Block_Array (1 .. 3) :=
+        [1 => [0 => 3, 1 => 1, 8 => -1, others => 0],
+         2 => [0 => -2, 16 => 1, others => 0],
+         3 => [0 => 4, 9 => -1, others => 0]];
+      Decoded_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 3) := [others => [others => 0]];
+      Blocks_Decoded : Jpeglib.Block_Count := 0;
+      Encode_Result : Jpeglib.Results.Result;
+      Decode_Result : Jpeglib.Results.Result;
+      Header : Jpeglib.Decoding.Image_Info;
+   begin
+      Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+      Encode_Result :=
+        Jpeglib.Coefficients.Encoding.Encode_YCbCr_Progressive
+          (Destination,
+           Width => 8,
+           Height => 8,
+           Blocks => Input_Blocks,
+           Layouts => Layouts,
+           Restart => 0,
+           Quality => 75,
+           Refine => False);
+      Assert
+        (Jpeglib.Results.Succeeded (Encode_Result),
+         "public progressive YCbCr coefficient encode failed");
+
+      Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
+      Jpeglib.Decoding.Initialize (Decoder, Source'Access);
+      Decode_Result := Jpeglib.Decoding.Decode_Coefficients (Decoder, Decoded_Blocks, Blocks_Decoded);
+      Assert
+        (Jpeglib.Results.Succeeded (Decode_Result),
+         "public progressive YCbCr coefficient output did not decode");
+      Assert (Jpeglib.Decoding.State (Decoder) = Jpeglib.Decoding.Completed,
+              "public progressive YCbCr coefficient output decoder did not complete");
+      Header := Jpeglib.Decoding.Header (Decoder);
+      Assert (Header.Width = 8, "public progressive YCbCr coefficient output width mismatch");
+      Assert (Header.Height = 8, "public progressive YCbCr coefficient output height mismatch");
+      Assert (Header.Components = 3, "public progressive YCbCr coefficient output component mismatch");
+      Assert (Header.Color_Model = Jpeglib.YCbCr, "public progressive YCbCr coefficient output color mismatch");
+      Assert (Header.Progressive, "public progressive YCbCr coefficient output not marked progressive");
+      Assert (Blocks_Decoded >= 3, "public progressive YCbCr coefficient output decoded no final block pass");
+      Assert (Decoded_Blocks = Input_Blocks, "public progressive YCbCr coefficient output blocks changed");
+   end Public_Coefficient_Encoding_YCbCr_Progressive;
 
    procedure Public_Decoder_Rejects_Too_Few_Coefficient_Blocks (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);

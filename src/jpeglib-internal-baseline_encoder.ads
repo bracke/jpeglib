@@ -50,6 +50,18 @@ package Jpeglib.Internal.Baseline_Encoder is
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
      with Pre => Quality <= 100;
 
+   function Encode_Progressive_YCbCr_Coefficients
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Layouts : Jpeglib.Coefficients.Component_Block_Layout_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Refine : Boolean := False;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
+     with Pre => Quality <= 100;
+
    function Encode_Gray_Alpha_Image
      (Output : in out Streams.Destination'Class;
       Input : Images.Image_View;

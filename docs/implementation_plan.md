@@ -1012,13 +1012,10 @@ row in `tests/fixtures/complete_plus/gap_matrix.txt` to be closed.
   `jpeglib_transform --self-test` cover deterministic coefficient-domain block
   and component-grid remapping for rotate, flip, transpose, transverse, and
   block-aligned crop operations. `Jpeglib.Coefficients.Encoding` now emits
-  baseline Huffman grayscale and YCbCr JPEG streams, plus the covered
-  progressive Huffman grayscale DC-only stream, from quantized coefficient
-  arrays.
-- Remaining: extend the coefficient-domain output path to progressive AC
-  coefficient streams and broader color progressive DCT output so decoded
-  coefficient arrays can be emitted as JPEG streams after lossless transforms
-  across the supported DCT modes.
+  baseline and progressive Huffman grayscale and YCbCr JPEG streams, including
+  AC coefficient round trips, from quantized coefficient arrays.
+- Remaining: add optimize-table output and external `jpegtran` comparison where
+  a stable oracle is available.
 - Keep Huffman optimization under CP4 unless it is needed as an option on the
   coefficient-domain output path.
 - Compare against `jpegtran` where a stable external oracle exists.

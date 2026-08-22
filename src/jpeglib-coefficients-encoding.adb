@@ -132,4 +132,43 @@ package body Jpeglib.Coefficients.Encoding is
          return Results.Failure (Errors.Internal_Invariant_Failed);
    end Encode_YCbCr_Baseline;
 
+   function Encode_YCbCr_Progressive
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : DCT_Block_Array;
+      Layouts : Component_Block_Layout_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Refine : Boolean := False;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
+      Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
+   is
+      pragma Unreferenced (Encode_Limits);
+   begin
+      if Width > 65_535 or else Height > 65_535 then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      elsif Layouts'Length /= 3 or else Layouts'First /= 1 then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      elsif Total_Block_Count (Layouts) /= Block_Count (Blocks'Length) then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      elsif not Coefficients_Are_In_Baseline_Range (Blocks) then
+         return Results.Failure (Errors.Coefficient_Invalid_Encoding);
+      end if;
+
+      return Jpeglib.Internal.Baseline_Encoder.Encode_Progressive_YCbCr_Coefficients
+        (Output,
+         Width,
+         Height,
+         Blocks,
+         Layouts,
+         Restart,
+         Quality,
+         Refine,
+         Encoded_Metadata);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_YCbCr_Progressive;
+
 end Jpeglib.Coefficients.Encoding;

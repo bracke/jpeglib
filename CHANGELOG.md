@@ -18,9 +18,9 @@
   validation, full-image and block-aligned crop remapping, AUnit coverage, and
   a `jpeglib_transform --self-test` CLI gate.
 - Add `Jpeglib.Coefficients.Encoding` for emitting baseline Huffman grayscale
-  and YCbCr JPEG streams plus covered progressive Huffman grayscale DC-only
-  streams from quantized coefficient blocks, with public coefficient decode
-  round-trip coverage.
+  and YCbCr JPEG streams plus progressive Huffman grayscale and YCbCr streams
+  from quantized coefficient blocks, with AC-preserving public coefficient
+  decode round-trip coverage.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

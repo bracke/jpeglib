@@ -62,8 +62,8 @@ procedure Jpeglib_Transform is
       Decoder : Jpeglib.Decoding.Decoder;
       Decoded_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) := [others => [others => 0]];
       Progressive_Blocks : constant Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) :=
-        [1 => [0 => 7, others => 0],
-         2 => [0 => 9, others => 0]];
+        [1 => [0 => 7, 1 => 2, 8 => -1, others => 0],
+         2 => [0 => 9, 16 => 1, 9 => -2, others => 0]];
       Decoded_Progressive_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 2) := [others => [others => 0]];
       Color_Blocks : constant Jpeglib.Coefficients.DCT_Block_Array (1 .. 3) :=
         [1 => Make_Block (2),
@@ -72,6 +72,7 @@ procedure Jpeglib_Transform is
       Color_Layouts : constant Jpeglib.Coefficients.Component_Block_Layout_Array (1 .. 3) :=
         [others => (Width_In_Blocks => 1, Height_In_Blocks => 1)];
       Decoded_Color_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 3) := [others => [others => 0]];
+      Decoded_Progressive_Color_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 3) := [others => [others => 0]];
       Blocks_Decoded : Jpeglib.Block_Count := 0;
       Outcome : Jpeglib.Results.Result;
    begin
@@ -174,7 +175,7 @@ procedure Jpeglib_Transform is
          Fail ("progressive coefficient JPEG output did not decode");
          return;
       elsif Decoded_Progressive_Blocks /= Progressive_Blocks then
-         Fail ("progressive DC-only coefficient JPEG output changed coefficients");
+         Fail ("progressive coefficient JPEG output changed coefficients");
          return;
       end if;
 
@@ -204,6 +205,36 @@ procedure Jpeglib_Transform is
          return;
       elsif Decoded_Color_Blocks /= Color_Blocks then
          Fail ("YCbCr coefficient JPEG output changed coefficients");
+         return;
+      end if;
+
+      Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+      Outcome :=
+        Jpeglib.Coefficients.Encoding.Encode_YCbCr_Progressive
+          (Destination,
+           Width => 8,
+           Height => 8,
+           Blocks => Color_Blocks,
+           Layouts => Color_Layouts,
+           Restart => 0,
+           Quality => 75,
+           Refine => False);
+      if not Jpeglib.Results.Succeeded (Outcome) then
+         Fail ("progressive YCbCr coefficient JPEG output failed");
+         return;
+      end if;
+
+      Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
+      Jpeglib.Decoding.Initialize (Decoder, Source'Access);
+      Outcome := Jpeglib.Decoding.Decode_Coefficients (Decoder, Decoded_Progressive_Color_Blocks, Blocks_Decoded);
+      if not Jpeglib.Results.Succeeded (Outcome) then
+         Fail ("progressive YCbCr coefficient JPEG output did not decode");
+         return;
+      elsif Blocks_Decoded < 3 then
+         Fail ("progressive YCbCr coefficient JPEG output decoded wrong block count");
+         return;
+      elsif Decoded_Progressive_Color_Blocks /= Color_Blocks then
+         Fail ("progressive YCbCr coefficient JPEG output changed coefficients");
          return;
       end if;
 
