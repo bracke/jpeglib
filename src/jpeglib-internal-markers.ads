@@ -49,17 +49,25 @@ package Jpeglib.Internal.Markers is
    COM : constant Marker_Code := 16#FE#;
    TEM : constant Marker_Code := 16#01#;
 
-   function Is_Restart (Marker : Marker_Code) return Boolean is (Marker in RST0 .. RST7);
+   function Is_Restart (Marker : Marker_Code) return Boolean is (Marker in RST0 .. RST7)
+     with SPARK_Mode => On;
    function Restart_Number (Marker : Marker_Code) return Natural
      with Pre => Is_Restart (Marker),
-          Post => Restart_Number'Result <= 7;
+          Post => Restart_Number'Result <= 7,
+          SPARK_Mode => On;
 
-   function Is_APP (Marker : Marker_Code) return Boolean is (Marker in APP0 .. APP15);
-   function Is_JPG_Extension (Marker : Marker_Code) return Boolean is (Marker in JPG0 .. JPG13);
-   function Is_Frame (Marker : Marker_Code) return Boolean;
-   function Is_Standalone (Marker : Marker_Code) return Boolean;
-   function Has_Length (Marker : Marker_Code) return Boolean;
-   function Is_Reserved (Marker : Marker_Code) return Boolean;
+   function Is_APP (Marker : Marker_Code) return Boolean is (Marker in APP0 .. APP15)
+     with SPARK_Mode => On;
+   function Is_JPG_Extension (Marker : Marker_Code) return Boolean is (Marker in JPG0 .. JPG13)
+     with SPARK_Mode => On;
+   function Is_Frame (Marker : Marker_Code) return Boolean
+     with SPARK_Mode => On;
+   function Is_Standalone (Marker : Marker_Code) return Boolean
+     with SPARK_Mode => On;
+   function Has_Length (Marker : Marker_Code) return Boolean
+     with SPARK_Mode => On;
+   function Is_Reserved (Marker : Marker_Code) return Boolean
+     with SPARK_Mode => On;
 
    type Marker_Result is record
       Outcome : Results.Result := Results.Success;

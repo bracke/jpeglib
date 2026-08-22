@@ -98,6 +98,7 @@ procedure Jpeglib_Prove is
       Run_Proof_Unit ("jpeglib-internal-segments.adb");
       Run_Proof_Unit ("jpeglib-internal-ownership.adb");
       Run_Proof_Unit ("jpeglib-capabilities.ads");
+      Run_Proof_Unit ("jpeglib-internal-markers.adb");
    end Run_Proof_Profile;
 begin
    if Root = "" then
@@ -162,6 +163,14 @@ begin
             "capability invariant lacks proof-designated runtime coverage");
          Require_Text
            (Registry,
+            "| MARKER-001 |",
+            "missing marker-classification proof-designated invariant");
+         Require_Text
+           (Registry,
+            "Jpeglib.Internal.Markers` | `foundation.markers.classification` | Proof-designated",
+            "marker invariant lacks proof-designated runtime coverage");
+         Require_Text
+           (Registry,
             "arithmetic CMYK/YCCK `Balanced_Progressive` as the corresponding 24-scan component-local script",
             "arithmetic CMYK/YCCK balanced-progressive invariant is missing");
          Require_Text
@@ -206,6 +215,10 @@ begin
            (Profile,
             "Jpeglib.Capabilities",
             "proof profile does not document capability target");
+         Require_Text
+           (Profile,
+            "Jpeglib.Internal.Markers",
+            "proof profile does not document marker target");
          Require_Text
            (Profile,
             "docs/limits_and_safety.md",

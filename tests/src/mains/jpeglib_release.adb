@@ -148,6 +148,7 @@ begin
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Ownership");
    Require_Text ("docs/proof_profile.md", "Reserve_State");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Capabilities");
+   Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Markers");
    Require_Text ("docs/proof_profile.md", "unproved checks");
    Require_Text ("docs/proof_profile.md", "jpeglib_release");
    Require_Text ("docs/proof_profile.md", "docs/limits_and_safety.md");
@@ -171,6 +172,7 @@ begin
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Images");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Internal.Ownership");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Capabilities");
+   Require_Text ("docs/implementation_plan.md", "Jpeglib.Internal.Markers");
    Require_Text ("docs/implementation_plan.md", "skipped declared SPARK bodies");
    Require_Text ("docs/implementation_plan.md", "runs 81 deterministic cases");
    Require_Text ("docs/implementation_plan.md", "fixed encode/decode timing matrix");

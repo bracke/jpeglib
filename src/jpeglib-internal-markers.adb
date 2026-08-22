@@ -3,11 +3,13 @@ with Jpeglib.Internal.Bytes;
 
 package body Jpeglib.Internal.Markers is
    function Restart_Number (Marker : Marker_Code) return Natural is
+      pragma SPARK_Mode (On);
    begin
       return Natural (Marker - RST0);
    end Restart_Number;
 
    function Is_Frame (Marker : Marker_Code) return Boolean is
+      pragma SPARK_Mode (On);
    begin
       case Marker is
          when SOF0 | SOF1 | SOF2 | SOF3 | SOF5 | SOF6 | SOF7 |
@@ -19,16 +21,19 @@ package body Jpeglib.Internal.Markers is
    end Is_Frame;
 
    function Is_Standalone (Marker : Marker_Code) return Boolean is
+      pragma SPARK_Mode (On);
    begin
       return Marker = SOI or else Marker = EOI or else Marker = TEM or else Is_Restart (Marker);
    end Is_Standalone;
 
    function Has_Length (Marker : Marker_Code) return Boolean is
+      pragma SPARK_Mode (On);
    begin
       return Marker /= 0 and then Marker /= 16#FF# and then not Is_Standalone (Marker);
    end Has_Length;
 
    function Is_Reserved (Marker : Marker_Code) return Boolean is
+      pragma SPARK_Mode (On);
    begin
       return Marker = 0
         or else Marker = 16#FF#

@@ -16,6 +16,7 @@ call GNATprove from the system `PATH`. The first executable proof profile uses
 - `Jpeglib.Internal.Segments`
 - `Jpeglib.Internal.Ownership`
 - `Jpeglib.Capabilities`
+- `Jpeglib.Internal.Markers`
 
 The broader proof-designated invariant registry remains in `docs/invariants.md`.
 The caller-buffer and unsafe-boundary policy is documented in
@@ -35,6 +36,9 @@ caller-buffer contract enforced at runtime by null checks and by descriptor
 validation before public decode/encode writes. `Jpeglib.Capabilities` is proved
 as the pure, constant public capability surface that the runtime
 `foundation.capabilities.v1` test keeps synchronized with implemented behavior.
+`Jpeglib.Internal.Markers` is proved for its marker classification helpers; the
+stream-backed marker reader remains runtime-checked because it depends on
+class-wide source IO.
 
 `jpeglib_prove --run` also checks the GNATprove summary for unproved checks,
 severity diagnostics, and declared SPARK bodies that were skipped. `jpeglib_release`

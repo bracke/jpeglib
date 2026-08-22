@@ -144,6 +144,8 @@
   summary.
 - Add the pure public `Jpeglib.Capabilities` surface to the executable proof
   profile and mark its V1 capability invariant as proof-designated.
+- Add `Jpeglib.Internal.Markers` marker classification helpers to the executable
+  proof profile and mark the marker-classification invariant as proof-designated.
 - Add `docs/limits_and_safety.md` to make the caller-buffer contract explicit,
   including the SPARK-proved descriptor arithmetic boundary and runtime-checked access-bearing views,
   configured output/metadata limits, and test-only `Unchecked_Access` usage.
