@@ -1,0 +1,8 @@
+# jpeglib real-world corpus manifest
+# Format:
+# id|path|source|license|mode|entry_points|expected|sha256
+#
+# The manifest is intentionally empty until LC2 lands real corpus samples.
+# `tests/bin/jpeglib_real_world --allow-empty` validates the manifest shape for
+# current release readiness; `tests/bin/jpeglib_real_world` requires entries and
+# is intended for the library-complete gate.

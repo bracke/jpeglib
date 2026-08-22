@@ -148,6 +148,8 @@
 - Add `jpeglib_complete` as the executable library-complete gate scaffold; it
   runs the release baseline and reports explicit LC blockers until the complete
   JPEG-library criteria are closed.
+- Add the `jpeglib_real_world` manifest checker and initial LC2 manifest
+  location for the real-world interoperability corpus.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.

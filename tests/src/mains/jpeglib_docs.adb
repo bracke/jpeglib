@@ -64,6 +64,7 @@ begin
    Require_Text ("README.md", "limits_and_safety.md");
    Require_Text ("README.md", "jpeglib_prove --run");
    Require_Text ("README.md", "jpeglib_complete");
+   Require_Text ("README.md", "jpeglib_real_world --allow-empty");
    Require_Text ("README.md", "`project_tools` manifest checks");
    Require_Text ("README.md", "`Project_Tools.Release_Checks` tests GPR main inventory");
    Require_Text ("README.md", "../hostkit");
@@ -121,6 +122,7 @@ begin
    Require_Text ("docs/implementation_plan.md", "Library-Complete Roadmap");
    Require_Text ("docs/implementation_plan.md", "Phase LC1: External Oracle Closure");
    Require_Text ("docs/implementation_plan.md", "Phase LC2: Real-World Corpus");
+   Require_Text ("docs/implementation_plan.md", "jpeglib_real_world --allow-empty");
    Require_Text ("docs/implementation_plan.md", "Phase LC3: Complete Public API Policy Matrix");
    Require_Text ("docs/implementation_plan.md", "Phase LC4: Proof Expansion");
    Require_Text ("docs/implementation_plan.md", "Phase LC5: Streaming and Large-Image Completeness");

@@ -857,6 +857,9 @@ Work:
 - Create a manifest-driven corpus under `tests/fixtures/real_world` with
   source, license/provenance, mode classification, expected dimensions,
   component model, metadata expectations, and output digests.
+- Use `jpeglib_real_world --allow-empty` to keep the manifest shape checked
+  during bootstrap, and make plain `jpeglib_real_world` require populated
+  entries for the library-complete gate.
 - Cover camera, browser, editor, scanner, CMYK/YCCK, ICC, Exif-orientation,
   progressive, restart-heavy, odd-size, malformed-in-the-wild, and metadata-rich
   JPEG samples.

@@ -90,6 +90,7 @@ alr exec -- tests/bin/jpeglib_prove
 alr exec -- tests/bin/jpeglib_prove --run
 alr exec -- tests/bin/jpeglib_release
 alr exec -- tests/bin/jpeglib_complete
+alr exec -- tests/bin/jpeglib_real_world --allow-empty
 ```
 
 `jpeglib_tests` is the AUnit test runner. `jpeglib_check` is the aggregate local
@@ -132,6 +133,9 @@ implementation-plan coverage.
 baseline and then fails on the explicit LC1-LC6 blockers until diagnostic
 external rows, proof expansion, real-world corpus coverage, public API policy
 coverage, streaming stress, and the final completeness criteria are closed.
+`jpeglib_real_world --allow-empty` validates the LC2 corpus manifest shape while
+the real-world corpus is being populated; without `--allow-empty` it requires
+at least one manifest entry.
 
 Fixture files live under `tests/fixtures/coefficients` and
 `tests/fixtures/images`. Refresh them with:

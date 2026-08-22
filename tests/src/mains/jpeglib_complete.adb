@@ -37,6 +37,19 @@ procedure Jpeglib_Complete is
          Fail ("release baseline failed with status" & Integer'Image (Status));
       end if;
    end Run_Release_Gate;
+
+   procedure Run_Real_World_Manifest is
+      Status : constant Integer :=
+        Project_Tools.Processes.Run_Status
+          ("library-complete real-world corpus",
+           Root,
+           Project_Tools.Files.Join (Root, "tests/bin/jpeglib_real_world"),
+           Project_Tools.Processes.No_Arguments);
+   begin
+      if Status /= 0 then
+         Fail ("LC2 real-world corpus gate failed with status" & Integer'Image (Status));
+      end if;
+   end Run_Real_World_Manifest;
 begin
    if Root = "" then
       Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "jpeglib_complete: run below the jpeglib tree");
@@ -46,6 +59,7 @@ begin
    end if;
 
    Run_Release_Gate;
+   Run_Real_World_Manifest;
 
    if Errors = 0 then
       Require_Resolved
