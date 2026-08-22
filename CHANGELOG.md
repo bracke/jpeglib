@@ -152,6 +152,9 @@
   matrix with explicit open rows for diagnostic/sentinel interoperability work.
 - Add the `jpeglib_real_world` manifest checker and initial LC2 manifest
   location for the real-world interoperability corpus.
+- Populate the LC2 corpus manifest with pinned representative JPEG fixture rows
+  and make `jpeglib_real_world` validate that each listed file exists and
+  matches its SHA-256 digest.
 - Add the `jpeglib_policy_matrix` checker and initial LC3 public API policy
   matrix with explicit open rows for library-complete coverage.
 - Close the LC3 public API policy matrix rows against the existing complete

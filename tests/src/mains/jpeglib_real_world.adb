@@ -5,6 +5,7 @@ with Ada.Strings.Fixed;
 with Ada.Text_IO;
 
 with Jpeglib_Tools;
+with Jpeglib_Tools.Release_Digests;
 with Project_Tools.Files;
 
 procedure Jpeglib_Real_World is
@@ -34,6 +35,25 @@ procedure Jpeglib_Real_World is
       return Count;
    end Separator_Count;
 
+   function Field (Line : String; Index : Positive) return String is
+      Start : Positive := Line'First;
+      Current : Positive := 1;
+   begin
+      for I in Line'Range loop
+         if Line (I) = '|' then
+            if Current = Index then
+               return Line (Start .. I - 1);
+            end if;
+            Current := Current + 1;
+            Start := I + 1;
+         end if;
+      end loop;
+      if Current = Index then
+         return Line (Start .. Line'Last);
+      end if;
+      return "";
+   end Field;
+
    procedure Check_Manifest is
       Path : constant String := Project_Tools.Files.Join (Root, Manifest_Relative);
       File : Ada.Text_IO.File_Type;
@@ -59,6 +79,22 @@ procedure Jpeglib_Real_World is
                Entries := Entries + 1;
                if Separator_Count (Text) /= 7 then
                   Fail ("manifest entry has wrong column count: " & Text);
+               else
+                  declare
+                     Relative_Path : constant String := Field (Text, 2);
+                     Expected_SHA256 : constant String := Field (Text, 8);
+                     Path : constant String := Project_Tools.Files.Join (Root, Relative_Path);
+                  begin
+                     if Relative_Path = "" then
+                        Fail ("manifest entry has empty path: " & Field (Text, 1));
+                     elsif not Project_Tools.Files.File_Exists (Path) then
+                        Fail ("manifest entry path is missing: " & Relative_Path);
+                     elsif Expected_SHA256'Length /= 64 then
+                        Fail ("manifest entry has invalid sha256 length: " & Field (Text, 1));
+                     elsif Jpeglib_Tools.Release_Digests.File_SHA256_Hex (Path) /= Expected_SHA256 then
+                        Fail ("manifest entry sha256 mismatch: " & Field (Text, 1));
+                     end if;
+                  end;
                end if;
             end if;
          end;

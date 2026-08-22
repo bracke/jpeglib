@@ -2,7 +2,10 @@
 # Format:
 # id|path|source|license|mode|entry_points|expected|sha256
 #
-# The manifest is intentionally empty until LC2 lands real corpus samples.
-# `tests/bin/jpeglib_real_world --allow-empty` validates the manifest shape for
-# current release readiness; `tests/bin/jpeglib_real_world` requires entries and
-# is intended for the library-complete gate.
+baseline-ycbcr-odd-size|tests/fixtures/images/baseline-ycbcr-17x9-420.jpg|managed interoperability fixture|project test corpus|baseline YCbCr 4:2:0 odd dimensions|header,image,raw,coefficients|17x9 RGBA decode and fixture digest|e8098d01a228ff5c563d65c2d7329afe006a08f253423fc458144e163a9fb23b
+baseline-ycbcr-restart|tests/fixtures/images/baseline-ycbcr-17x9-420-restart.jpg|managed interoperability fixture|project test corpus|baseline YCbCr restart interval|header,image,raw,coefficients|17x9 RGBA restarted decode and fixture digest|10df9a4a242a1cf447e84fd3040283e490499b62ca5758b014d5debdcbcf9a8e
+baseline-cmyk|tests/fixtures/images/baseline-cmyk-8x8.jpg|managed interoperability fixture|project test corpus|baseline CMYK|header,image,raw,coefficients|8x8 RGBA decode and fixture digest|d771dafb91716f6d154f70eb64bbbf01ca2eca1924d7c2b3ac875f16b0c77c91
+progressive-rgb|tests/fixtures/images/encoded-progressive-rgb-2x2.jpg|managed interoperability fixture|project test corpus|progressive RGB|header,image,raw,coefficients|2x2 RGB decode and fixture digest|e4a16e320760e8a2da90f31409ead2b4aae21e850b71c734e4532d5fb0f5e74e
+arithmetic-progressive-rgb|tests/fixtures/images/encoded-arithmetic-progressive-rgb-2x2.jpg|managed interoperability fixture|project test corpus|arithmetic progressive RGB|header,image,raw,coefficients|2x2 RGB decode and fixture digest|832768fb18dacf156fd51afea896cd06508818c7af37c257b77ecbd0a8cdec93
+hierarchical-lossless-rgb|tests/fixtures/images/encoded-hierarchical-lossless-rgb-2x2.jpg|managed interoperability fixture|project test corpus|hierarchical lossless RGB|header,image,raw,coefficients|2x2 RGB decode and fixture digest|2fbe21cd7eaf0dc230a23d680514cb90f768775738cf3446bce25143f7a15ce0
+arithmetic-lossless-ycck|tests/fixtures/images/encoded-arithmetic-lossless-ycck-2x2.jpg|managed interoperability fixture|project test corpus|arithmetic lossless YCCK|header,image,raw,coefficients|2x2 YCCK decode and fixture digest|06903a99e41c73055b60aa44e7ee4dd878198347a74dc59dd2e774bf68b8b2ee
