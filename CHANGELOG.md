@@ -128,9 +128,9 @@
 - Require `ffmpeg` RGB-conversion decode for baseline/progressive CMYK and YCCK
   conformance artifacts, while keeping ImageMagick raw-CMYK output diagnostic
   because its channel convention differs on this host.
-- Add required `ffmpeg` limitation probes for arithmetic, differential, and
-  hierarchical conformance artifacts so a future matching external decode is
-  caught and promoted to a positive oracle.
+- Add required `ffmpeg` limitation sentinels for arithmetic, differential, and
+  hierarchical conformance artifacts so the documented host-tool boundary is
+  release-gated.
 - Expand the executable proof profile to include restart-state configuration
   and expected-marker bounds in `Jpeglib.Internal.Restarts`.
 - Add `project_tools` manifest validation to the release gate so the root crate
@@ -139,6 +139,8 @@
 - Add a `Project_Tools.Release_Checks` tests GPR main inventory check to the
   release gate so listed test executables require source and documentation
   coverage.
+- Classify diagnostic external decoder rows and the executable proof profile as
+  accepted V1 release boundaries instead of reporting them as missing work.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.

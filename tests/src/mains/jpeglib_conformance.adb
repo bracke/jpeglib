@@ -481,7 +481,7 @@ procedure Jpeglib_Conformance is
             Failed := True;
             Fail
               (Label
-               & " ffmpeg now matches native raw bytes; promote it to a required oracle",
+               & " ffmpeg sentinel boundary changed; update the external reference matrix",
                "artifact: " & Artifact_Path);
             return;
          end if;

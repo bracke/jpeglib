@@ -568,8 +568,8 @@ baseline/progressive CMYK/YCCK rows additionally require `ffmpeg` as a
 third-party RGB-conversion oracle, and the lossless Huffman grayscale/RGB rows,
 including restarted artifacts with emitted restart markers, require `ffmpeg` as
 a third-party raw-byte oracle on this host. Arithmetic sequential/progressive,
-differential, and hierarchical rows also run required `ffmpeg` limitation probes
-so a future matching third-party decode is caught and promoted. The
+differential, and hierarchical rows also run required `ffmpeg` limitation sentinels
+that lock the documented host-tool boundary. The
 required versus diagnostic external coverage is documented in
 `docs/external_reference_matrix.md`. `jpeglib_check` runs these conformance
 checks after fixture verification.
@@ -632,12 +632,11 @@ Completed:
   artifacts with varied quality and sampling. Arithmetic DCT, CMYK/YCCK four-channel, lossless, differential, and
   hierarchical encode probes are required to pass the `jpeglib_decode_raw`
   native process oracle, baseline/progressive CMYK/YCCK rows require `ffmpeg`
-  RGB-conversion decode, while ImageMagick results remain
-  optional external-support diagnostics and lossless Huffman grayscale/RGB rows,
-  including restarted artifacts, also require `ffmpeg` raw-byte decode.
-  Arithmetic, differential, and hierarchical rows also require `ffmpeg`
-  limitation probes that fail if the host decoder gains matching output and
-  should be promoted to a positive oracle.
+  RGB-conversion decode, ImageMagick results remain V1 telemetry, and lossless
+  Huffman grayscale/RGB rows, including restarted artifacts, also require
+  `ffmpeg` raw-byte decode. Arithmetic, differential, and hierarchical rows
+  also require `ffmpeg` limitation sentinels that lock the documented host-tool
+  boundary.
   `docs/external_reference_matrix.md`
   records which checks are required native process oracles versus diagnostic
   third-party probes.
@@ -783,7 +782,8 @@ Exit criteria:
 
 ## Release Readiness
 
-Before a V1 release:
+The V1 release readiness checklist is implemented by `tests/bin/jpeglib_release`
+and by the GitHub Actions `ci` workflow:
 
 - `alr build` succeeds.
 - `alr --chdir tests build` succeeds.
@@ -798,18 +798,7 @@ Before a V1 release:
 
 ## Post-V1 Work
 
-Future work is tracked as explicit post-V1 interoperability expansion, with
-capability flags and docs kept tied to tested behavior. The first post-V1
-expansions broaden ImageMagick-backed conformance from RGB-only 4:2:0 output to
-generated baseline/progressive grayscale plus RGB 4:4:4/4:2:2/4:2:0/4:1:1
-encode output, add required ImageMagick-generated baseline/progressive gray and
-RGB decode artifacts including RGB 4x3/5x2/17x9/9x17 and grayscale
-5x3/4x4/17x1/2x17 cases, add a
-required native process oracle for advanced encode
-families, require `ffmpeg` for baseline/progressive CMYK/YCCK RGB-conversion
-third-party decode and lossless Huffman grayscale/RGB raw-byte third-party
-decode, including restarted artifacts with emitted restart markers, and keep
-required `ffmpeg` limitation probes for arithmetic, differential, and
-hierarchical rows without a matching third-party byte oracle yet. ImageMagick
-diagnostics are kept for host reference decoder support without
-requiring ImageMagick builds to support every advanced JPEG mode.
+No open implementation work remains in this plan for the current V1 scope.
+Post-V1 expansion must start from a new, explicit capability or interoperability
+target and keep `Jpeglib.Capabilities`, conformance policy, documentation, and
+release gates synchronized.

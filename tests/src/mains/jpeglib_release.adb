@@ -183,10 +183,11 @@ begin
    Require_Text ("docs/external_reference_matrix.md", "Required native process oracle");
    Require_Text ("docs/external_reference_matrix.md", "required third-party `ffmpeg` oracle");
    Require_Text ("docs/external_reference_matrix.md", "required third-party `ffmpeg` RGB-conversion oracle");
-   Require_Text ("docs/external_reference_matrix.md", "required `ffmpeg` limitation probe");
-   Require_Text ("CHANGELOG.md", "future matching external decode");
+   Require_Text ("docs/external_reference_matrix.md", "required `ffmpeg` limitation sentinel");
+   Require_Text ("docs/external_reference_matrix.md", "Diagnostic external rows are V1 telemetry");
    Require_Text ("docs/external_reference_matrix.md", "jpeglib_decode_raw");
    Require_Text ("docs/proof_profile.md", "alr exec -- tests/bin/jpeglib_prove --run");
+   Require_Text ("docs/proof_profile.md", "V1 proof boundary");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Checked_Arithmetic");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Images");
    Require_Text ("docs/proof_profile.md", "Descriptor_Is_Valid");
@@ -210,7 +211,8 @@ begin
    Require_Text ("docs/invariants.md", "RELEASE-TOOLS-001");
    Require_Text ("docs/invariants.md", "arithmetic CMYK/YCCK `Balanced_Progressive`");
    Require_Text ("docs/implementation_plan.md", "arithmetic CMYK/YCCK emits the corresponding 24-scan");
-   Require_Text ("docs/implementation_plan.md", "optional external-support diagnostics");
+   Require_Text ("docs/implementation_plan.md", "No open implementation work remains");
+   Require_Text ("docs/implementation_plan.md", "required `ffmpeg` limitation sentinels");
    Require_Text ("docs/implementation_plan.md", "native process oracle");
    Require_Text ("docs/implementation_plan.md", "ffmpeg");
    Require_Text ("docs/implementation_plan.md", "baseline/progressive CMYK/YCCK rows require `ffmpeg`");

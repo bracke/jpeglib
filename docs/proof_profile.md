@@ -8,8 +8,9 @@ alr exec -- tests/bin/jpeglib_prove --run
 ```
 
 `jpeglib_prove --run` invokes proof tooling only through `alr exec`; it does not
-call GNATprove from the system `PATH`. The first executable proof profile uses
-`proof/jpeglib_proof.gpr` and targets these proof-designated units:
+call GNATprove from the system `PATH`. This executable proof profile is the V1 proof boundary.
+It uses `proof/jpeglib_proof.gpr` and targets these
+proof-designated units:
 
 - `Jpeglib.Internal.Checked_Arithmetic`
 - `Jpeglib.Images`
@@ -38,11 +39,11 @@ validation before public decode/encode writes. `Jpeglib.Capabilities` is proved
 as the pure, constant public capability surface that the runtime
 `foundation.capabilities.v1` test keeps synchronized with implemented behavior.
 `Jpeglib.Internal.Markers` is proved for its marker classification helpers; the
-stream-backed marker reader remains runtime-checked because it depends on
-class-wide source IO. `Jpeglib.Internal.Restarts` is proved for restart-state
+stream-backed marker reader is intentionally runtime-checked because it depends
+on class-wide source IO. `Jpeglib.Internal.Restarts` is proved for restart-state
 configuration and expected-marker bounds; DRI segment parsing and restart
-acceptance failure diagnostics remain runtime-checked because they depend on
-segment-reader IO and diagnostic construction.
+acceptance failure diagnostics are intentionally runtime-checked because they
+depend on segment-reader IO and diagnostic construction.
 
 `jpeglib_prove --run` also checks current GNATprove output for unproved checks,
 severity diagnostics, and declared SPARK bodies that were skipped. `jpeglib_release`

@@ -71,8 +71,8 @@ begin
    Require_Text ("docs/external_reference_matrix.md", "Required native process oracle");
    Require_Text ("docs/external_reference_matrix.md", "required third-party `ffmpeg` oracle");
    Require_Text ("docs/external_reference_matrix.md", "required third-party `ffmpeg` RGB-conversion oracle");
-   Require_Text ("docs/external_reference_matrix.md", "required `ffmpeg` limitation probe");
-   Require_Text ("docs/external_reference_matrix.md", "promote it to a required");
+   Require_Text ("docs/external_reference_matrix.md", "required `ffmpeg` limitation sentinel");
+   Require_Text ("docs/external_reference_matrix.md", "Diagnostic external rows are V1 telemetry");
    Require_Text ("docs/external_reference_matrix.md", "jpeglib_decode_raw");
    Require_Text ("docs/external_reference_matrix.md", "Arithmetic sequential/progressive DCT encode");
    Require_Text ("docs/external_reference_matrix.md", "including restarted artifacts");
@@ -81,6 +81,7 @@ begin
      ("docs/external_reference_matrix.md",
       "Differential DCT, hierarchical DCT, and hierarchical lossless encode");
    Require_Text ("docs/proof_profile.md", "alr exec -- tests/bin/jpeglib_prove --run");
+   Require_Text ("docs/proof_profile.md", "V1 proof boundary");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Checked_Arithmetic");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Images");
    Require_Text ("docs/proof_profile.md", "Descriptor_Is_Valid");
@@ -113,6 +114,7 @@ begin
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Internal.Markers");
    Require_Text ("docs/implementation_plan.md", "Jpeglib.Internal.Restarts");
    Require_Text ("docs/implementation_plan.md", "skipped declared SPARK bodies");
+   Require_Text ("docs/implementation_plan.md", "No open implementation work remains");
    Require_Text ("docs/implementation_plan.md", "pin-free root Alire manifest");
    Require_Text ("docs/implementation_plan.md", "../project_tools");
    Require_Text ("docs/implementation_plan.md", "tests GPR main inventory");

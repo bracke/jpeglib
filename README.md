@@ -101,14 +101,14 @@ ImageMagick-supported grayscale/RGB cases are required, and advanced arithmetic,
 CMYK/YCCK, lossless, differential, and hierarchical modes are required to pass
 the separate `tests/bin/jpeglib_decode_raw` native process oracle. CMYK/YCCK
 baseline/progressive conformance also requires the installed `ffmpeg` command as
-a third-party RGB-conversion oracle. ImageMagick remains diagnostic when host
-tools do not expose a stable byte oracle for an advanced mode. Arithmetic,
-differential, and hierarchical rows run required `ffmpeg` limitation probes so a
-future matching decode must be promoted to a required oracle. Lossless Huffman
+a third-party RGB-conversion oracle. ImageMagick diagnostics are V1 telemetry
+when host tools do not expose a stable byte oracle for an advanced mode.
+Arithmetic, differential, and hierarchical rows run required `ffmpeg` limitation
+sentinels that lock the documented host-tool boundary. Lossless Huffman
 grayscale/RGB conformance, including restarted artifacts with emitted restart
 markers, also requires `ffmpeg` as a third-party raw-byte oracle.
 `jpeglib_prove` audits proof-readiness by default; `jpeglib_prove --run` runs
-the current proof profile for checked arithmetic, descriptor-only image view
+the accepted V1 proof boundary for checked arithmetic, descriptor-only image view
 bounds via `Jpeglib.Images.Descriptor_Is_Valid`, segment boundary helpers,
 ownership budget/lease transitions, marker classification helpers,
 restart-state configuration, and the pure public capability surface in
