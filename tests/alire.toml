@@ -11,7 +11,14 @@ executables = [
   "jpeglib_benchmark",
   "jpeglib_docs",
   "jpeglib_prove",
-  "jpeglib_release"
+  "jpeglib_release",
+  "jpeglib_complete",
+  "jpeglib_complete_plus",
+  "jpeglib_external_matrix",
+  "jpeglib_real_world",
+  "jpeglib_policy_matrix",
+  "jpeglib_proof_matrix",
+  "jpeglib_stress_matrix"
 ]
 
 authors = ["Bent Bracke"]
