@@ -17,8 +17,6 @@ with Jpeglib.Internal.Writers;
 package body Jpeglib.Internal.Baseline_Encoder is
    use type Errors.Error_Code;
    use type Jpeglib.Coefficients.Component_Block_Layout;
-   use type Jpeglib.Coefficients.Quantized_Coefficient;
-   use type Arithmetic.DC_Difference;
    use type Huffman.Symbol_Count;
    use Jpeglib.Internal.Encoder_Headers;
    use Jpeglib.Internal.Encoder_Arithmetic_Scans;
@@ -3812,240 +3810,9 @@ package body Jpeglib.Internal.Baseline_Encoder is
    is
       Luma_Quantization : constant Quantization.Quantization_Table :=
         Quantization.Luma_Table_For_Quality (Quality);
-      First_Al : constant Successive_Approximation_Value := (if Refine then 2 else 0);
       Needed : Block_Count;
       Samples_Needed : Byte_Count;
-      DC_Bins : Arithmetic.Probability_Bin_Array (0 .. 63) :=
-        [others => Arithmetic.Initial_Probability_Bin];
-      AC_Bins : Arithmetic.Probability_Bin_Array (0 .. 255) :=
-        [others => Arithmetic.Initial_Probability_Bin];
-      DC_Contexts : Arithmetic.DC_Context_Array := [others => 0];
-      Predictors : array (Component_Index) of Arithmetic.DC_Difference := [others => 0];
       Outcome : Results.Result;
-
-      function Write_Component_DC
-        (Component : Component_Identifier;
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array;
-         Refinement : Boolean;
-         Al : Successive_Approximation_Value) return Results.Result
-      is
-         Component_Index_Value : constant Component_Index := Component_Index (Component);
-         Restart_State : Restarts.Restart_State;
-         Encoded : Block_Count := 0;
-         Arithmetic_Encoder : Arithmetic.Encoder (Output'Unchecked_Access);
-         DC_Refinement_Bin : Arithmetic.Probability_Bin := Arithmetic.Initial_Probability_Bin;
-         Scan_Outcome : Results.Result;
-
-         function Write_Restart_When_Due (More_Blocks : Boolean) return Results.Result is
-            Marker : Marker_Code;
-            Restart_Outcome : Results.Result;
-         begin
-            if Restart = 0 or else Restarts.MCUs_Until_Restart (Restart_State) /= 0 or else not More_Blocks then
-               return Results.Success;
-            end if;
-
-            Marker := Restarts.Expected_Marker (Restart_State);
-            Restart_Outcome := Arithmetic.Finish (Arithmetic_Encoder);
-            if not Results.Succeeded (Restart_Outcome) then
-               return Restart_Outcome;
-            end if;
-
-            Restart_Outcome := Writers.Write_Marker (Output, Marker);
-            if not Results.Succeeded (Restart_Outcome) then
-               return Restart_Outcome;
-            end if;
-
-            Restart_Outcome := Restarts.Accept_Restart (Restart_State, Marker, 0);
-            if Results.Succeeded (Restart_Outcome) then
-               Arithmetic.Reset (Arithmetic_Encoder);
-               DC_Bins := [others => Arithmetic.Initial_Probability_Bin];
-               AC_Bins := [others => Arithmetic.Initial_Probability_Bin];
-               DC_Contexts := [others => 0];
-               Predictors := [others => 0];
-               DC_Refinement_Bin := Arithmetic.Initial_Probability_Bin;
-            end if;
-
-            return Restart_Outcome;
-         end Write_Restart_When_Due;
-      begin
-         Scan_Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output,
-              Component => Component,
-              Spectral_Start => 0,
-              Spectral_End => 0,
-              Ah => (if Refinement then Al + 1 else 0),
-              Al => Al,
-              DC_Table => 0,
-              AC_Table => 0);
-         if not Results.Succeeded (Scan_Outcome) then
-            return Scan_Outcome;
-         end if;
-
-         Restarts.Configure (Restart_State, Restart);
-         for Block of Blocks loop
-            if Refinement then
-               Scan_Outcome :=
-                 Arithmetic.Encode_Progressive_DC_Refine
-                    (Arithmetic_Encoder,
-                     DC_Refinement_Bin,
-                     Block,
-                    Natural (Al));
-            else
-               declare
-                  Scale : constant Arithmetic.DC_Difference := 2 ** Natural (First_Al);
-                  DC_Value : constant Arithmetic.DC_Difference :=
-                    Arithmetic.DC_Difference (Block (0)) / Scale;
-                  Difference : constant Arithmetic.DC_Difference :=
-                    DC_Value - Predictors (Component_Index_Value);
-               begin
-                  Scan_Outcome :=
-                    Arithmetic.Encode_DC_Difference
-                      (Arithmetic_Encoder,
-                       DC_Bins,
-                       DC_Contexts (Component_Index_Value),
-                       Conditioning => 16#5A#,
-                       Difference => Difference);
-                  if Results.Succeeded (Scan_Outcome) then
-                     Predictors (Component_Index_Value) := DC_Value;
-                  end if;
-               end;
-            end if;
-            if not Results.Succeeded (Scan_Outcome) then
-               return Scan_Outcome;
-            end if;
-
-            Scan_Outcome := Restarts.Advance_MCU (Restart_State);
-            if not Results.Succeeded (Scan_Outcome) then
-               return Scan_Outcome;
-            end if;
-
-            Encoded := Encoded + 1;
-            Scan_Outcome := Write_Restart_When_Due (Encoded /= Block_Count (Blocks'Length));
-            if not Results.Succeeded (Scan_Outcome) then
-               return Scan_Outcome;
-            end if;
-         end loop;
-
-         return Arithmetic.Finish (Arithmetic_Encoder);
-      exception
-         when Constraint_Error =>
-            return Results.Failure (Errors.Internal_Invariant_Failed);
-      end Write_Component_DC;
-
-      function Write_Component_AC
-        (Component : Component_Identifier;
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array;
-         Block_Start : Positive;
-         Decoded : in out Arithmetic.Decoded_Coefficient_Map;
-         Refinement : Boolean;
-         Al : Successive_Approximation_Value) return Results.Result
-      is
-         Restart_State : Restarts.Restart_State;
-         Encoded : Block_Count := 0;
-         Arithmetic_Encoder : Arithmetic.Encoder (Output'Unchecked_Access);
-         Fixed_Bin : Arithmetic.Probability_Bin := Arithmetic.Initial_Probability_Bin;
-         Scan_Outcome : Results.Result;
-
-         function Write_Restart_When_Due (More_Blocks : Boolean) return Results.Result is
-            Marker : Marker_Code;
-            Restart_Outcome : Results.Result;
-         begin
-            if Restart = 0 or else Restarts.MCUs_Until_Restart (Restart_State) /= 0 or else not More_Blocks then
-               return Results.Success;
-            end if;
-
-            Marker := Restarts.Expected_Marker (Restart_State);
-            Restart_Outcome := Arithmetic.Finish (Arithmetic_Encoder);
-            if not Results.Succeeded (Restart_Outcome) then
-               return Restart_Outcome;
-            end if;
-
-            Restart_Outcome := Writers.Write_Marker (Output, Marker);
-            if not Results.Succeeded (Restart_Outcome) then
-               return Restart_Outcome;
-            end if;
-
-            Restart_Outcome := Restarts.Accept_Restart (Restart_State, Marker, 0);
-            if Results.Succeeded (Restart_Outcome) then
-               Arithmetic.Reset (Arithmetic_Encoder);
-               DC_Bins := [others => Arithmetic.Initial_Probability_Bin];
-               AC_Bins := [others => Arithmetic.Initial_Probability_Bin];
-               DC_Contexts := [others => 0];
-               Predictors := [others => 0];
-               Fixed_Bin := Arithmetic.Initial_Probability_Bin;
-            end if;
-
-            return Restart_Outcome;
-         end Write_Restart_When_Due;
-      begin
-         Scan_Outcome :=
-           Writers.Write_SOS_Component_Progressive
-             (Output,
-              Component => Component,
-              Spectral_Start => 1,
-              Spectral_End => 63,
-              Ah => (if Refinement then Al + 1 else 0),
-              Al => Al,
-              DC_Table => 0,
-              AC_Table => 0);
-         if not Results.Succeeded (Scan_Outcome) then
-            return Scan_Outcome;
-         end if;
-
-         Restarts.Configure (Restart_State, Restart);
-         for Block_Index in Blocks'Range loop
-            declare
-               Global_Block : constant Positive :=
-                 Positive (Block_Start + Block_Index - Blocks'First);
-            begin
-               if Refinement then
-                  Scan_Outcome :=
-                    Arithmetic.Encode_Progressive_AC_Refine
-                      (Arithmetic_Encoder,
-                       AC_Bins,
-                       Fixed_Bin,
-                       AC_Conditioning => 0,
-                       Spectral_Start => 1,
-                       Spectral_End => 63,
-                       Successive_Low => Natural (Al),
-                       Decoded_Coefficients => Decoded,
-                       Block_Number => Global_Block,
-                       Block => Blocks (Block_Index));
-               else
-                  Scan_Outcome :=
-                    Arithmetic.Encode_Progressive_AC_First
-                      (Arithmetic_Encoder,
-                       AC_Bins,
-                       Fixed_Bin,
-                       AC_Conditioning => 0,
-                       Spectral_Start => 1,
-                       Spectral_End => 63,
-                       Successive_Low => Natural (Al),
-                       Block => Blocks (Block_Index));
-               end if;
-            end;
-            if not Results.Succeeded (Scan_Outcome) then
-               return Scan_Outcome;
-            end if;
-
-            Scan_Outcome := Restarts.Advance_MCU (Restart_State);
-            if not Results.Succeeded (Scan_Outcome) then
-               return Scan_Outcome;
-            end if;
-
-            Encoded := Encoded + 1;
-            Scan_Outcome := Write_Restart_When_Due (Encoded /= Block_Count (Blocks'Length));
-            if not Results.Succeeded (Scan_Outcome) then
-               return Scan_Outcome;
-            end if;
-         end loop;
-
-         return Arithmetic.Finish (Arithmetic_Encoder);
-      exception
-         when Constraint_Error =>
-            return Results.Failure (Errors.Internal_Invariant_Failed);
-      end Write_Component_AC;
    begin
       Needed := Image_Blocks.Required_Block_Count (Input.Descriptor);
       if Needed > Block_Count (Positive'Last) then
@@ -4062,8 +3829,6 @@ package body Jpeglib.Internal.Baseline_Encoder is
          Alpha_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
          Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
          Alpha_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
-         Decoded : Arithmetic.Decoded_Coefficient_Map (1 .. Positive (Needed) * 2, Coefficient_Index) :=
-           [others => [others => False]];
          Plane_Result : constant Image_Blocks.Plane_Result :=
            Image_Blocks.Fill_Gray_Alpha_Planes (Input, Gray_Plane, Alpha_Plane);
          Gray_Result : Image_Blocks.Image_Block_Result;
@@ -4097,26 +3862,6 @@ package body Jpeglib.Internal.Baseline_Encoder is
             return Alpha_Result.Outcome;
          end if;
 
-         if not Arithmetic_Blocks_Supported (Gray_Blocks, Restart)
-           or else not Arithmetic_Blocks_Supported (Alpha_Blocks, Restart)
-         then
-            return Results.Failure (Errors.Unsupported_Feature);
-         end if;
-
-         for Block_Index in Gray_Blocks'Range loop
-            for Index in Coefficient_Index range 1 .. 63 loop
-               Decoded (Block_Index, Index) :=
-                 Gray_Blocks (Block_Index) (Index) / (2 ** Natural (First_Al)) /= 0;
-            end loop;
-         end loop;
-
-         for Block_Index in Alpha_Blocks'Range loop
-            for Index in Coefficient_Index range 1 .. 63 loop
-               Decoded (Positive (Needed) + Block_Index, Index) :=
-                 Alpha_Blocks (Block_Index) (Index) / (2 ** Natural (First_Al)) /= 0;
-            end loop;
-         end loop;
-
          Outcome :=
            Write_Arithmetic_Progressive_Gray_Alpha_Headers
              (Output, Input, Luma_Quantization, Restart, Differential, Hierarchical, Encoded_Metadata);
@@ -4124,71 +3869,11 @@ package body Jpeglib.Internal.Baseline_Encoder is
             return Outcome;
          end if;
 
-         Outcome := Write_Component_DC (1, Gray_Blocks, Refinement => False, Al => First_Al);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         Outcome := Write_Component_DC (2, Alpha_Blocks, Refinement => False, Al => First_Al);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
          Outcome :=
-           Write_Component_AC
-             (1, Gray_Blocks, Block_Start => 1, Decoded => Decoded, Refinement => False, Al => First_Al);
+           Encode_Arithmetic_Progressive_Gray_Alpha_Blocks
+             (Output, Gray_Blocks, Alpha_Blocks, Restart, Refine);
          if not Results.Succeeded (Outcome) then
             return Outcome;
-         end if;
-
-         Outcome :=
-           Write_Component_AC
-             (2,
-              Alpha_Blocks,
-              Block_Start => Positive (Needed) + 1,
-              Decoded => Decoded,
-              Refinement => False,
-              Al => First_Al);
-         if not Results.Succeeded (Outcome) then
-            return Outcome;
-         end if;
-
-         if Refine then
-            for Refinement_Al in reverse Successive_Approximation_Value range 0 .. First_Al - 1 loop
-               Outcome := Write_Component_DC (1, Gray_Blocks, Refinement => True, Al => Refinement_Al);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome := Write_Component_DC (2, Alpha_Blocks, Refinement => True, Al => Refinement_Al);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome :=
-                 Write_Component_AC
-                   (1,
-                    Gray_Blocks,
-                    Block_Start => 1,
-                    Decoded => Decoded,
-                    Refinement => True,
-                    Al => Refinement_Al);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-
-               Outcome :=
-                 Write_Component_AC
-                   (2,
-                    Alpha_Blocks,
-                    Block_Start => Positive (Needed) + 1,
-                    Decoded => Decoded,
-                    Refinement => True,
-                    Al => Refinement_Al);
-               if not Results.Succeeded (Outcome) then
-                  return Outcome;
-               end if;
-            end loop;
          end if;
       end;
 
