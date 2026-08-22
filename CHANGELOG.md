@@ -158,6 +158,9 @@
   with explicit open rows for library-complete coverage.
 - Add the `jpeglib_stress_matrix` checker and initial LC5 streaming/large-image
   stress matrix with explicit open rows for library-complete coverage.
+- Close the LC5 stress matrix with dedicated chunked restarted RGB stream
+  roundtrip coverage, chunked metadata callback stress coverage, and existing
+  large-dimension/resource-limit evidence.
 - Add required ImageMagick-generated baseline/progressive gray and RGB decode
   artifacts to the conformance gate, expanding the external interoperability
   corpus beyond `jpeglib`-generated streams.

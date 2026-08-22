@@ -64,6 +64,7 @@ package body Jpeglib_Testing.Test_Foundation is
    use type Jpeglib.Source_Offset;
    use type Jpeglib.Destination_Offset;
    use type Jpeglib.Streams.Byte_Array;
+   use type Jpeglib.Streams.Byte_Array_Access;
    use type Jpeglib.Streams.Const_Byte_Array_Access;
    use type Jpeglib.Internal.Bit_Streams.Entropy_Byte_Kind;
    use type Jpeglib.Internal.Bit_Streams.Entropy_Value;
@@ -1523,6 +1524,7 @@ package body Jpeglib_Testing.Test_Foundation is
    procedure Decoder_Rejects_Incomplete_ICC_Profile (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Decoder_Parses_Exif_Orientation (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Decoder_Caps_Metadata_Summaries (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Decoder_Stress_Streams_Metadata_Callbacks (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Coefficients (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Coefficients_After_Header (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Extended_Sequential_Coefficients
@@ -1833,6 +1835,8 @@ package body Jpeglib_Testing.Test_Foundation is
    procedure Public_Encoder_Encodes_Progressive_RGB_Image (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Honors_RGB_Subsampling (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Encodes_Restarted_RGB_Image (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Encoder_Stresses_Restarted_RGB_Chunked_Streams
+     (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Writes_Quality_DQT (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Propagates_Output_Limit (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Baseline_Encoder_Writes_Gray_JPEG (T : in out AUnit.Test_Cases.Test_Case'Class);
@@ -2345,6 +2349,10 @@ package body Jpeglib_Testing.Test_Foundation is
          "foundation.decoder.metadata_icc_incomplete");
       Register_Routine (T, Decoder_Parses_Exif_Orientation'Access, "foundation.decoder.metadata_exif_orientation");
       Register_Routine (T, Decoder_Caps_Metadata_Summaries'Access, "foundation.decoder.metadata_summary_cap");
+      Register_Routine
+        (T,
+         Decoder_Stress_Streams_Metadata_Callbacks'Access,
+         "foundation.decoder.metadata_callback_stress");
       Register_Routine
         (T,
          Public_Decoder_Decodes_Coefficients'Access,
@@ -3104,6 +3112,10 @@ package body Jpeglib_Testing.Test_Foundation is
         (T,
          Public_Encoder_Encodes_Restarted_RGB_Image'Access,
          "foundation.encoder.encode_rgb_restart_roundtrip");
+      Register_Routine
+        (T,
+         Public_Encoder_Stresses_Restarted_RGB_Chunked_Streams'Access,
+         "foundation.encoder.restart_chunked_streams");
       Register_Routine
         (T,
          Public_Encoder_Writes_Quality_DQT'Access,
@@ -4572,6 +4584,18 @@ package body Jpeglib_Testing.Test_Foundation is
       Skip_Calls : Natural := 0;
    end record;
 
+   type Chunked_Read_Source is limited new Jpeglib.Streams.Source with record
+      Storage : Jpeglib.Streams.Const_Byte_Array_Access := null;
+      Position : Natural := 0;
+      Max_Read : Positive := 1;
+   end record;
+
+   type Chunked_Write_Destination is limited new Jpeglib.Streams.Destination with record
+      Storage : Jpeglib.Streams.Byte_Array_Access := null;
+      Position : Natural := 0;
+      Max_Internal_Chunk : Positive := 1;
+   end record;
+
    overriding function Read
      (Object : in out Zero_Progress_Source;
       Buffer : out Jpeglib.Streams.Byte_Array) return Jpeglib.Streams.Source_Result;
@@ -4591,6 +4615,24 @@ package body Jpeglib_Testing.Test_Foundation is
    overriding function Skip
      (Object : in out One_Byte_Skip_Source;
       Count : Jpeglib.Byte_Count) return Jpeglib.Streams.Source_Result;
+
+   overriding function Read
+     (Object : in out Chunked_Read_Source;
+      Buffer : out Jpeglib.Streams.Byte_Array) return Jpeglib.Streams.Source_Result;
+
+   overriding function Offset (Object : Chunked_Read_Source) return Jpeglib.Source_Offset;
+
+   overriding function Skip
+     (Object : in out Chunked_Read_Source;
+      Count : Jpeglib.Byte_Count) return Jpeglib.Streams.Source_Result;
+
+   overriding function Write
+     (Object : in out Chunked_Write_Destination;
+      Buffer : Jpeglib.Streams.Byte_Array) return Jpeglib.Streams.Destination_Result;
+
+   overriding function Offset (Object : Chunked_Write_Destination) return Jpeglib.Destination_Offset;
+
+   overriding function Flush (Object : in out Chunked_Write_Destination) return Jpeglib.Errors.Error;
 
    overriding function Read
      (Object : in out Zero_Progress_Source;
@@ -4670,6 +4712,112 @@ package body Jpeglib_Testing.Test_Foundation is
          Count => Jpeglib.Byte_Count (To_Skip),
          End_Of_Input => To_Skip = 0);
    end Skip;
+
+   overriding function Read
+     (Object : in out Chunked_Read_Source;
+      Buffer : out Jpeglib.Streams.Byte_Array) return Jpeglib.Streams.Source_Result
+   is
+      Available : Natural;
+      To_Copy : Natural;
+   begin
+      if Object.Storage = null then
+         return (Result => Jpeglib.Errors.Make (Jpeglib.Errors.Source_Read_Failed), Count => 0, End_Of_Input => False);
+      end if;
+
+      Available := Object.Storage'Length - Object.Position;
+      To_Copy := Natural'Min (Natural'Min (Buffer'Length, Available), Object.Max_Read);
+
+      for I in 0 .. To_Copy - 1 loop
+         Buffer (Buffer'First + I) := Object.Storage (Object.Storage'First + Object.Position + I);
+      end loop;
+
+      Object.Position := Object.Position + To_Copy;
+      return
+        (Result => Jpeglib.Errors.Make (Jpeglib.Errors.No_Error),
+         Count => Jpeglib.Byte_Count (To_Copy),
+         End_Of_Input => To_Copy = 0);
+   end Read;
+
+   overriding function Offset (Object : Chunked_Read_Source) return Jpeglib.Source_Offset is
+   begin
+      return Jpeglib.Source_Offset (Object.Position);
+   end Offset;
+
+   overriding function Skip
+     (Object : in out Chunked_Read_Source;
+      Count : Jpeglib.Byte_Count) return Jpeglib.Streams.Source_Result
+   is
+      Available : Natural;
+      To_Skip : Natural;
+   begin
+      if Object.Storage = null then
+         return (Result => Jpeglib.Errors.Make (Jpeglib.Errors.Source_Read_Failed), Count => 0, End_Of_Input => False);
+      end if;
+
+      Available := Object.Storage'Length - Object.Position;
+      if Count > Jpeglib.Byte_Count (Natural'Last) then
+         To_Skip := Natural'Min (Available, Object.Max_Read);
+      else
+         To_Skip := Natural'Min (Natural'Min (Natural (Count), Available), Object.Max_Read);
+      end if;
+
+      Object.Position := Object.Position + To_Skip;
+      return
+        (Result => Jpeglib.Errors.Make (Jpeglib.Errors.No_Error),
+         Count => Jpeglib.Byte_Count (To_Skip),
+         End_Of_Input => To_Skip = 0);
+   end Skip;
+
+   overriding function Write
+     (Object : in out Chunked_Write_Destination;
+      Buffer : Jpeglib.Streams.Byte_Array) return Jpeglib.Streams.Destination_Result
+   is
+      Available : Natural;
+      Written : Natural := 0;
+      To_Copy : Natural;
+   begin
+      if Object.Storage = null then
+         return (Result => Jpeglib.Errors.Make (Jpeglib.Errors.Destination_Write_Failed), Count => 0);
+      end if;
+
+      Available := Object.Storage'Length - Object.Position;
+      if Available < Buffer'Length then
+         To_Copy := Available;
+      else
+         To_Copy := Buffer'Length;
+      end if;
+
+      while Written < To_Copy loop
+         declare
+            Step : constant Natural := Natural'Min (Object.Max_Internal_Chunk, To_Copy - Written);
+         begin
+            for I in 0 .. Step - 1 loop
+               Object.Storage (Object.Storage'First + Object.Position + I) := Buffer (Buffer'First + Written + I);
+            end loop;
+            Object.Position := Object.Position + Step;
+            Written := Written + Step;
+         end;
+      end loop;
+
+      if Written /= Buffer'Length then
+         return
+           (Result => Jpeglib.Errors.Make (Jpeglib.Errors.Output_Limit_Exceeded),
+            Count => Jpeglib.Byte_Count (Written));
+      end if;
+
+      return (Result => Jpeglib.Errors.Make (Jpeglib.Errors.No_Error), Count => Jpeglib.Byte_Count (Written));
+   end Write;
+
+   overriding function Offset (Object : Chunked_Write_Destination) return Jpeglib.Destination_Offset is
+   begin
+      return Jpeglib.Destination_Offset (Object.Position);
+   end Offset;
+
+   overriding function Flush (Object : in out Chunked_Write_Destination) return Jpeglib.Errors.Error is
+      pragma Unreferenced (Object);
+   begin
+      return Jpeglib.Errors.Make (Jpeglib.Errors.No_Error);
+   end Flush;
 
    procedure Byte_Reader_Detects_Zero_Progress (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
@@ -8008,6 +8156,35 @@ package body Jpeglib_Testing.Test_Foundation is
          "metadata summary cap mismatch");
       Assert (Header.Metadata_Summaries (16).Payload_Length = 1, "last retained metadata length mismatch");
    end Decoder_Caps_Metadata_Summaries;
+
+   procedure Decoder_Stress_Streams_Metadata_Callbacks (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Source : aliased Chunked_Read_Source :=
+        (Storage => Many_Metadata_Header_Storage'Access, Position => 0, Max_Read => 1);
+      Decoder : Jpeglib.Decoding.Decoder;
+      Outcome : Jpeglib.Results.Result;
+      Header : Jpeglib.Decoding.Image_Info;
+   begin
+      Reset_Metadata_Callback_State;
+      Jpeglib.Decoding.Initialize
+        (Decoder,
+         Source'Access,
+         Decode_Options =>
+           (Metadata => Jpeglib.Metadata.Stream_To_Callback,
+            Metadata_Callback => Capture_Metadata_Callback'Access,
+            others => <>));
+      Outcome := Jpeglib.Decoding.Read_Header (Decoder);
+      Assert (Jpeglib.Results.Succeeded (Outcome), "metadata callback stress header read failed");
+      Header := Jpeglib.Decoding.Header (Decoder);
+      Assert (Header.Metadata_Segments = 17, "metadata callback stress segment count mismatch");
+      Assert (Header.Metadata_Bytes = 17, "metadata callback stress byte count mismatch");
+      Assert (Callback_Begin_Count = 17, "metadata callback stress begin count mismatch");
+      Assert (Callback_Data_Count = 17, "metadata callback stress data event count mismatch");
+      Assert (Callback_End_Count = 17, "metadata callback stress end count mismatch");
+      Assert (Callback_Event_Count = 51, "metadata callback stress event count mismatch");
+      Assert (Callback_Data_Bytes = 17, "metadata callback stress byte count mismatch");
+      Assert (Callback_Data_Sum = 153, "metadata callback stress checksum mismatch");
+   end Decoder_Stress_Streams_Metadata_Callbacks;
 
    procedure Public_Decoder_Decodes_Coefficients (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
@@ -43673,6 +43850,74 @@ package body Jpeglib_Testing.Test_Foundation is
          Assert (Difference <= 3, "public restarted RGB roundtrip drift too large");
       end loop;
    end Public_Encoder_Encodes_Restarted_RGB_Image;
+
+   procedure Public_Encoder_Stresses_Restarted_RGB_Chunked_Streams (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Decoder_State;
+      Input_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 17 * 17 * 3 => 96];
+      Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 8192 => 0];
+      Decoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 17 * 17 * 3 => 0];
+      Destination : aliased Chunked_Write_Destination :=
+        (Storage => Encoded_Storage'Unchecked_Access, Position => 0, Max_Internal_Chunk => 3);
+      Source : aliased Chunked_Read_Source :=
+        (Storage => Encoded_Storage'Unchecked_Access, Position => 0, Max_Read => 1);
+      Encoder : Jpeglib.Encoding.Encoder;
+      Decoder : Jpeglib.Decoding.Decoder;
+      Input : constant Jpeglib.Images.Image_View :=
+        (Descriptor =>
+           (Width => 17,
+            Height => 17,
+            Format => Jpeglib.Images.RGB_24,
+            Stride => Jpeglib.Row_Stride (17 * 3),
+            Accessible_Bytes => 17 * 17 * 3),
+         Storage => Input_Storage'Unchecked_Access);
+      Output : Jpeglib.Images.Mutable_Image_View :=
+        (Descriptor =>
+           (Width => 17,
+            Height => 17,
+            Format => Jpeglib.Images.RGB_24,
+            Stride => Jpeglib.Row_Stride (17 * 3),
+            Accessible_Bytes => 17 * 17 * 3),
+         Storage => Decoded_Storage'Unchecked_Access);
+      Outcome : Jpeglib.Results.Result;
+      Difference : Natural;
+   begin
+      for Pixel in Natural range 0 .. 17 * 17 - 1 loop
+         Input_Storage (Input_Storage'First + Pixel * 3) := Jpeglib.Byte (Pixel mod 251);
+         Input_Storage (Input_Storage'First + Pixel * 3 + 1) := Jpeglib.Byte ((Pixel * 3) mod 251);
+         Input_Storage (Input_Storage'First + Pixel * 3 + 2) := Jpeglib.Byte ((Pixel * 7) mod 251);
+      end loop;
+
+      Jpeglib.Encoding.Initialize
+        (Encoder,
+         Destination'Access,
+         (Quality => 100, Restart => 1, Subsampling => Jpeglib.Encoding.Subsampling_444, others => <>));
+      Outcome := Jpeglib.Encoding.Encode_Image (Encoder, Input);
+      Assert
+        (Jpeglib.Results.Succeeded (Outcome),
+         "chunked restarted RGB encoder failed: " & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+      Assert (Jpeglib.Encoding.State (Encoder) = Jpeglib.Encoding.Completed, "chunked encoder state mismatch");
+
+      Jpeglib.Decoding.Initialize
+        (Decoder,
+         Source'Access,
+         (Output_Format => Jpeglib.Images.RGB_24, others => <>));
+      Outcome := Jpeglib.Decoding.Decode_Image (Decoder, Output);
+      Assert
+        (Jpeglib.Results.Succeeded (Outcome),
+         "chunked restarted RGB decode failed: " & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+      Assert (Jpeglib.Decoding.State (Decoder) = Jpeglib.Decoding.Completed, "chunked decoder state mismatch");
+      Assert (Jpeglib.Decoding.Header (Decoder).Restart = 1, "chunked restart interval mismatch");
+
+      for Index in Decoded_Storage'Range loop
+         if Natural (Decoded_Storage (Index)) > Natural (Input_Storage (Index)) then
+            Difference := Natural (Decoded_Storage (Index)) - Natural (Input_Storage (Index));
+         else
+            Difference := Natural (Input_Storage (Index)) - Natural (Decoded_Storage (Index));
+         end if;
+         Assert (Difference <= 3, "chunked restarted RGB roundtrip drift too large");
+      end loop;
+   end Public_Encoder_Stresses_Restarted_RGB_Chunked_Streams;
 
    procedure Public_Encoder_Writes_Quality_DQT (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);

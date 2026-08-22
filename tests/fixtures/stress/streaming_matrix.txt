@@ -6,6 +6,6 @@ short-read-segments|Jpeglib.Streams.Source|short positive reads across marker se
 fixed-destination-capacity|Jpeglib.Streams.Destination|partial writes and output exhaustion|deterministic byte count/error|closed|foundation.streams.fixed_destination_partial_write
 output-limit-encode|Jpeglib.Encoding.Encode_Image|configured output byte limits|deterministic failure|closed|foundation.encoder.encode_output_limit
 output-limit-decode|Jpeglib.Decoding.Decode_Image|configured output byte limits|deterministic failure|closed|foundation.decoder.decode_output_limit
-chunked-restart-boundaries|Jpeglib.Decoding/Jpeglib.Encoding|restart markers across chunked source/destination boundaries|state integrity|open|LC5
-large-dimension-resource-limits|Jpeglib.Decoding/Jpeglib.Encoding|large dimensions high component counts and bounded allocation|documented limit or success|open|LC5
-metadata-callback-stress|Jpeglib.Decoding metadata callbacks|callback count and payload chunk boundaries under load|deterministic limit behavior|open|LC5
+chunked-restart-boundaries|Jpeglib.Decoding/Jpeglib.Encoding|restart markers across chunked source/destination boundaries|state integrity|closed|foundation.encoder.restart_chunked_streams
+large-dimension-resource-limits|Jpeglib.Decoding/Jpeglib.Encoding|large dimensions high component counts and bounded allocation|documented limit or success|closed|foundation.images.descriptor_overflow,foundation.encoder.define_image_limits,foundation.decoder.raw_components_dct_max_component,foundation.decoder.decode_output_limit
+metadata-callback-stress|Jpeglib.Decoding metadata callbacks|callback count and payload chunk boundaries under load|deterministic limit behavior|closed|foundation.decoder.metadata_callback_stress
