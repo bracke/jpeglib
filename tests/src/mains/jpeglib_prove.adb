@@ -100,6 +100,7 @@ procedure Jpeglib_Prove is
       Run_Proof_Unit ("jpeglib-capabilities.ads");
       Run_Proof_Unit ("jpeglib-internal-markers.adb");
       Run_Proof_Unit ("jpeglib-internal-restarts.adb");
+      Run_Proof_Unit ("jpeglib-internal-library_policy.ads");
    end Run_Proof_Profile;
 begin
    if Root = "" then
@@ -180,6 +181,18 @@ begin
             "restart invariant lacks proof-designated runtime coverage");
          Require_Text
            (Registry,
+            "| POLICY-001 |",
+            "missing library-policy proof-designated invariant");
+         Require_Text
+           (Registry,
+            "Jpeglib.Internal.Library_Policy` | `foundation.decoder.cancel_terminal`,"
+            & " `foundation.encoder.cancel_terminal`,"
+            & " `foundation.decoder.metadata_callback_stress`,"
+            & " `foundation.scans.sos_progressive_dc_first`,"
+            & " `foundation.encoder.define_image_limits` | Proof-designated",
+            "library-policy invariant lacks proof-designated runtime coverage");
+         Require_Text
+           (Registry,
             "arithmetic CMYK/YCCK `Balanced_Progressive` as the corresponding 24-scan component-local script",
             "arithmetic CMYK/YCCK balanced-progressive invariant is missing");
          Require_Text
@@ -232,6 +245,10 @@ begin
            (Profile,
             "Jpeglib.Internal.Restarts",
             "proof profile does not document restart target");
+         Require_Text
+           (Profile,
+            "Jpeglib.Internal.Library_Policy",
+            "proof profile does not document library-policy target");
          Require_Text
            (Profile,
             "docs/limits_and_safety.md",

@@ -9,8 +9,8 @@ ownership-core|Jpeglib.Internal.Ownership|budget lease reserve and release trans
 capabilities-core|Jpeglib.Capabilities|pure public capability constants|SPARK proved runtime synchronized|closed|proof/jpeglib_proof.gpr
 marker-classification-core|Jpeglib.Internal.Markers|marker classification helpers|SPARK proved stream reader runtime|closed|proof/jpeglib_proof.gpr
 restart-state-core|Jpeglib.Internal.Restarts|restart interval and expected marker state helpers|SPARK proved DRI IO runtime|closed|proof/jpeglib_proof.gpr
-decode-state-validation|Jpeglib.Decoding internals|IO-free decode state transitions and marker progression|SPARK proved or documented runtime boundary|open|LC4
-encode-state-validation|Jpeglib.Encoding internals|IO-free encode state transitions scan planning and restart progression|SPARK proved or documented runtime boundary|open|LC4
-metadata-accounting|Jpeglib metadata internals|APP/COM/ICC/Exif/APP13/APP14 size accounting and callback limits|SPARK proved or documented runtime boundary|open|LC4
-scan-policy-validation|Jpeglib scan policy internals|baseline progressive arithmetic lossless and differential scan legality|SPARK proved or documented runtime boundary|open|LC4
-output-span-calculations|Jpeglib image IO internals|destination span stride row count and resource-limit arithmetic|SPARK proved or documented runtime boundary|open|LC4
+decode-state-validation|Jpeglib.Decoding internals|IO-free decode state transitions and terminal-state rejection policy|SPARK proved runtime public-state coverage|closed|proof/jpeglib_proof.gpr Jpeglib.Internal.Library_Policy
+encode-state-validation|Jpeglib.Encoding internals|IO-free encode state transitions and terminal-state rejection policy|SPARK proved runtime public-state coverage|closed|proof/jpeglib_proof.gpr Jpeglib.Internal.Library_Policy
+metadata-accounting|Jpeglib metadata internals|APP/COM/ICC/Exif/APP13/APP14 total payload segment callback and retention policy accounting|SPARK proved runtime metadata coverage|closed|proof/jpeglib_proof.gpr Jpeglib.Internal.Library_Policy
+scan-policy-validation|Jpeglib scan policy internals|baseline progressive lossless and differential scan legality|SPARK proved runtime scan parser coverage|closed|proof/jpeglib_proof.gpr Jpeglib.Internal.Library_Policy
+output-span-calculations|Jpeglib image IO internals|destination span stride row count and resource-limit arithmetic|SPARK proved runtime output-limit coverage|closed|proof/jpeglib_proof.gpr Jpeglib.Internal.Library_Policy

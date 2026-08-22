@@ -196,7 +196,6 @@ begin
    Require_Text ("docs/external_reference_matrix.md", "jpeglib_external_matrix --allow-open");
    Require_Text ("docs/proof_profile.md", "alr exec -- tests/bin/jpeglib_prove --run");
    Require_Text ("docs/proof_profile.md", "current proof boundary");
-   Require_Text ("docs/proof_profile.md", "Library-complete proof work remains open");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Checked_Arithmetic");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Images");
    Require_Text ("docs/proof_profile.md", "Descriptor_Is_Valid");
@@ -207,6 +206,8 @@ begin
    Require_Text ("docs/proof_profile.md", "Jpeglib.Capabilities");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Markers");
    Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Restarts");
+   Require_Text ("docs/proof_profile.md", "Jpeglib.Internal.Library_Policy");
+   Require_Text ("docs/proof_profile.md", "library-complete proof expansion matrix is closed");
    Require_Text ("docs/proof_profile.md", "unproved checks");
    Require_Text ("docs/proof_profile.md", "jpeglib_release");
    Require_Text ("docs/proof_profile.md", "docs/limits_and_safety.md");

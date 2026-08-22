@@ -19,6 +19,7 @@ proof-designated units:
 - `Jpeglib.Capabilities`
 - `Jpeglib.Internal.Markers`
 - `Jpeglib.Internal.Restarts`
+- `Jpeglib.Internal.Library_Policy`
 
 The broader proof-designated invariant registry remains in `docs/invariants.md`.
 The caller-buffer and unsafe-boundary policy is documented in
@@ -44,6 +45,12 @@ on class-wide source IO. `Jpeglib.Internal.Restarts` is proved for restart-state
 configuration and expected-marker bounds; DRI segment parsing and restart
 acceptance failure diagnostics are intentionally runtime-checked because they
 depend on segment-reader IO and diagnostic construction.
+`Jpeglib.Internal.Library_Policy` is proved for IO-free public decode/encode
+entry-state predicates, metadata total/segment/callback accounting, metadata
+retention policy, scan-header legality, and output span/resource-limit
+arithmetic. The runtime-heavy callers keep their stream, marker, and diagnostic
+work outside SPARK while the proved predicates define the boundary conditions
+they enforce.
 
 `jpeglib_prove --run` also checks current GNATprove output for unproved checks,
 severity diagnostics, and declared SPARK bodies that were skipped. `jpeglib_release`
@@ -56,8 +63,6 @@ The library-complete proof expansion matrix is tracked in
 alr exec -- tests/bin/jpeglib_proof_matrix --allow-open
 ```
 
-Library-complete proof work remains open. The next proof expansions should move
-additional SPARK-clean decode/encode state helpers under `proof/jpeglib_proof.gpr`,
-split IO-free validation logic out of runtime-heavy paths where that reduces
-risk, and keep access-bearing public views documented as runtime-checked unless
-their data model changes to become SPARK-legal.
+The library-complete proof expansion matrix is closed for the current native
+JPEG surface. Future feature additions should add SPARK-clean helper boundaries
+to `proof/jpeglib_proof.gpr` before exposing new runtime-heavy public paths.
