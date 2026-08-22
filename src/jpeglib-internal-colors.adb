@@ -346,6 +346,156 @@ package body Jpeglib.Internal.Colors is
       Write_RGB_Channels (Output, Column, Row, Gray, Gray, Gray, Alpha);
    end Write_Gray_Alpha;
 
+   procedure Write_Gray_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      Gray_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Alpha : Byte := Byte'Last;
+      Written : out Natural)
+   is
+      Descriptor : constant Images.Image_Descriptor := Output.Descriptor;
+      Output_Row_Base : constant Positive :=
+        Output.Storage'First + Natural (Row_Stride (Row) * Descriptor.Stride);
+      Gray_Input_Base : constant Positive := Gray_Plane'First + Input_Offset;
+      Output_Index : Positive;
+      Gray_Index : Positive;
+      Gray : Byte;
+   begin
+      Written := 0;
+      if Pixels = 0
+        or else Row >= Natural (Descriptor.Height)
+        or else Pixels > Natural (Descriptor.Width)
+        or else Input_Offset + Pixels > Natural (Gray_Plane'Length)
+      then
+         return;
+      end if;
+
+      case Descriptor.Format is
+         when Images.Gray_8 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Output.Storage (Output_Row_Base + Column) := Gray_Plane (Gray_Input_Base + Column);
+            end loop;
+         when Images.Gray_Alpha_16 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Output_Index := Output_Row_Base + Column * 2;
+               Output.Storage (Output_Index) := Gray_Plane (Gray_Input_Base + Column);
+               Output.Storage (Output_Index + 1) := Alpha;
+            end loop;
+         when Images.RGB_24 | Images.BGR_24 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Gray := Gray_Plane (Gray_Input_Base + Column);
+               Output_Index := Output_Row_Base + Column * 3;
+               Output.Storage (Output_Index) := Gray;
+               Output.Storage (Output_Index + 1) := Gray;
+               Output.Storage (Output_Index + 2) := Gray;
+            end loop;
+         when Images.RGBA_32 | Images.BGRA_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Gray := Gray_Plane (Gray_Input_Base + Column);
+               Output_Index := Output_Row_Base + Column * 4;
+               Output.Storage (Output_Index) := Gray;
+               Output.Storage (Output_Index + 1) := Gray;
+               Output.Storage (Output_Index + 2) := Gray;
+               Output.Storage (Output_Index + 3) := Alpha;
+            end loop;
+         when others =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Gray_Index := Gray_Input_Base + Column;
+               Write_Gray (Output, Column, Row, Gray_Plane (Gray_Index), Alpha);
+            end loop;
+      end case;
+
+      Written := Pixels;
+   exception
+      when Constraint_Error =>
+         Written := 0;
+   end Write_Gray_Row;
+
+   procedure Write_Gray_Alpha_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      Gray_Plane : Streams.Byte_Array;
+      Alpha_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Written : out Natural)
+   is
+      Descriptor : constant Images.Image_Descriptor := Output.Descriptor;
+      Output_Row_Base : constant Positive :=
+        Output.Storage'First + Natural (Row_Stride (Row) * Descriptor.Stride);
+      Gray_Input_Base : constant Positive := Gray_Plane'First + Input_Offset;
+      Alpha_Input_Base : constant Positive := Alpha_Plane'First + Input_Offset;
+      Output_Index : Positive;
+      Gray_Index : Positive;
+      Alpha_Index : Positive;
+      Gray : Byte;
+      Alpha : Byte;
+   begin
+      Written := 0;
+      if Pixels = 0
+        or else Row >= Natural (Descriptor.Height)
+        or else Pixels > Natural (Descriptor.Width)
+        or else Input_Offset + Pixels > Natural (Gray_Plane'Length)
+        or else Input_Offset + Pixels > Natural (Alpha_Plane'Length)
+      then
+         return;
+      end if;
+
+      case Descriptor.Format is
+         when Images.Gray_8 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Output.Storage (Output_Row_Base + Column) := Gray_Plane (Gray_Input_Base + Column);
+            end loop;
+         when Images.Gray_Alpha_16 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Output_Index := Output_Row_Base + Column * 2;
+               Output.Storage (Output_Index) := Gray_Plane (Gray_Input_Base + Column);
+               Output.Storage (Output_Index + 1) := Alpha_Plane (Alpha_Input_Base + Column);
+            end loop;
+         when Images.RGB_24 | Images.BGR_24 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Gray := Gray_Plane (Gray_Input_Base + Column);
+               Output_Index := Output_Row_Base + Column * 3;
+               Output.Storage (Output_Index) := Gray;
+               Output.Storage (Output_Index + 1) := Gray;
+               Output.Storage (Output_Index + 2) := Gray;
+            end loop;
+         when Images.RGBA_32 | Images.BGRA_32 =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Gray := Gray_Plane (Gray_Input_Base + Column);
+               Alpha := Alpha_Plane (Alpha_Input_Base + Column);
+               Output_Index := Output_Row_Base + Column * 4;
+               Output.Storage (Output_Index) := Gray;
+               Output.Storage (Output_Index + 1) := Gray;
+               Output.Storage (Output_Index + 2) := Gray;
+               Output.Storage (Output_Index + 3) := Alpha;
+            end loop;
+         when others =>
+            for Column in 0 .. Pixels - 1 loop
+               pragma Loop_Optimize (Vector);
+               Gray_Index := Gray_Input_Base + Column;
+               Alpha_Index := Alpha_Input_Base + Column;
+               Write_Gray_Alpha (Output, Column, Row, Gray_Plane (Gray_Index), Alpha_Plane (Alpha_Index));
+            end loop;
+      end case;
+
+      Written := Pixels;
+   exception
+      when Constraint_Error =>
+         Written := 0;
+   end Write_Gray_Alpha_Row;
+
    procedure Write_YCbCr
      (Output : in out Images.Mutable_Image_View;
       Column : Natural;

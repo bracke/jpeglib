@@ -47,6 +47,10 @@
 - Add compiler-vectorized direct RGB row output packing, route direct full-size
   RGB-labelled lossless and 4:4:4 DCT decode output through row writers, and
   expand `jpeglib_simd_matrix` to cover every public output format.
+- Add compiler-vectorized gray and gray-alpha row output packing, route direct
+  full-size grayscale and two-component lossless decode output through row
+  writers, and extend `jpeglib_simd_matrix` scalar-equivalence coverage across
+  every public output format.
 - Make GitHub Actions run the full `jpeglib_complete` gate for push, pull
   request, and manual CI runs instead of stopping at release readiness.
 - Close the library-complete gate by finalizing LC1 external oracle rows,

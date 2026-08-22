@@ -68,6 +68,24 @@ package Jpeglib.Internal.Colors is
       Gray : Byte;
       Alpha : Byte);
 
+   procedure Write_Gray_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      Gray_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Alpha : Byte := Byte'Last;
+      Written : out Natural);
+
+   procedure Write_Gray_Alpha_Row
+     (Output : in out Images.Mutable_Image_View;
+      Row : Natural;
+      Gray_Plane : Streams.Byte_Array;
+      Alpha_Plane : Streams.Byte_Array;
+      Input_Offset : Natural;
+      Pixels : Natural;
+      Written : out Natural);
+
    procedure Write_YCbCr
      (Output : in out Images.Mutable_Image_View;
       Column : Natural;

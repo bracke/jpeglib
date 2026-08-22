@@ -5012,16 +5012,48 @@ package body Jpeglib.Decoding is
             end if;
          end;
 
-         for Row in Natural range 0 .. Natural (Internal.Frames.Height (Header.Frame)) - 1 loop
-            for Column in Natural range 0 .. Natural (Internal.Frames.Width (Header.Frame)) - 1 loop
-               Write_Gray_Pixel
-                 (Column,
-                  Row,
-                  Output_Byte
-                    (Samples
-                       (1, Samples'First (2) + Row * Natural (Internal.Frames.Width (Header.Frame)) + Column)));
-            end loop;
-         end loop;
+         declare
+            Width : constant Natural := Natural (Internal.Frames.Width (Header.Frame));
+            Height : constant Natural := Natural (Internal.Frames.Height (Header.Frame));
+         begin
+            if Can_Write_Direct_Output_Rows (Width, Height) then
+               for Row in Natural range 0 .. Height - 1 loop
+                  declare
+                     Gray_Row : Streams.Byte_Array (1 .. Width);
+                     Written : Natural;
+                  begin
+                     for Column in Natural range 0 .. Width - 1 loop
+                        Gray_Row (Gray_Row'First + Column) :=
+                          Output_Byte (Samples (1, Samples'First (2) + Row * Width + Column));
+                     end loop;
+
+                     Internal.Colors.Write_Gray_Row
+                       (Output,
+                        Row,
+                        Gray_Row,
+                        0,
+                        Width,
+                        Object.Decode_Options.Alpha_Fill,
+                        Written);
+
+                     if Written /= Width then
+                        for Column in Natural range 0 .. Width - 1 loop
+                           Write_Gray_Pixel (Column, Row, Gray_Row (Gray_Row'First + Column));
+                        end loop;
+                     end if;
+                  end;
+               end loop;
+            else
+               for Row in Natural range 0 .. Height - 1 loop
+                  for Column in Natural range 0 .. Width - 1 loop
+                     Write_Gray_Pixel
+                       (Column,
+                        Row,
+                        Output_Byte (Samples (1, Samples'First (2) + Row * Width + Column)));
+                  end loop;
+               end loop;
+            end if;
+         end;
 
          return Results.Success;
       end Decode_Lossless_Grayscale;
@@ -6469,34 +6501,67 @@ package body Jpeglib.Decoding is
             end loop;
          end if;
 
-         for Row in Natural range 0 .. Natural (Internal.Frames.Height (Header.Frame)) - 1 loop
-            for Column in Natural range 0 .. Natural (Internal.Frames.Width (Header.Frame)) - 1 loop
-               declare
-                  C1_C : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Column_For_Image
-                         (Header.Frame, 1, Internal.Sampling.Sample_Column (Column)));
-                  C1_R : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Row_For_Image
-                         (Header.Frame, 1, Internal.Sampling.Sample_Row (Row)));
-                  C2_C : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Column_For_Image
-                         (Header.Frame, 2, Internal.Sampling.Sample_Column (Column)));
-                  C2_R : constant Natural :=
-                    Natural
-                      (Internal.Sampling.Component_Row_For_Image
-                         (Header.Frame, 2, Internal.Sampling.Sample_Row (Row)));
-               begin
-                  Write_Gray_Alpha_Pixel
-                    (Column,
-                     Row,
-                     C1_Plane (C1_Plane'First + C1_R * Natural (C1_Component.Component_Width) + C1_C),
-                     C2_Plane (C2_Plane'First + C2_R * Natural (C2_Component.Component_Width) + C2_C));
-               end;
-            end loop;
-         end loop;
+         declare
+            Width : constant Natural := Natural (Internal.Frames.Width (Header.Frame));
+            Height : constant Natural := Natural (Internal.Frames.Height (Header.Frame));
+            Can_Write_Direct_Rows : constant Boolean :=
+              Can_Write_Direct_Output_Rows (Width, Height)
+              and then Natural (C1_Component.Component_Width) = Width
+              and then Natural (C1_Component.Component_Height) = Height
+              and then Natural (C2_Component.Component_Width) = Width
+              and then Natural (C2_Component.Component_Height) = Height;
+         begin
+            if Can_Write_Direct_Rows then
+               for Row in Natural range 0 .. Height - 1 loop
+                  declare
+                     Row_Offset : constant Natural := Row * Width;
+                     Written : Natural;
+                  begin
+                     Internal.Colors.Write_Gray_Alpha_Row
+                       (Output, Row, C1_Plane, C2_Plane, Row_Offset, Width, Written);
+
+                     if Written /= Width then
+                        for Column in Natural range 0 .. Width - 1 loop
+                           Write_Gray_Alpha_Pixel
+                             (Column,
+                              Row,
+                              C1_Plane (C1_Plane'First + Row_Offset + Column),
+                              C2_Plane (C2_Plane'First + Row_Offset + Column));
+                        end loop;
+                     end if;
+                  end;
+               end loop;
+            else
+               for Row in Natural range 0 .. Height - 1 loop
+                  for Column in Natural range 0 .. Width - 1 loop
+                     declare
+                        C1_C : constant Natural :=
+                          Natural
+                            (Internal.Sampling.Component_Column_For_Image
+                               (Header.Frame, 1, Internal.Sampling.Sample_Column (Column)));
+                        C1_R : constant Natural :=
+                          Natural
+                            (Internal.Sampling.Component_Row_For_Image
+                               (Header.Frame, 1, Internal.Sampling.Sample_Row (Row)));
+                        C2_C : constant Natural :=
+                          Natural
+                            (Internal.Sampling.Component_Column_For_Image
+                               (Header.Frame, 2, Internal.Sampling.Sample_Column (Column)));
+                        C2_R : constant Natural :=
+                          Natural
+                            (Internal.Sampling.Component_Row_For_Image
+                               (Header.Frame, 2, Internal.Sampling.Sample_Row (Row)));
+                     begin
+                        Write_Gray_Alpha_Pixel
+                          (Column,
+                           Row,
+                           C1_Plane (C1_Plane'First + C1_R * Natural (C1_Component.Component_Width) + C1_C),
+                           C2_Plane (C2_Plane'First + C2_R * Natural (C2_Component.Component_Width) + C2_C));
+                     end;
+                  end loop;
+               end loop;
+            end if;
+         end;
       end Write_Two_Component_Blocks;
 
       procedure Write_Three_Component_Blocks
@@ -6751,23 +6816,49 @@ package body Jpeglib.Decoding is
                      return Outcome;
                   end if;
 
-                  for Row in Natural range 0 .. Height - 1 loop
-                     for Column in Natural range 0 .. Width - 1 loop
+                  if Can_Write_Direct_Output_Rows (Width, Height)
+                    and then C1_Width = Width
+                    and then C1_Height = Height
+                  then
+                     for Row in Natural range 0 .. Height - 1 loop
                         declare
-                           C1_C : constant Natural :=
-                             Natural
-                               (Internal.Sampling.Component_Column_For_Image
-                                  (Header.Frame, 1, Internal.Sampling.Sample_Column (Column)));
-                           C1_R : constant Natural :=
-                             Natural
-                               (Internal.Sampling.Component_Row_For_Image
-                                  (Header.Frame, 1, Internal.Sampling.Sample_Row (Row)));
+                           Written : Natural := 0;
                         begin
-                           Write_Gray_Pixel
-                             (Column, Row, C1 (C1'First + C1_R * C1_Width + C1_C));
+                           Internal.Colors.Write_Gray_Row
+                             (Output,
+                              Row,
+                              C1,
+                              Row * Width,
+                              Width,
+                              Alpha => Object.Decode_Options.Alpha_Fill,
+                              Written => Written);
+                           if Written /= Width then
+                              for Column in Natural range 0 .. Width - 1 loop
+                                 Write_Gray_Pixel
+                                   (Column, Row, C1 (C1'First + Row * C1_Width + Column));
+                              end loop;
+                           end if;
                         end;
                      end loop;
-                  end loop;
+                  else
+                     for Row in Natural range 0 .. Height - 1 loop
+                        for Column in Natural range 0 .. Width - 1 loop
+                           declare
+                              C1_C : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Column_For_Image
+                                     (Header.Frame, 1, Internal.Sampling.Sample_Column (Column)));
+                              C1_R : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Row_For_Image
+                                     (Header.Frame, 1, Internal.Sampling.Sample_Row (Row)));
+                           begin
+                              Write_Gray_Pixel
+                                (Column, Row, C1 (C1'First + C1_R * C1_Width + C1_C));
+                           end;
+                        end loop;
+                     end loop;
+                  end if;
                end;
 
             when 2 =>
@@ -6801,34 +6892,65 @@ package body Jpeglib.Decoding is
                      return Outcome;
                   end if;
 
-                  for Row in Natural range 0 .. Height - 1 loop
-                     for Column in Natural range 0 .. Width - 1 loop
+                  if Can_Write_Direct_Output_Rows (Width, Height)
+                    and then C1_Width = Width
+                    and then C1_Height = Height
+                    and then C2_Width = Width
+                    and then C2_Height = Height
+                  then
+                     for Row in Natural range 0 .. Height - 1 loop
                         declare
-                           C1_C : constant Natural :=
-                             Natural
-                               (Internal.Sampling.Component_Column_For_Image
-                                  (Header.Frame, 1, Internal.Sampling.Sample_Column (Column)));
-                           C1_R : constant Natural :=
-                             Natural
-                               (Internal.Sampling.Component_Row_For_Image
-                                  (Header.Frame, 1, Internal.Sampling.Sample_Row (Row)));
-                           C2_C : constant Natural :=
-                             Natural
-                               (Internal.Sampling.Component_Column_For_Image
-                                  (Header.Frame, 2, Internal.Sampling.Sample_Column (Column)));
-                           C2_R : constant Natural :=
-                             Natural
-                               (Internal.Sampling.Component_Row_For_Image
-                                  (Header.Frame, 2, Internal.Sampling.Sample_Row (Row)));
+                           Written : Natural := 0;
                         begin
-                           Write_Gray_Alpha_Pixel
-                             (Column,
+                           Internal.Colors.Write_Gray_Alpha_Row
+                             (Output,
                               Row,
-                              C1 (C1'First + C1_R * C1_Width + C1_C),
-                              C2 (C2'First + C2_R * C2_Width + C2_C));
+                              C1,
+                              C2,
+                              Row * Width,
+                              Width,
+                              Written);
+                           if Written /= Width then
+                              for Column in Natural range 0 .. Width - 1 loop
+                                 Write_Gray_Alpha_Pixel
+                                   (Column,
+                                    Row,
+                                    C1 (C1'First + Row * C1_Width + Column),
+                                    C2 (C2'First + Row * C2_Width + Column));
+                              end loop;
+                           end if;
                         end;
                      end loop;
-                  end loop;
+                  else
+                     for Row in Natural range 0 .. Height - 1 loop
+                        for Column in Natural range 0 .. Width - 1 loop
+                           declare
+                              C1_C : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Column_For_Image
+                                     (Header.Frame, 1, Internal.Sampling.Sample_Column (Column)));
+                              C1_R : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Row_For_Image
+                                     (Header.Frame, 1, Internal.Sampling.Sample_Row (Row)));
+                              C2_C : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Column_For_Image
+                                     (Header.Frame, 2, Internal.Sampling.Sample_Column (Column)));
+                              C2_R : constant Natural :=
+                                Natural
+                                  (Internal.Sampling.Component_Row_For_Image
+                                     (Header.Frame, 2, Internal.Sampling.Sample_Row (Row)));
+                           begin
+                              Write_Gray_Alpha_Pixel
+                                (Column,
+                                 Row,
+                                 C1 (C1'First + C1_R * C1_Width + C1_C),
+                                 C2 (C2'First + C2_R * C2_Width + C2_C));
+                           end;
+                        end loop;
+                     end loop;
+                  end if;
                end;
 
             when 3 =>
