@@ -244,8 +244,12 @@ package body Jpeglib.Internal.Encoder_Arithmetic_Scans is
          for Block of Blocks loop
             declare
                Scale : constant Arithmetic.DC_Difference := 2 ** Natural (First_Al);
+               Signed : constant Arithmetic.DC_Difference :=
+                 Arithmetic.DC_Difference (Block (0));
+               --  Rounded down, not towards zero: the DC point transform
+               --  is an arithmetic shift.
                DC_Value : constant Arithmetic.DC_Difference :=
-                 Arithmetic.DC_Difference (Block (0)) / Scale;
+                 (Signed - (Signed mod Scale)) / Scale;
                Difference : constant Arithmetic.DC_Difference :=
                  DC_Value - Predictor;
             begin
@@ -662,8 +666,10 @@ package body Jpeglib.Internal.Encoder_Arithmetic_Scans is
             else
                declare
                   Scale : constant Arithmetic.DC_Difference := 2 ** Natural (First_Al);
+                  Signed : constant Arithmetic.DC_Difference :=
+                    Arithmetic.DC_Difference (Block (0));
                   DC_Value : constant Arithmetic.DC_Difference :=
-                    Arithmetic.DC_Difference (Block (0)) / Scale;
+                    (Signed - (Signed mod Scale)) / Scale;
                   Difference : constant Arithmetic.DC_Difference :=
                     DC_Value - Predictors (Component_Index_Value);
                begin

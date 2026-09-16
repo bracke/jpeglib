@@ -2,6 +2,22 @@
 
 ## 0.1.0-dev
 
+- Fix three faults in progressive DCT streams that other encoders write and
+  that the round trips here could not see, every one found on one 1920x1080
+  progressive JFIF from libjpeg: a DC refinement scan of several components
+  is interleaved by MCU with each component's sampling factors, and was walked
+  as one component in block order, so the scan ended early and the marker
+  that was not there was refused; a ZRL in an AC refinement scan ends on the
+  sixteenth zero-history coefficient, and stopping one later read the
+  correction bits between as if they came before the next symbol; and the DC
+  point transform is an arithmetic shift (T.81 G.1.2.1), so a refinement bit
+  is ORed into the two's complement whatever the sign -- the decoder took the
+  step away from a negative DC and the encoder wrote the magnitude's bit, so a
+  negative odd DC was off by two steps in both directions, and libjpeg read
+  this library's refined progressive output off by two levels. Both entropy
+  coders' encoders and decoders now agree with libjpeg: a progressive file
+  decodes to the same pixels as the baseline file of the same coefficients,
+  and the refined progressive fixtures are regenerated.
 - Add the complete-plus competitive gap matrix and `jpeglib_complete_plus`
   tracker for multi-platform CI, expanded corpus, transform, optimization,
   precision/buffer, and performance work, explicitly excluding libjpeg API/ABI

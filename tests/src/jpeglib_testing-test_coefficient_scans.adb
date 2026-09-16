@@ -1056,8 +1056,11 @@ package body Jpeglib_Testing.Test_Coefficient_Scans is
          Outcome := Jpeglib.Internal.Coefficients.Decode_Progressive_DC_Refine (Bits, 1, Negative_Block);
       end;
 
+      --  The DC point transform is an arithmetic shift, so a refinement
+      --  bit is ORed into the two's complement whatever the sign: -8 with
+      --  bit 1 set is -6, as libjpeg reads it, not -10.
       Assert (Jpeglib.Results.Succeeded (Outcome), "negative progressive DC refine failed");
-      Assert (Negative_Block (0) = -10, "negative progressive DC refine mismatch");
+      Assert (Negative_Block (0) = -6, "negative progressive DC refine mismatch");
    end Progressive_DC_Refine_Updates_Signed_Value;
 
    procedure Progressive_AC_First_Decodes_Run_And_Value (T : in out AUnit.Test_Cases.Test_Case'Class) is

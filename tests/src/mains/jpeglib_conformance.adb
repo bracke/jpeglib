@@ -1,3 +1,4 @@
+with Interfaces;
 with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Strings;
@@ -816,6 +817,150 @@ procedure Jpeglib_Conformance is
 
       Ada.Text_IO.Put_Line ("jpeglib_conformance: " & Label & " passed external-generated decode check");
    end Run_Magick_Generated_RGB_Corpus_Case;
+
+   --  A picture of pseudo-random pixels: every coefficient of every block
+   --  nonzero at a high quality, which is what puts zero-run and
+   --  end-of-band symbols, correction bits and negative odd DCs into a
+   --  progressive stream's refinement scans. The gradients above are
+   --  too smooth to reach them.
+   function Noisy_RGB_Input
+     (Width  : Jpeglib.Image_Width;
+      Height : Jpeglib.Image_Height) return Jpeglib.Streams.Byte_Array
+   is
+      use type Interfaces.Unsigned_32;
+      Result : Jpeglib.Streams.Byte_Array (1 .. Natural (Width) * Natural (Height) * 3);
+      State  : Interfaces.Unsigned_32 := 2_463_534_242;
+   begin
+      for Index in Result'Range loop
+         State := State * 1_664_525 + 1_013_904_223;
+         Result (Index) := Jpeglib.Byte (Interfaces.Shift_Right (State, 24));
+      end loop;
+
+      return Result;
+   end Noisy_RGB_Input;
+
+   --  The same pixels encoded by ImageMagick as a baseline stream and as a
+   --  progressive one carry the same quantized coefficients, so the two
+   --  must decode here to the same bytes, not merely to bytes near the
+   --  input: a refinement bit misplaced moves a coefficient by one and a
+   --  pixel by less than any tolerance above, and nothing else in this
+   --  file would see it. A partial MCU row -- 40 by 24 at 4:2:0 is two
+   --  and a half MCUs down -- puts padding blocks into the interleaved DC
+   --  scans as well.
+   procedure Run_Magick_Baseline_Against_Progressive_Case
+     (Label           : String;
+      Artifact_Name   : String;
+      Magick          : String;
+      Width           : Jpeglib.Image_Width;
+      Height          : Jpeglib.Image_Height;
+      Input_Storage   : Jpeglib.Streams.Byte_Array;
+      Quality         : Natural;
+      Sampling_Factor : String;
+      Failed          : in out Boolean)
+   is
+      Baseline_Decoded : aliased Jpeglib.Streams.Byte_Array := [1 .. Input_Storage'Length => 0];
+      Progressive_Decoded : aliased Jpeglib.Streams.Byte_Array := [1 .. Input_Storage'Length => 0];
+      Artifact_Path : constant String :=
+        Project_Tools.Files.Join (Project_Tools.Files.Temp_Dir, Artifact_Name);
+
+      procedure Decode_Magick_Output
+        (Progressive : Boolean;
+         Decoded : aliased in out Jpeglib.Streams.Byte_Array;
+         Ok : out Boolean)
+      is
+         Source : aliased Jpeglib.Streams.Memory_Source;
+         Decoder : Jpeglib.Decoding.Decoder;
+         Output : Jpeglib.Images.Mutable_Image_View :=
+           (Descriptor =>
+              (Width => Width,
+               Height => Height,
+               Format => Jpeglib.Images.RGB_24,
+               Stride => Jpeglib.Row_Stride (Natural (Width) * 3),
+               Accessible_Bytes => Jpeglib.Byte_Count (Input_Storage'Length)),
+            Storage => Decoded'Unchecked_Access);
+         Magick_Status : aliased Integer := -1;
+         Outcome : Jpeglib.Results.Result;
+         Encoded : constant String :=
+           Project_Tools.Processes.Command_Output
+             (Magick,
+              Project_Tools.Processes.Arguments
+                ([Project_Tools.Processes.Argument ("-size"),
+                  Project_Tools.Processes.Argument
+                    (Image (Natural (Width)) & "x" & Image (Natural (Height))),
+                  Project_Tools.Processes.Argument ("-depth"),
+                  Project_Tools.Processes.Argument ("8"),
+                  Project_Tools.Processes.Argument ("rgb:-"),
+                  Project_Tools.Processes.Argument ("-quality"),
+                  Project_Tools.Processes.Argument (Image (Quality)),
+                  Project_Tools.Processes.Argument ("-sampling-factor"),
+                  Project_Tools.Processes.Argument (Sampling_Factor),
+                  Project_Tools.Processes.Argument ("-interlace"),
+                  Project_Tools.Processes.Argument ((if Progressive then "Plane" else "None")),
+                  Project_Tools.Processes.Argument ("jpeg:-")]),
+              Input => To_String (Input_Storage, Input_Storage'Length),
+              Status => Magick_Status'Access,
+              Err_To_Out => True);
+         Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. Encoded'Length => 0];
+         Kind : constant String := (if Progressive then "progressive" else "baseline");
+      begin
+         Ok := False;
+         if Magick_Status /= 0 or else Encoded'Length = 0 then
+            Fail (Label & " ImageMagick " & Kind & " encode failed", "artifact: " & Artifact_Path);
+            return;
+         end if;
+
+         Project_Tools.Files.Write_Raw_File (Artifact_Path & "." & Kind, Encoded);
+         for Index in Encoded'Range loop
+            Encoded_Storage (Index - Encoded'First + 1) :=
+              Jpeglib.Byte (Character'Pos (Encoded (Index)));
+         end loop;
+
+         Jpeglib.Streams.Open (Source, Encoded_Storage'Unchecked_Access);
+         Jpeglib.Decoding.Initialize
+           (Decoder,
+            Source'Access,
+            (Output_Format => Jpeglib.Images.RGB_24, others => <>));
+         Outcome := Jpeglib.Decoding.Decode_Image (Decoder, Output);
+         if not Jpeglib.Results.Succeeded (Outcome) then
+            Fail
+              (Label & " jpeglib decode of the ImageMagick " & Kind & " artifact failed: "
+               & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code),
+               "artifact: " & Artifact_Path & "." & Kind);
+            return;
+         end if;
+
+         Ok := True;
+      end Decode_Magick_Output;
+
+      Ok : Boolean;
+   begin
+      Decode_Magick_Output (False, Baseline_Decoded, Ok);
+      if not Ok then
+         Failed := True;
+         return;
+      end if;
+
+      Decode_Magick_Output (True, Progressive_Decoded, Ok);
+      if not Ok then
+         Failed := True;
+         return;
+      end if;
+
+      for Index in Baseline_Decoded'Range loop
+         if Baseline_Decoded (Index) /= Progressive_Decoded (Index) then
+            Failed := True;
+            Fail
+              (Label & " progressive and baseline decodes differ at byte" & Image (Index)
+               & ":" & Image (Natural (Baseline_Decoded (Index)))
+               & " against" & Image (Natural (Progressive_Decoded (Index))),
+               "artifact: " & Artifact_Path);
+            return;
+         end if;
+      end loop;
+
+      Ada.Text_IO.Put_Line
+        ("jpeglib_conformance: " & Label & " passed external-generated decode check");
+   end Run_Magick_Baseline_Against_Progressive_Case;
 
    procedure Run_Magick_Generated_Gray_Corpus_Case
      (Label         : String;
@@ -1840,6 +1985,28 @@ begin
       14,
       Failed,
       Progressive => True);
+
+   Run_Magick_Baseline_Against_Progressive_Case
+     ("ImageMagick-generated noisy RGB 40x24 q92 4:2:0, progressive against baseline",
+      "jpeglib-conformance-magick-noisy-rgb-40x24-q92-420",
+      Magick,
+      40,
+      24,
+      Noisy_RGB_Input (40, 24),
+      92,
+      "2x2",
+      Failed);
+
+   Run_Magick_Baseline_Against_Progressive_Case
+     ("ImageMagick-generated noisy RGB 33x41 q95 4:4:4, progressive against baseline",
+      "jpeglib-conformance-magick-noisy-rgb-33x41-q95-444",
+      Magick,
+      33,
+      41,
+      Noisy_RGB_Input (33, 41),
+      95,
+      "1x1",
+      Failed);
 
    Run_RGB_Encode_Case
      ("baseline RGB 4:2:0 encode",

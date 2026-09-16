@@ -1115,9 +1115,12 @@ package body Jpeglib.Internal.Arithmetic is
       Block : Jpeglib.Coefficients.DCT_Block;
       Successive_Low : Natural) return Results.Result
    is
-      Scale : constant Jpeglib.Coefficients.Quantized_Coefficient :=
-        Jpeglib.Coefficients.Quantized_Coefficient (2 ** Successive_Low);
-      Bit : constant Natural := Natural ((abs Block (0) / Scale) mod 2);
+      Scale : constant Long_Long_Integer := 2 ** Successive_Low;
+      Signed : constant Long_Long_Integer := Long_Long_Integer (Block (0));
+      --  Bit Successive_Low of the two's complement: the DC point
+      --  transform is an arithmetic shift, so the refinement bit of -3
+      --  by one is the 1 that makes -3 of -4, not the magnitude's.
+      Bit : constant Natural := Natural (((Signed - (Signed mod Scale)) / Scale) mod 2);
    begin
       return Encode_Bit (Object, Bin, Bit_Streams.Bit_Value (Bit));
    exception

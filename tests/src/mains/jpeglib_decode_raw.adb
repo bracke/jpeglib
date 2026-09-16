@@ -99,7 +99,17 @@ begin
             Ada.Text_IO.Put_Line
               (Ada.Text_IO.Standard_Error,
                "jpeglib_decode_raw: decode failed "
-               & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+               & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code)
+               & " at source offset"
+               & Jpeglib.Source_Offset'Image (Outcome.First_Error.Context.Source)
+               & " marker"
+               & Jpeglib.Marker_Code'Image (Outcome.First_Error.Context.Marker)
+               & " scan"
+               & Jpeglib.Scan_Number'Image (Outcome.First_Error.Context.Scan)
+               & " detail"
+               & Long_Long_Integer'Image (Outcome.First_Error.Context.Detail)
+               & " coefficient"
+               & Jpeglib.Coefficient_Index'Image (Outcome.First_Error.Context.Coefficient));
             Ada.Command_Line.Set_Exit_Status
               (Ada.Command_Line.Exit_Status (Jpeglib_Tools.Code (Jpeglib_Tools.Conformance_Failure)));
             return;

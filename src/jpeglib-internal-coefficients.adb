@@ -250,11 +250,15 @@ package body Jpeglib.Internal.Coefficients is
    begin
       if not Results.Succeeded (Bit.Outcome) then
          return Bit.Outcome;
-      elsif Bit.Value = 0 then
-         return Results.Success;
-      elsif Block (0) < 0 then
-         Block (0) := Block (0) - Step;
-      else
+      elsif Bit.Value = 1 then
+         --  The DC point transform is an arithmetic shift of the signed
+         --  value (T.81 G.1.2.1), so what the first scan left is the
+         --  value rounded down to a multiple of the step, for a negative
+         --  value as for a positive one, and a refinement bit adds the
+         --  step whatever the sign: -3 was sent as -4 and the bit brings
+         --  it back. Taking the step away from a negative value made -5
+         --  of it, and every negative odd DC of a file another encoder
+         --  wrote was off by two steps.
          Block (0) := Block (0) + Step;
       end if;
 
@@ -387,7 +391,14 @@ package body Jpeglib.Internal.Coefficients is
          Size := Natural (Symbol_Result.Symbol) mod 16;
          if Size = 0 then
             if Run = 15 then
-               Zeros_To_Skip := 16;
+               --  A ZRL covers sixteen zero-history coefficients and ends
+               --  on the sixteenth: fifteen are passed and the walk below
+               --  stops on the next, as it stops on the coefficient a run
+               --  and a new value name. Stopping one zero later read the
+               --  correction bits of the coefficients between as if they
+               --  came before the next symbol, which is not where the
+               --  encoder puts them.
+               Zeros_To_Skip := 15;
             else
                EOB_Result := Read_EOB_Run (Bits, Run, Symbol_Result.Source);
                if not Results.Succeeded (EOB_Result.Outcome) then
@@ -442,8 +453,9 @@ package body Jpeglib.Internal.Coefficients is
             else
                Block (Natural_Index) := Step;
             end if;
-            K := K + 1;
          end if;
+
+         K := K + 1;
       end loop;
 
       return Results.Success;
@@ -523,6 +535,36 @@ package body Jpeglib.Internal.Coefficients is
       when Constraint_Error =>
          return 0;
    end Successive_Value;
+
+   --  The DC point transform: an arithmetic shift right by Al, which
+   --  rounds towards minus infinity -- -3 by one is -2 -- where the AC
+   --  transform divides the magnitude and keeps the sign (T.81 A.4). A
+   --  decoder ORs each refinement bit into what the first scan gave, and
+   --  that only restores the value when the first scan rounded down.
+   function DC_Successive_Value
+     (Value : Jpeglib.Coefficients.Quantized_Coefficient;
+      Al : Successive_Approximation_Value) return Jpeglib.Coefficients.Quantized_Coefficient
+   is
+      Scale : constant Long_Long_Integer := Scale_For (Al);
+      Signed : constant Long_Long_Integer := Long_Long_Integer (Value);
+   begin
+      return Jpeglib.Coefficients.Quantized_Coefficient ((Signed - (Signed mod Scale)) / Scale);
+   exception
+      when Constraint_Error =>
+         return 0;
+   end DC_Successive_Value;
+
+   --  Bit Al of the DC's two's complement, which is what a decoder ORs in.
+   function DC_Refinement_Bit
+     (Value : Jpeglib.Coefficients.Quantized_Coefficient;
+      Al : Successive_Approximation_Value) return Bit_Streams.Bit_Value
+   is
+   begin
+      return Bit_Streams.Bit_Value (Long_Long_Integer (DC_Successive_Value (Value, Al)) mod 2);
+   exception
+      when Constraint_Error =>
+         return 0;
+   end DC_Refinement_Bit;
 
    function Refinement_Bit
      (Value : Jpeglib.Coefficients.Quantized_Coefficient;
@@ -652,7 +694,7 @@ package body Jpeglib.Internal.Coefficients is
       Block : Jpeglib.Coefficients.DCT_Block;
       Al : Successive_Approximation_Value := 0) return Results.Result
    is
-      DC_Value : constant Jpeglib.Coefficients.Quantized_Coefficient := Successive_Value (Block (0), Al);
+      DC_Value : constant Jpeglib.Coefficients.Quantized_Coefficient := DC_Successive_Value (Block (0), Al);
       Difference : Jpeglib.Coefficients.Quantized_Coefficient;
       Amplitude : Amplitude_Result;
       Outcome : Results.Result;
@@ -686,7 +728,7 @@ package body Jpeglib.Internal.Coefficients is
       Block : Jpeglib.Coefficients.DCT_Block;
       Al : Successive_Approximation_Value := 0) return Results.Result is
    begin
-      return Bit_Streams.Write_Bits (Bits, 1, Bit_Streams.Entropy_Bits (Refinement_Bit (Block (0), Al)));
+      return Bit_Streams.Write_Bits (Bits, 1, Bit_Streams.Entropy_Bits (DC_Refinement_Bit (Block (0), Al)));
    exception
       when Constraint_Error =>
          return Invalid;
@@ -1377,42 +1419,117 @@ package body Jpeglib.Internal.Coefficients is
 
          return Result;
       elsif Scans.Spectral_Start (Scan) = 0 then
-         Scan_Component := Scans.Component (Scan, 1);
-         Frame_Component := Frames.Component (Frame, Scan_Component.Frame_Component);
-         Block_Start := Component_Block_Start (Frame, Scan_Component.Frame_Component, Blocks);
-         for Row in 0 .. Natural (Frame_Component.Block_Rows) - 1 loop
-            for Column in 0 .. Natural (Frame_Component.Block_Columns) - 1 loop
-               Block_Number := Block_Start + Row * Natural (Frame_Component.Block_Columns) + Column;
-               if Block_Number > Blocks'Last then
-                  Result.Outcome := Invalid (Detail => Long_Long_Integer (Block_Number));
-                  return Result;
-               end if;
+         --  A DC refinement scan walks the same order as the DC first scan
+         --  did: one component in block order, or several interleaved by
+         --  MCU with each component's sampling factors, the blocks beyond
+         --  a component's edge read and dropped as they were in the first
+         --  scan. One bit a block either way.
+         if Scans.Components (Scan) = 1 then
+            Scan_Component := Scans.Component (Scan, 1);
+            Frame_Component := Frames.Component (Frame, Scan_Component.Frame_Component);
+            Block_Start := Component_Block_Start (Frame, Scan_Component.Frame_Component, Blocks);
+            for Row in 0 .. Natural (Frame_Component.Block_Rows) - 1 loop
+               for Column in 0 .. Natural (Frame_Component.Block_Columns) - 1 loop
+                  Block_Number := Block_Start + Row * Natural (Frame_Component.Block_Columns) + Column;
+                  if Block_Number > Blocks'Last then
+                     Result.Outcome := Invalid (Detail => Long_Long_Integer (Block_Number));
+                     return Result;
+                  end if;
 
-               Outcome :=
-                 Decode_Progressive_DC_Refine
-                   (Bits, Scans.Successive_Low (Scan), Blocks (Block_Number));
-               if not Results.Succeeded (Outcome) then
-                  Result.Outcome := Outcome;
-                  return Result;
-               end if;
+                  Outcome :=
+                    Decode_Progressive_DC_Refine
+                      (Bits, Scans.Successive_Low (Scan), Blocks (Block_Number));
+                  if not Results.Succeeded (Outcome) then
+                     Result.Outcome := Outcome;
+                     return Result;
+                  end if;
 
-               Result.Blocks_Decoded := Result.Blocks_Decoded + 1;
-               Outcome := Restarts.Advance_MCU (Restart_State);
-               if not Results.Succeeded (Outcome) then
-                  Result.Outcome := Outcome;
-                  return Result;
-               end if;
+                  Result.Blocks_Decoded := Result.Blocks_Decoded + 1;
+                  Outcome := Restarts.Advance_MCU (Restart_State);
+                  if not Results.Succeeded (Outcome) then
+                     Result.Outcome := Outcome;
+                     return Result;
+                  end if;
 
-               Outcome :=
-                 Accept_Restart_When_Due
-                   (Row /= Natural (Frame_Component.Block_Rows) - 1
-                    or else Column /= Natural (Frame_Component.Block_Columns) - 1);
-               if not Results.Succeeded (Outcome) then
-                  Result.Outcome := Outcome;
-                  return Result;
-               end if;
+                  Outcome :=
+                    Accept_Restart_When_Due
+                      (Row /= Natural (Frame_Component.Block_Rows) - 1
+                       or else Column /= Natural (Frame_Component.Block_Columns) - 1);
+                  if not Results.Succeeded (Outcome) then
+                     Result.Outcome := Outcome;
+                     return Result;
+                  end if;
+               end loop;
             end loop;
-         end loop;
+         else
+            for MCU_R_Value in MCU_Row range 0 .. Frames.MCU_Rows (Frame) - 1 loop
+               for MCU_C_Value in MCU_Column range 0 .. Frames.MCU_Columns (Frame) - 1 loop
+                  for Scan_Index in Component_Index range 1 .. Component_Index (Scans.Components (Scan)) loop
+                     Scan_Component := Scans.Component (Scan, Scan_Index);
+                     Frame_Component := Frames.Component (Frame, Scan_Component.Frame_Component);
+                     Block_Start := Component_Block_Start (Frame, Scan_Component.Frame_Component, Blocks);
+
+                     for V in 0 .. Natural (Frame_Component.Vertical_Sampling) - 1 loop
+                        for H in 0 .. Natural (Frame_Component.Horizontal_Sampling) - 1 loop
+                           declare
+                              Row : constant Natural :=
+                                Natural (MCU_R_Value) * Natural (Frame_Component.Vertical_Sampling) + V;
+                              Column : constant Natural :=
+                                Natural (MCU_C_Value) * Natural (Frame_Component.Horizontal_Sampling) + H;
+                           begin
+                              if Row < Natural (Frame_Component.Block_Rows)
+                                and then Column < Natural (Frame_Component.Block_Columns)
+                              then
+                                 Block_Number := Block_Start + Row * Natural (Frame_Component.Block_Columns) + Column;
+                                 if Block_Number > Blocks'Last then
+                                    Result.Outcome := Invalid (Detail => Long_Long_Integer (Block_Number));
+                                    return Result;
+                                 end if;
+
+                                 Outcome :=
+                                   Decode_Progressive_DC_Refine
+                                     (Bits, Scans.Successive_Low (Scan), Blocks (Block_Number));
+                                 if not Results.Succeeded (Outcome) then
+                                    Result.Outcome := Outcome;
+                                    return Result;
+                                 end if;
+
+                                 Result.Blocks_Decoded := Result.Blocks_Decoded + 1;
+                              else
+                                 declare
+                                    Dummy_Block : Jpeglib.Coefficients.DCT_Block := [others => 0];
+                                 begin
+                                    Outcome :=
+                                      Decode_Progressive_DC_Refine
+                                        (Bits, Scans.Successive_Low (Scan), Dummy_Block);
+                                    if not Results.Succeeded (Outcome) then
+                                       Result.Outcome := Outcome;
+                                       return Result;
+                                    end if;
+                                 end;
+                              end if;
+                           end;
+                        end loop;
+                     end loop;
+                  end loop;
+
+                  Outcome := Restarts.Advance_MCU (Restart_State);
+                  if not Results.Succeeded (Outcome) then
+                     Result.Outcome := Outcome;
+                     return Result;
+                  end if;
+
+                  Outcome :=
+                    Accept_Restart_When_Due
+                      (MCU_R_Value /= Frames.MCU_Rows (Frame) - 1
+                       or else MCU_C_Value /= Frames.MCU_Columns (Frame) - 1);
+                  if not Results.Succeeded (Outcome) then
+                     Result.Outcome := Outcome;
+                     return Result;
+                  end if;
+               end loop;
+            end loop;
+         end if;
 
          return Result;
       else
@@ -2112,11 +2229,9 @@ package body Jpeglib.Internal.Coefficients is
          Decision := Arithmetic.Decode_Bit (Decoder, DC_Refinement_Bin);
          if not Results.Succeeded (Decision.Outcome) then
             return Decision.Outcome;
-         elsif Decision.Decision = 0 then
-            return Results.Success;
-         elsif Blocks (Block_Number) (0) < 0 then
-            Blocks (Block_Number) (0) := Blocks (Block_Number) (0) - Step;
-         else
+         elsif Decision.Decision = 1 then
+            --  Added whatever the sign: the DC point transform is an
+            --  arithmetic shift, as in the Huffman path.
             Blocks (Block_Number) (0) := Blocks (Block_Number) (0) + Step;
          end if;
 
