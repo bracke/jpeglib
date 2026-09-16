@@ -189,7 +189,13 @@ package body Jpeglib.Internal.Coefficients is
       Bit := Bit_Streams.Read_Bit (Bits);
       if not Results.Succeeded (Bit.Outcome) then
          return Bit.Outcome;
-      elsif Bit.Value = 0 then
+      elsif Bit.Value = 0
+        or else (abs Block (Natural_Index) / Step) mod 2 = 1
+      then
+         --  A bit already set is left as it is, as libjpeg leaves it: a
+         --  valid stream never refines a coefficient twice at one bit,
+         --  and a corrupt one that does must not grow a coefficient past
+         --  what the bit can mean.
          return Results.Success;
       elsif Block (Natural_Index) < 0 then
          Block (Natural_Index) := Block (Natural_Index) - Step;
@@ -250,15 +256,16 @@ package body Jpeglib.Internal.Coefficients is
    begin
       if not Results.Succeeded (Bit.Outcome) then
          return Bit.Outcome;
-      elsif Bit.Value = 1 then
+      elsif Bit.Value = 1 and then Block (0) mod (2 * Step) < Step then
          --  The DC point transform is an arithmetic shift of the signed
          --  value (T.81 G.1.2.1), so what the first scan left is the
          --  value rounded down to a multiple of the step, for a negative
-         --  value as for a positive one, and a refinement bit adds the
-         --  step whatever the sign: -3 was sent as -4 and the bit brings
-         --  it back. Taking the step away from a negative value made -5
-         --  of it, and every negative odd DC of a file another encoder
-         --  wrote was off by two steps.
+         --  value as for a positive one, and a refinement bit is ORed in
+         --  whatever the sign: -3 was sent as -4 and the bit brings it
+         --  back. Taking the step away from a negative value made -5 of
+         --  it, and every negative odd DC of a file another encoder wrote
+         --  was off by two steps. ORed, not added: a bit already set --
+         --  which only a corrupt stream sends twice -- stays what it is.
          Block (0) := Block (0) + Step;
       end if;
 
@@ -2229,8 +2236,10 @@ package body Jpeglib.Internal.Coefficients is
          Decision := Arithmetic.Decode_Bit (Decoder, DC_Refinement_Bin);
          if not Results.Succeeded (Decision.Outcome) then
             return Decision.Outcome;
-         elsif Decision.Decision = 1 then
-            --  Added whatever the sign: the DC point transform is an
+         elsif Decision.Decision = 1
+           and then Blocks (Block_Number) (0) mod (2 * Step) < Step
+         then
+            --  ORed in whatever the sign: the DC point transform is an
             --  arithmetic shift, as in the Huffman path.
             Blocks (Block_Number) (0) := Blocks (Block_Number) (0) + Step;
          end if;

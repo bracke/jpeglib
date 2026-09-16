@@ -475,6 +475,7 @@ package body Jpeglib_Testing.Test_Coefficient_Scans is
    procedure Progressive_DC_First_Decodes_Shifted_Value (T : in out AUnit.Test_Cases.Test_Case'Class);
 
    procedure Progressive_DC_Refine_Updates_Signed_Value (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Progressive_Refine_Leaves_A_Set_Bit (T : in out AUnit.Test_Cases.Test_Case'Class);
 
    procedure Progressive_AC_First_Decodes_Run_And_Value (T : in out AUnit.Test_Cases.Test_Case'Class);
 
@@ -565,6 +566,11 @@ package body Jpeglib_Testing.Test_Coefficient_Scans is
         (T,
          Progressive_DC_Refine_Updates_Signed_Value'Access,
          "foundation.coefficients.progressive_dc_refine");
+
+      Register_Routine
+        (T,
+         Progressive_Refine_Leaves_A_Set_Bit'Access,
+         "foundation.coefficients.progressive_refine_set_bit");
 
       Register_Routine
         (T,
@@ -1062,6 +1068,54 @@ package body Jpeglib_Testing.Test_Coefficient_Scans is
       Assert (Jpeglib.Results.Succeeded (Outcome), "negative progressive DC refine failed");
       Assert (Negative_Block (0) = -6, "negative progressive DC refine mismatch");
    end Progressive_DC_Refine_Updates_Signed_Value;
+
+   --  A refinement bit is ORed into a coefficient, not added: a bit already
+   --  set -- which only a corrupt stream sends twice at one plane -- leaves
+   --  the coefficient as it is, for the DC as libjpeg ORs it and for an AC
+   --  coefficient whose magnitude has the bit. Bit_Storage starts with a
+   --  one bit; the AC case takes the EOB-run path, one bit a coefficient.
+   procedure Progressive_Refine_Leaves_A_Set_Bit (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      --  -2 has bit 1 of its two's complement set: ...11111110.
+      DC_Block : Jpeglib.Coefficients.DCT_Block := [0 => -2, others => 0];
+      AC_Block : Jpeglib.Coefficients.DCT_Block := [1 => 6, 8 => -4, others => 0];
+      EOB_Run : Jpeglib.Internal.Coefficients.EOB_Run_Count := 1;
+      Any_AC : constant Jpeglib.Internal.Huffman.Compiled_Huffman :=
+        Compile_Test_Huffman (DHT_AC_EOB_Storage'Access, Jpeglib.Internal.Huffman.AC);
+      DC_Source : aliased Jpeglib.Streams.Memory_Source;
+      AC_Source : aliased Jpeglib.Streams.Memory_Source;
+      Outcome : Jpeglib.Results.Result;
+   begin
+      Jpeglib.Streams.Open (DC_Source, Bit_Storage'Access);
+      declare
+         Entropy : aliased Jpeglib.Internal.Bit_Streams.Entropy_Reader (DC_Source'Access);
+         Bits : Jpeglib.Internal.Bit_Streams.Bit_Reader (Entropy'Access);
+      begin
+         Outcome := Jpeglib.Internal.Coefficients.Decode_Progressive_DC_Refine (Bits, 1, DC_Block);
+      end;
+
+      Assert (Jpeglib.Results.Succeeded (Outcome), "DC refine of a set bit failed");
+      Assert (DC_Block (0) = -2, "a DC refinement bit already set moved the coefficient");
+
+      --  Zigzag 1 is natural 1: magnitude 6 has bit 1 set and stays; zigzag
+      --  2 is natural 8: -4 has not, and the bit (the second in A0, a
+      --  zero) is not set either, so it stays too -- what is checked is
+      --  that the one bit read for 6 did not become 8.
+      Jpeglib.Streams.Open (AC_Source, Bit_Storage'Access);
+      declare
+         Entropy : aliased Jpeglib.Internal.Bit_Streams.Entropy_Reader (AC_Source'Access);
+         Bits : Jpeglib.Internal.Bit_Streams.Bit_Reader (Entropy'Access);
+      begin
+         Outcome :=
+           Jpeglib.Internal.Coefficients.Decode_Progressive_AC_Refine
+             (Bits, Any_AC, 1, 2, 1, AC_Block, EOB_Run);
+      end;
+
+      Assert (Jpeglib.Results.Succeeded (Outcome), "AC refine of a set bit failed");
+      Assert (AC_Block (1) = 6, "an AC refinement bit already set moved the coefficient");
+      Assert (AC_Block (8) = -4, "an AC refinement bit of zero moved the coefficient");
+      Assert (EOB_Run = 0, "the EOB run was not spent");
+   end Progressive_Refine_Leaves_A_Set_Bit;
 
    procedure Progressive_AC_First_Decodes_Run_And_Value (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);

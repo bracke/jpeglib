@@ -1492,7 +1492,10 @@ package body Jpeglib.Internal.Arithmetic is
             Refine := Decode_Bit (Object, Fixed_Bin);
             if not Results.Succeeded (Refine.Outcome) then
                return Refine.Outcome;
-            elsif Refine.Decision = 1 then
+            elsif Refine.Decision = 1
+              and then (abs Block (Index) / Step) mod 2 = 0
+            then
+               --  A bit already set is left, as in the Huffman path.
                if Block (Index) < 0 then
                   Block (Index) := Block (Index) - Step;
                else

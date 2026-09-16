@@ -2,6 +2,11 @@
 
 ## 0.1.0-dev
 
+- A refinement bit is ORed into a coefficient rather than added, in both
+  entropy coders, for the DC and for AC coefficients: a bit already set --
+  which only a corrupt stream sends twice at one plane -- leaves the
+  coefficient as it is, as libjpeg leaves it, instead of growing it past what
+  the bit can mean.
 - Fix three faults in progressive DCT streams that other encoders write and
   that the round trips here could not see, every one found on one 1920x1080
   progressive JFIF from libjpeg: a DC refinement scan of several components
