@@ -12,5 +12,8 @@ package Jpeglib_Tools is
       Documentation_Failure,
       Release_Reproducibility_Failure);
 
+   --  Code.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Code (Item : Exit_Code) return Integer;
 end Jpeglib_Tools;

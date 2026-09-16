@@ -68,45 +68,95 @@ package Jpeglib.Internal.Arithmetic is
       Block : Jpeglib.Coefficients.DCT_Block := [others => 0];
    end record;
 
+   --  Initial probability bin.
+   --  @return Operation result.
    function Initial_Probability_Bin return Probability_Bin;
+   --  Mps sense.
+   --  @param Bin See package contract for this parameter.
+   --  @return Operation result.
    function MPS_Sense (Bin : Probability_Bin) return Bit_Streams.Bit_Value;
+   --  State index.
+   --  @param Bin See package contract for this parameter.
+   --  @return Operation result.
    function State_Index (Bin : Probability_Bin) return Natural;
 
+   --  Has table.
+   --  @param State See package contract for this parameter.
+   --  @param Class See package contract for this parameter.
+   --  @param Index See package contract for this parameter.
+   --  @return Operation result.
    function Has_Table
      (State : Arithmetic_State;
       Class : Conditioning_Class;
       Index : Table_Index) return Boolean;
 
+   --  Value.
+   --  @param State See package contract for this parameter.
+   --  @param Class See package contract for this parameter.
+   --  @param Index See package contract for this parameter.
+   --  @return Operation result.
    function Value
      (State : Arithmetic_State;
       Class : Conditioning_Class;
       Index : Table_Index) return Conditioning_Value
      with Pre => Has_Table (State, Class, Index);
 
+   --  Dc lower bound.
+   --  @param Definition See package contract for this parameter.
+   --  @return Operation result.
    function DC_Lower_Bound (Definition : Conditioning_Value) return Natural
      with Pre => Definition <= 16#FF#;
+   --  Dc upper bound.
+   --  @param Definition See package contract for this parameter.
+   --  @return Operation result.
    function DC_Upper_Bound (Definition : Conditioning_Value) return Natural
      with Pre => Definition <= 16#FF#;
 
+   --  Parse dac.
+   --  @param State See package contract for this parameter.
+   --  @param Segment See package contract for this parameter.
+   --  @return Operation result.
    function Parse_DAC
      (State : in out Arithmetic_State;
       Segment : in out Segments.Segment_Reader) return Results.Result;
 
+   --  Decode bit.
+   --  @param Object See package contract for this parameter.
+   --  @param Bin See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Bit
      (Object : in out Decoder;
       Bin : in out Probability_Bin) return Decision_Result;
 
+   --  Reset.
+   --  @param Object See package contract for this parameter.
    procedure Reset (Object : in out Decoder);
 
+   --  Reset.
+   --  @param Object See package contract for this parameter.
    procedure Reset (Object : in out Encoder);
 
+   --  Encode bit.
+   --  @param Object See package contract for this parameter.
+   --  @param Bin See package contract for this parameter.
+   --  @param Decision See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Bit
      (Object : in out Encoder;
       Bin : in out Probability_Bin;
       Decision : Bit_Streams.Bit_Value) return Results.Result;
 
+   --  Finish.
+   --  @param Object See package contract for this parameter.
+   --  @return Operation result.
    function Finish (Object : in out Encoder) return Results.Result;
 
+   --  Decode dc difference.
+   --  @param Object See package contract for this parameter.
+   --  @param Bins See package contract for this parameter.
+   --  @param Context See package contract for this parameter.
+   --  @param Conditioning See package contract for this parameter.
+   --  @return Operation result.
    function Decode_DC_Difference
      (Object : in out Decoder;
       Bins : in out Probability_Bin_Array;
@@ -114,14 +164,29 @@ package Jpeglib.Internal.Arithmetic is
       Conditioning : Conditioning_Value) return DC_Result
      with Pre => Bins'First <= 0 and then Bins'Last >= 48;
 
+   --  Encode dc difference decisions.
+   --  @param Difference See package contract for this parameter.
+   --  @return Operation result.
    function Encode_DC_Difference_Decisions
      (Difference : DC_Difference) return DC_Difference_Decision_Result;
 
+   --  Encode dc difference events.
+   --  @param Difference See package contract for this parameter.
+   --  @param Context See package contract for this parameter.
+   --  @param Conditioning See package contract for this parameter.
+   --  @return Operation result.
    function Encode_DC_Difference_Events
      (Difference : DC_Difference;
       Context : DC_Context_Index;
       Conditioning : Conditioning_Value) return DC_Difference_Event_Result;
 
+   --  Encode dc difference.
+   --  @param Object See package contract for this parameter.
+   --  @param Bins See package contract for this parameter.
+   --  @param Context See package contract for this parameter.
+   --  @param Conditioning See package contract for this parameter.
+   --  @param Difference See package contract for this parameter.
+   --  @return Operation result.
    function Encode_DC_Difference
      (Object : in out Encoder;
       Bins : in out Probability_Bin_Array;
@@ -130,6 +195,17 @@ package Jpeglib.Internal.Arithmetic is
       Difference : DC_Difference) return Results.Result
      with Pre => Bins'First <= 0 and then Bins'Last >= 48;
 
+   --  Encode sequential block.
+   --  @param Object See package contract for this parameter.
+   --  @param DC_Bins See package contract for this parameter.
+   --  @param AC_Bins See package contract for this parameter.
+   --  @param Fixed_Bin See package contract for this parameter.
+   --  @param DC_Context See package contract for this parameter.
+   --  @param Predictor See package contract for this parameter.
+   --  @param DC_Conditioning See package contract for this parameter.
+   --  @param AC_Conditioning See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Sequential_Block
      (Object : in out Encoder;
       DC_Bins : in out Probability_Bin_Array;
@@ -143,6 +219,16 @@ package Jpeglib.Internal.Arithmetic is
      with Pre => DC_Bins'First <= 0 and then DC_Bins'Last >= 48
                  and then AC_Bins'First <= 0 and then AC_Bins'Last >= 245;
 
+   --  Encode progressive ac first.
+   --  @param Object See package contract for this parameter.
+   --  @param Bins See package contract for this parameter.
+   --  @param Fixed_Bin See package contract for this parameter.
+   --  @param AC_Conditioning See package contract for this parameter.
+   --  @param Spectral_Start See package contract for this parameter.
+   --  @param Spectral_End See package contract for this parameter.
+   --  @param Successive_Low See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Progressive_AC_First
      (Object : in out Encoder;
       Bins : in out Probability_Bin_Array;
@@ -156,12 +242,30 @@ package Jpeglib.Internal.Arithmetic is
                  and then Spectral_Start in 1 .. 63
                  and then Spectral_End in Spectral_Start .. 63;
 
+   --  Encode progressive dc refine.
+   --  @param Object See package contract for this parameter.
+   --  @param Bin See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @param Successive_Low See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Progressive_DC_Refine
      (Object : in out Encoder;
       Bin : in out Probability_Bin;
       Block : Jpeglib.Coefficients.DCT_Block;
       Successive_Low : Natural) return Results.Result;
 
+   --  Encode progressive ac refine.
+   --  @param Object See package contract for this parameter.
+   --  @param Bins See package contract for this parameter.
+   --  @param Fixed_Bin See package contract for this parameter.
+   --  @param AC_Conditioning See package contract for this parameter.
+   --  @param Spectral_Start See package contract for this parameter.
+   --  @param Spectral_End See package contract for this parameter.
+   --  @param Successive_Low See package contract for this parameter.
+   --  @param Decoded_Coefficients See package contract for this parameter.
+   --  @param Block_Number See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Progressive_AC_Refine
      (Object : in out Encoder;
       Bins : in out Probability_Bin_Array;
@@ -180,11 +284,27 @@ package Jpeglib.Internal.Arithmetic is
                  and then Decoded_Coefficients'First (2) <= Spectral_Start
                  and then Decoded_Coefficients'Last (2) >= Spectral_End;
 
+   --  Decode ac eob.
+   --  @param Object See package contract for this parameter.
+   --  @param Bins See package contract for this parameter.
+   --  @return Operation result.
    function Decode_AC_EOB
      (Object : in out Decoder;
       Bins : in out Probability_Bin_Array) return AC_EOB_Result
      with Pre => Bins'First <= 0 and then Bins'Last >= 0;
 
+   --  Decode progressive ac first.
+   --  @param Object See package contract for this parameter.
+   --  @param Bins See package contract for this parameter.
+   --  @param Fixed_Bin See package contract for this parameter.
+   --  @param AC_Conditioning See package contract for this parameter.
+   --  @param Spectral_Start See package contract for this parameter.
+   --  @param Spectral_End See package contract for this parameter.
+   --  @param Successive_Low See package contract for this parameter.
+   --  @param Decoded_Coefficients See package contract for this parameter.
+   --  @param Block_Number See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_AC_First
      (Object : in out Decoder;
       Bins : in out Probability_Bin_Array;
@@ -203,6 +323,18 @@ package Jpeglib.Internal.Arithmetic is
                  and then Decoded_Coefficients'First (2) <= Spectral_Start
                  and then Decoded_Coefficients'Last (2) >= Spectral_End;
 
+   --  Decode progressive ac refine.
+   --  @param Object See package contract for this parameter.
+   --  @param Bins See package contract for this parameter.
+   --  @param Fixed_Bin See package contract for this parameter.
+   --  @param AC_Conditioning See package contract for this parameter.
+   --  @param Spectral_Start See package contract for this parameter.
+   --  @param Spectral_End See package contract for this parameter.
+   --  @param Successive_Low See package contract for this parameter.
+   --  @param Decoded_Coefficients See package contract for this parameter.
+   --  @param Block_Number See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_AC_Refine
      (Object : in out Decoder;
       Bins : in out Probability_Bin_Array;
@@ -221,6 +353,14 @@ package Jpeglib.Internal.Arithmetic is
                  and then Decoded_Coefficients'First (2) <= Spectral_Start
                  and then Decoded_Coefficients'Last (2) >= Spectral_End;
 
+   --  Decode dc eob block.
+   --  @param Object See package contract for this parameter.
+   --  @param DC_Bins See package contract for this parameter.
+   --  @param AC_Bins See package contract for this parameter.
+   --  @param DC_Context See package contract for this parameter.
+   --  @param Predictor See package contract for this parameter.
+   --  @param DC_Conditioning See package contract for this parameter.
+   --  @return Operation result.
    function Decode_DC_EOB_Block
      (Object : in out Decoder;
       DC_Bins : in out Probability_Bin_Array;
@@ -231,6 +371,16 @@ package Jpeglib.Internal.Arithmetic is
      with Pre => DC_Bins'First <= 0 and then DC_Bins'Last >= 48
                  and then AC_Bins'First <= 0 and then AC_Bins'Last >= 0;
 
+   --  Decode sequential block.
+   --  @param Object See package contract for this parameter.
+   --  @param DC_Bins See package contract for this parameter.
+   --  @param AC_Bins See package contract for this parameter.
+   --  @param Fixed_Bin See package contract for this parameter.
+   --  @param DC_Context See package contract for this parameter.
+   --  @param Predictor See package contract for this parameter.
+   --  @param DC_Conditioning See package contract for this parameter.
+   --  @param AC_Conditioning See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Sequential_Block
      (Object : in out Decoder;
       DC_Bins : in out Probability_Bin_Array;

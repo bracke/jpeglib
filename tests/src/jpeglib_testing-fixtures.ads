@@ -249,18 +249,60 @@ package Jpeglib_Testing.Fixtures is
       Message : Ada.Strings.Unbounded.Unbounded_String;
    end record;
 
+   --  Name of.
+   --  @param Id See package contract for this parameter.
+   --  @return Operation result.
    function Name_Of (Id : Fixture_Id) return String;
+   --  Name of.
+   --  @param Id See package contract for this parameter.
+   --  @return Operation result.
    function Name_Of (Id : Image_Fixture_Id) return String;
+   --  Project root.
+   --  @return Operation result.
    function Project_Root return String;
+   --  Coefficient directory.
+   --  @param Root See package contract for this parameter.
+   --  @return Operation result.
    function Coefficient_Directory (Root : String) return String;
+   --  Image directory.
+   --  @param Root See package contract for this parameter.
+   --  @return Operation result.
    function Image_Directory (Root : String) return String;
+   --  Path for.
+   --  @param Root See package contract for this parameter.
+   --  @param Id See package contract for this parameter.
+   --  @return Operation result.
    function Path_For (Root : String; Id : Fixture_Id) return String;
+   --  Path for.
+   --  @param Root See package contract for this parameter.
+   --  @param Id See package contract for this parameter.
+   --  @return Operation result.
    function Path_For (Root : String; Id : Image_Fixture_Id) return String;
+   --  Read file.
+   --  @param Path See package contract for this parameter.
+   --  @return Operation result.
    function Read_File (Path : String) return Ada.Strings.Unbounded.Unbounded_String;
+   --  Manifest.
+   --  @return Operation result.
    function Manifest return String;
+   --  Image manifest.
+   --  @return Operation result.
    function Image_Manifest return String;
+   --  Generate.
+   --  @param Root See package contract for this parameter.
    procedure Generate (Root : String);
+   --  Decode file.
+   --  @param Path See package contract for this parameter.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Decode_File (Path : String; Item : Fixture) return Decode_Check;
+   --  Decode image file.
+   --  @param Path See package contract for this parameter.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Image_File (Path : String; Item : Image_Fixture) return Decode_Check;
+   --  Check corpus.
+   --  @param Root See package contract for this parameter.
+   --  @return Operation result.
    function Check_Corpus (Root : String) return Decode_Check;
 end Jpeglib_Testing.Fixtures;

@@ -9,7 +9,7 @@ sampling, color, metadata, recovery, then public orchestration.
 
 - Root library builds with `alr build`.
 - Test crate builds with `alr --chdir tests build`.
-- Foundation AUnit suite passes with 380 tests.
+- Foundation AUnit suite passes with 405 tests.
 - Header parsing, coefficient/raw/image decoding, and public image encoding are
   implemented for the V1 API surface.
 - Public `Decode_Image` supports baseline grayscale, YCbCr, RGB JPEG, plain CMYK,
@@ -25,7 +25,9 @@ sampling, color, metadata, recovery, then public orchestration.
   CMYK/YCCK covered across the DCT and lossless mode families.
 - Capability flags in `Jpeglib.Capabilities` advertise the completed V1 surface:
   baseline/progressive decode and encode, Huffman and arithmetic coding,
-  12-bit DCT byte-output decode, lossless JPEG, hierarchical JPEG,
+  12-bit DCT byte-output decode, 12-bit DCT coefficient encode for grayscale,
+  YCbCr, CMYK, and YCCK streams, packed raw 12-bit grayscale, full-resolution YCbCr,
+  CMYK, and YCCK sequential/progressive DCT encode, lossless JPEG, hierarchical JPEG,
   grayscale/YCbCr/RGB/CMYK/YCCK color paths, restart intervals, raw components,
   coefficients, reduced IDCT, Exif orientation, ICC preservation, and
   coefficient transforms.
@@ -35,13 +37,15 @@ sampling, color, metadata, recovery, then public orchestration.
   Advanced SOF frame families are represented in public header information,
   including 12-bit-capable, lossless predictor/point-transform metadata,
   differential, arithmetic, and hierarchical-header variants.
-  V1 capability flags are enabled for the covered arithmetic coding, 12-bit DCT,
-  lossless JPEG, and hierarchical JPEG scopes.
+  V1 capability flags are enabled for the covered arithmetic coding, 12-bit DCT
+  decode, 12-bit DCT coefficient/raw grayscale, YCbCr, CMYK, and YCCK encode, lossless JPEG, and hierarchical JPEG
+  scopes.
   SOF1 extended sequential 8-bit grayscale streams now decode through public
-  coefficient and image entry points. SOF1 extended sequential 12-bit grayscale
-  streams now decode through public image and raw component entry points with
-  precision-aware byte-output scaling. SOF3 lossless Huffman 8-bit grayscale
-  image and raw component decode now reconstruct predictor-1 through
+  coefficient and image entry points. SOF1 extended sequential 12-bit grayscale,
+  YCbCr, CMYK, and YCCK streams now decode through public image, raw component, and
+  coefficient entry points with precision-aware byte-output scaling. SOF3
+  lossless Huffman 8-bit grayscale image and raw component decode now
+  reconstruct predictor-1 through
   predictor-7 scans, including nonzero category-bit deltas and restart marker
   predictor resets, through initialized and header-ready public image/raw entry
   points. SOF3 lossless Huffman 8-bit YCbCr, RGB, CMYK, and YCCK image/raw
@@ -692,7 +696,9 @@ magnitude decoding, and YCbCr coefficient AC-first multi-scan scopes, plus
 multi-component DC-first scans decoded in MCU order and stored in
 component-major coefficient order.
 Public `Decode_Coefficients` dispatches covered SOF2 coefficient streams through
-that progressive coefficient path both before and after `Read_Header`.
+that progressive coefficient path both before and after `Read_Header`, including
+public-encoder-generated balanced/fast-preview grayscale, YCbCr/RGB, CMYK, and
+YCCK progressive scan scripts with preserved AC coefficient detail.
 Public `Decode_Image` reuses the progressive coefficient path for covered
 grayscale, YCbCr, and RGB SOF2 streams and reconstructs pixels through the
 existing IDCT/color paths. Progressive grayscale coverage includes DC-only and
@@ -1037,11 +1043,30 @@ staging future rows before their evidence is complete.
 
 - Status: closed. `Jpeglib.Decoding.Options` exposes `Raw_Output_Precision`
   and `Raw_Precision` so raw component callers can scale, clamp, preserve, or
-  reject source/output precision mismatches. `Decode_Raw_Components` validates
-  one-byte and two-byte caller buffers, preserves legal 12-bit lossless samples
-  as big-endian component bytes, and retains the existing scaled 8-bit default.
+  reject source/output precision mismatches. `Raw_Byte_Order` makes 16-bit raw
+  sample packing explicit for preserved or widened samples. Public
+  `Effective_Raw_Output_Precision`, `Raw_Bytes_Per_Sample`,
+  `Raw_Minimum_Row_Bytes`, `Raw_Accessible_Bytes`,
+  `Raw_Component_View_Is_Valid`, `Raw_Sample_Position_Is_Valid`, and
+  `Raw_Sample_At` helpers expose the same raw buffer sizing, view validation,
+  packed-sample bounds, and packed-sample interpretation policy used by decoder
+  validation and output. `Try_Raw_Sample_At` adds a non-raising packed sample
+  read path with a `Result` outcome for invalid coordinates or insufficient
+  storage. Raw sizing helpers saturate at `Byte_Count'Last` for impossible
+  caller dimensions so high-bit-depth view validation fails deterministically
+  instead of overflowing. `Raw_Sample_At` and `Try_Raw_Sample_At` also accept
+  full decode options so callers can use the same effective precision and
+  byte-order policy they used for decoding.
+  `Decode_Raw_Components` validates one-byte and two-byte caller buffers,
+  preserves legal 12-bit lossless and progressive grayscale/YCbCr/RGB/CMYK/YCCK
+  DCT samples as caller-selected big-endian or little-endian component bytes,
+  preserves 12-bit DCT raw output before any caller-requested scaling, and
+  retains the existing scaled 8-bit default.
 - `jpeglib_precision_buffer` covers the public preserve, clamp, scale, and
-  reject policy matrix and is run by `jpeglib_complete_plus`.
+  reject policy matrix, including 16-bit byte order and oversized sizing
+  validation plus packed sample position checks and non-raising packed sample
+  reads, and is run by
+  `jpeglib_complete_plus`.
 
 ### Phase CP6: Performance Architecture
 

@@ -195,4 +195,58 @@ package body Jpeglib.Internal.Encoder_Huffman_Optimization is
       Chroma_DC_Definition := Huffman.Optimized_Definition (Chroma_DC_Frequencies);
       Chroma_AC_Definition := Huffman.Optimized_Definition (Chroma_AC_Frequencies);
    end Optimized_Definitions_For_YCbCr_Blocks;
+
+   procedure Optimized_Definitions_For_CMYK_Blocks
+     (C_Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      M_Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      K_Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Block_Columns : Positive;
+      Block_Rows : Positive;
+      Restart : Restart_Interval;
+      DC_Definition : out Huffman.Huffman_Definition;
+      AC_Definition : out Huffman.Huffman_Definition)
+   is
+      DC_Frequencies : Huffman.Symbol_Frequencies := [others => 0];
+      AC_Frequencies : Huffman.Symbol_Frequencies := [others => 0];
+      C_Predictor : Coefficients.DC_Predictor := 0;
+      M_Predictor : Coefficients.DC_Predictor := 0;
+      Y_Predictor : Coefficients.DC_Predictor := 0;
+      K_Predictor : Coefficients.DC_Predictor := 0;
+      Restart_State : Restarts.Restart_State;
+   begin
+      Restarts.Configure (Restart_State, Restart);
+      for Block_Row in 0 .. Block_Rows - 1 loop
+         for Block_Column in 0 .. Block_Columns - 1 loop
+            declare
+               Offset : constant Natural := Block_Row * Block_Columns + Block_Column;
+               C_Index : constant Positive := C_Blocks'First + Offset;
+               M_Index : constant Positive := M_Blocks'First + Offset;
+               Y_Index : constant Positive := Y_Blocks'First + Offset;
+               K_Index : constant Positive := K_Blocks'First + Offset;
+            begin
+               Count_Baseline_Block_Symbols (DC_Frequencies, AC_Frequencies, C_Predictor, C_Blocks (C_Index));
+               Count_Baseline_Block_Symbols (DC_Frequencies, AC_Frequencies, M_Predictor, M_Blocks (M_Index));
+               Count_Baseline_Block_Symbols (DC_Frequencies, AC_Frequencies, Y_Predictor, Y_Blocks (Y_Index));
+               Count_Baseline_Block_Symbols (DC_Frequencies, AC_Frequencies, K_Predictor, K_Blocks (K_Index));
+            end;
+
+            if Restart /= 0 and then (Block_Row /= Block_Rows - 1 or else Block_Column /= Block_Columns - 1) then
+               declare
+                  Outcome : constant Results.Result := Restarts.Advance_MCU (Restart_State);
+               begin
+                  if Results.Succeeded (Outcome) and then Restarts.MCUs_Until_Restart (Restart_State) = 0 then
+                     C_Predictor := 0;
+                     M_Predictor := 0;
+                     Y_Predictor := 0;
+                     K_Predictor := 0;
+                  end if;
+               end;
+            end if;
+         end loop;
+      end loop;
+
+      DC_Definition := Huffman.Optimized_Definition (DC_Frequencies);
+      AC_Definition := Huffman.Optimized_Definition (AC_Frequencies);
+   end Optimized_Definitions_For_CMYK_Blocks;
 end Jpeglib.Internal.Encoder_Huffman_Optimization;

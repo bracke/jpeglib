@@ -12,9 +12,10 @@ supported independently of `Decode_Image`.
 - Separate baseline color scans where each component is scanned once.
 - Restart intervals with the expected marker sequence.
 - Covered 8-bit progressive DCT coefficient streams using Huffman entropy
-  coding, currently grayscale DC-first, restarted DC-first,
-  DC-first-plus-AC-first, interleaved color DC-first scans, and YCbCr
-  single-component luma AC-first scans after interleaved DC scans.
+  coding: grayscale DC-first, restarted DC-first, DC-first-plus-AC-first,
+  interleaved color DC-first scans, YCbCr single-component luma AC-first scans
+  after interleaved DC scans, and public-encoder-generated balanced/fast-preview
+  grayscale, YCbCr/RGB, CMYK, and YCCK progressive scan scripts with AC detail.
 - Covered Huffman and arithmetic lossless plus differential-lossless streams
   expose reconstructed source-precision component samples as DC-only
   coefficient blocks, one block per sample, including covered grayscale,
@@ -82,7 +83,10 @@ Blocks are written in deterministic decode order:
 - Separate color scans: component scan order, with each component written in its
   own left-to-right, top-to-bottom block order.
 - Progressive color: entropy is consumed in scan order, while completed blocks
-  are exposed in component-major order.
+  are exposed in component-major order. Raw component output uses the same
+  completed progressive coefficient blocks and preserves caller-selected
+  high-bit-depth packing for covered 12-bit grayscale, YCbCr, RGB, CMYK, and
+  YCCK streams.
 - Lossless and differential-lossless coefficient output: source-precision
   samples are exposed in component-major row-major order as DC-only blocks.
 
@@ -125,14 +129,34 @@ component-major Y, Cb, and Cr coefficient blocks and layout metadata.
 `Encode_Grayscale_Progressive` emits a progressive Huffman grayscale JPEG
 stream from quantized coefficient blocks, including AC coefficients.
 `Encode_YCbCr_Progressive` emits a progressive Huffman YCbCr JPEG stream from
-component-major Y, Cb, and Cr coefficient blocks and layout metadata. These
-entry points validate block counts against the image dimensions and component
-layouts, reject coefficients outside the baseline encoding range, preserve
-restart interval signaling, and are covered by public encode/decode coefficient
-round-trip tests. Set `Optimize_Huffman => True` to emit coefficient-derived
-DHT tables instead of the standard Huffman tables; the option is covered by
-baseline grayscale and YCbCr coefficient round trips. Progressive refinement
-coefficient output keeps standard tables for refinement scans.
+component-major Y, Cb, and Cr coefficient blocks and layout metadata.
+`Encode_Grayscale_Twelve_Bit`, `Encode_YCbCr_Twelve_Bit`,
+`Encode_CMYK_Twelve_Bit`, and `Encode_YCCK_Twelve_Bit` emit SOF1 extended
+sequential precision-12 Huffman
+JPEG streams from the same coefficient-domain inputs. These entry points
+validate block counts against the image dimensions and component layouts,
+reject coefficients outside the baseline encoding range, preserve restart
+interval signaling, and are covered by public encode/decode coefficient
+round-trip tests. Set `Optimize_Huffman => True` to emit coefficient-derived DHT
+tables instead of the standard Huffman tables; the option is covered by
+baseline grayscale and YCbCr coefficient round trips plus the 12-bit
+CMYK/YCCK coefficient round trips.
+Progressive refinement coefficient output keeps standard tables for refinement
+scans.
+
+`Jpeglib.Encoding.Encode_Raw_Grayscale_Twelve_Bit`,
+`Encode_Raw_YCbCr_Twelve_Bit`, `Encode_Raw_CMYK_Twelve_Bit`, and
+`Encode_Raw_YCCK_Twelve_Bit` cover the
+corresponding stateful encoder paths for packed 12-bit grayscale,
+full-resolution YCbCr, CMYK, and YCCK samples. They accept two bytes per sample in
+caller-selected byte order, use the stateful encoder quality, restart,
+progressive-script, metadata, and Huffman optimization options, emit SOF1
+precision-12 Huffman output for sequential requests and SOF2 precision-12
+Huffman output for `Fast_Preview_Progressive`/`Balanced_Progressive` requests,
+reject invalid packed raw views, wrong component counts, and mismatched
+predefined image descriptors before writing output, emit queued metadata
+segments, enforce coefficient workspace limits, and reject packed values above
+the 12-bit sample range.
 
 ## State Transitions
 
@@ -186,12 +210,31 @@ Current public AUnit contract coverage:
 - `foundation.decoder.public_progressive_coefficients_after_header`
 - `foundation.decoder.public_progressive_coefficients_restart`
 - `foundation.decoder.public_progressive_coefficients_interleaved_color`
+- `foundation.decoder.public_progressive_coefficients_generated`
 - `foundation.coefficients.public_transforms`
 - `foundation.coefficients.public_image_transforms`
 - `foundation.coefficients.public_encode_grayscale_baseline`
 - `foundation.coefficients.public_encode_grayscale_progressive`
 - `foundation.coefficients.public_encode_ycbcr_baseline`
 - `foundation.coefficients.public_encode_ycbcr_progressive`
+- `coefficient_encoding.twelve_bit_invalid_coefficient`
+- `coefficient_encoding.twelve_bit_grayscale`
+- `coefficient_encoding.twelve_bit_ycbcr`
+- `coefficient_encoding.twelve_bit_cmyk`
+- `coefficient_encoding.twelve_bit_ycck`
+- `coefficient_encoding.raw_twelve_bit_out_of_range`
+- `coefficient_encoding.raw_twelve_bit_invalid_view`
+- `coefficient_encoding.raw_twelve_bit_wrong_component_count`
+- `coefficient_encoding.raw_twelve_bit_coefficient_byte_limit`
+- `coefficient_encoding.raw_twelve_bit_default_byte_order`
+- `coefficient_encoding.raw_twelve_bit_mismatched_geometry`
+- `coefficient_encoding.raw_twelve_bit_progressive`
+- `coefficient_encoding.raw_twelve_bit_defined_image_mismatch`
+- `coefficient_encoding.raw_twelve_bit_metadata`
+- `coefficient_encoding.raw_twelve_bit_grayscale`
+- `coefficient_encoding.raw_twelve_bit_ycbcr`
+- `coefficient_encoding.raw_twelve_bit_cmyk`
+- `coefficient_encoding.raw_twelve_bit_ycck`
 - `foundation.decoder.public_coefficients_small_output`
 - `foundation.decoder.public_coefficients_invalid_state`
 - `foundation.decoder.public_coefficients_restart_wrong_marker`
@@ -206,8 +249,12 @@ Current public AUnit contract coverage:
 to quantized DCT coefficients from supported Huffman-coded streams.
 `Jpeglib.Capabilities.Coefficient_Transforms` is `True` for the public
 block-level transform operations documented above.
+`Jpeglib.Capabilities.Twelve_Bit_DCT_Encode` is `True` for the SOF1
+coefficient-domain grayscale, YCbCr, CMYK, and YCCK encoding entry points plus
+the packed raw grayscale, YCbCr, CMYK, and YCCK entry points documented above,
+including SOF1 sequential and SOF2 progressive raw output.
 `Jpeglib.Capabilities.Baseline_Decode` is also `True` for the current baseline
 image scope: grayscale, YCbCr, RGB, and plain CMYK Huffman-coded image decode.
-Progressive coefficient extraction is partially covered as described above, and
-`Jpeglib.Capabilities.Progressive_Decode` is `True` for the current progressive
-grayscale, YCbCr, and RGB image-decode scope.
+Progressive coefficient extraction is covered for the supported public SOF2
+coefficient scope described above. `Jpeglib.Capabilities.Progressive_Decode` is
+`True` for the current progressive grayscale, YCbCr, and RGB image-decode scope.

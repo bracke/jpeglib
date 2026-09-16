@@ -7,6 +7,9 @@ package Jpeglib.Internal.Library_Policy is
    pragma SPARK_Mode (On);
    use type Metadata.Metadata_Kind;
 
+   --  Decode entry allowed.
+   --  @param State See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Entry_Allowed
      (State : Decoding.Decoder_State) return Boolean is
      (State in Decoding.Initialized | Decoding.Header_Ready)
@@ -14,6 +17,9 @@ package Jpeglib.Internal.Library_Policy is
        (if State in Decoding.Cancelled | Decoding.Failed | Decoding.Finalized
         then not Decode_Entry_Allowed'Result);
 
+   --  Encode entry allowed.
+   --  @param State See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Entry_Allowed
      (State : Encoding.Encoder_State) return Boolean is
      (State in Encoding.Image_Defined | Encoding.Accepting_Metadata | Encoding.Accepting_Input)
@@ -21,6 +27,11 @@ package Jpeglib.Internal.Library_Policy is
        (if State in Encoding.Cancelled | Encoding.Failed | Encoding.Finalized
         then not Encode_Entry_Allowed'Result);
 
+   --  Metadata total is bounded.
+   --  @param Current See package contract for this parameter.
+   --  @param Payload See package contract for this parameter.
+   --  @param Limit See package contract for this parameter.
+   --  @return Operation result.
    function Metadata_Total_Is_Bounded
      (Current : Byte_Count;
       Payload : Byte_Count;
@@ -29,11 +40,19 @@ package Jpeglib.Internal.Library_Policy is
      with Post =>
        (if Metadata_Total_Is_Bounded'Result then Current + Payload <= Limit);
 
+   --  Metadata segment is bounded.
+   --  @param Payload See package contract for this parameter.
+   --  @param Segment_Limit See package contract for this parameter.
+   --  @return Operation result.
    function Metadata_Segment_Is_Bounded
      (Payload : Byte_Count;
       Segment_Limit : Byte_Count) return Boolean is
      (Payload <= Segment_Limit);
 
+   --  Metadata callback is bounded.
+   --  @param Current_Callbacks See package contract for this parameter.
+   --  @param Callback_Limit See package contract for this parameter.
+   --  @return Operation result.
    function Metadata_Callback_Is_Bounded
      (Current_Callbacks : Natural;
       Callback_Limit : Natural) return Boolean is
@@ -41,6 +60,11 @@ package Jpeglib.Internal.Library_Policy is
      with Post =>
        (if Metadata_Callback_Is_Bounded'Result then Current_Callbacks + 1 <= Callback_Limit);
 
+   --  Retains metadata.
+   --  @param Policy See package contract for this parameter.
+   --  @param Kind See package contract for this parameter.
+   --  @param Selected See package contract for this parameter.
+   --  @return Operation result.
    function Retains_Metadata
      (Policy : Metadata.Metadata_Policy;
       Kind : Metadata.Metadata_Kind;
@@ -51,6 +75,15 @@ package Jpeglib.Internal.Library_Policy is
         when Metadata.Preserve_Selected => Selected (Kind),
         when others => False);
 
+   --  Scan header is legal.
+   --  @param Mode See package contract for this parameter.
+   --  @param Component_Total See package contract for this parameter.
+   --  @param Scan_Components See package contract for this parameter.
+   --  @param Spectral_Start See package contract for this parameter.
+   --  @param Spectral_End See package contract for this parameter.
+   --  @param Successive_High See package contract for this parameter.
+   --  @param Successive_Low See package contract for this parameter.
+   --  @return Operation result.
    function Scan_Header_Is_Legal
      (Mode : Frame_Mode;
       Component_Total : Component_Count;
@@ -84,6 +117,13 @@ package Jpeglib.Internal.Library_Policy is
        (if Scan_Header_Is_Legal'Result
         then Scan_Components <= Component_Total and then Spectral_Start <= 63 and then Spectral_End <= 63);
 
+   --  Output span is bounded.
+   --  @param Height See package contract for this parameter.
+   --  @param Row_Bytes See package contract for this parameter.
+   --  @param Stride See package contract for this parameter.
+   --  @param Accessible See package contract for this parameter.
+   --  @param Limit See package contract for this parameter.
+   --  @return Operation result.
    function Output_Span_Is_Bounded
      (Height : Image_Height;
       Row_Bytes : Byte_Count;

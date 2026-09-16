@@ -7,17 +7,35 @@ package Jpeglib.Internal.Quantization is
    type Quantization_Value is range 1 .. 65_535;
    type Quantization_Table is array (Coefficient_Index) of Quantization_Value;
 
+   --  Luma table for quality.
+   --  @param Quality See package contract for this parameter.
+   --  @return Operation result.
    function Luma_Table_For_Quality (Quality : Positive) return Quantization_Table
      with Pre => Quality <= 100;
+   --  Chroma table for quality.
+   --  @param Quality See package contract for this parameter.
+   --  @return Operation result.
    function Chroma_Table_For_Quality (Quality : Positive) return Quantization_Table
      with Pre => Quality <= 100;
 
    type Quantization_State is private;
 
+   --  Has table.
+   --  @param State See package contract for this parameter.
+   --  @param Index See package contract for this parameter.
+   --  @return Operation result.
    function Has_Table (State : Quantization_State; Index : Quantization_Table_Index) return Boolean;
+   --  Table.
+   --  @param State See package contract for this parameter.
+   --  @param Index See package contract for this parameter.
+   --  @return Operation result.
    function Table (State : Quantization_State; Index : Quantization_Table_Index) return Quantization_Table
      with Pre => Has_Table (State, Index);
 
+   --  Parse dqt.
+   --  @param State See package contract for this parameter.
+   --  @param Segment See package contract for this parameter.
+   --  @return Operation result.
    function Parse_DQT
      (State : in out Quantization_State;
       Segment : in out Segments.Segment_Reader) return Results.Result;

@@ -18,6 +18,39 @@
   coders' encoders and decoders now agree with libjpeg: a progressive file
   decodes to the same pixels as the baseline file of the same coefficients,
   and the refined progressive fixtures are regenerated.
+- Add `Raw_Byte_Order` decode options for high-bit-depth raw component output,
+  keeping big-endian 16-bit samples as the default while allowing callers to
+  request little-endian preserved or widened samples.
+- Preserve full reconstructed DCT sample values before raw component precision
+  conversion, so 12-bit DCT raw output uses the same two-byte packing policy as
+  lossless raw output.
+- Expand 12-bit DCT decode coverage to SOF1 grayscale, YCbCr, and CMYK streams
+  through public image, raw component, and coefficient entry points.
+- Add public SOF1 12-bit DCT coefficient encoding for grayscale, YCbCr, CMYK,
+  and YCCK streams, with public decoder round-trip coverage.
+- Add `Jpeglib.Encoding.Encode_Raw_Grayscale_Twelve_Bit`,
+  `Encode_Raw_YCbCr_Twelve_Bit`, `Encode_Raw_CMYK_Twelve_Bit`, and
+  `Encode_Raw_YCCK_Twelve_Bit` for stateful
+  SOF1 sequential and SOF2 progressive DCT encoding from packed big- or
+  little-endian 12-bit grayscale, full-resolution YCbCr, CMYK, and YCCK samples.
+- Add public raw component sizing helpers for effective precision, bytes per
+  sample, and minimum row bytes so high-bit-depth callers can size output views
+  with the same policy used by decoder validation.
+- Add `Raw_Accessible_Bytes` so callers can compute raw component storage
+  requirements, including stride and high-bit-depth sample width, before decode.
+- Saturate raw component sizing helpers at `Byte_Count'Last` for oversized
+  high-bit-depth caller dimensions so validation rejects impossible views
+  without arithmetic overflow.
+- Add `Raw_Component_View_Is_Valid` so callers can preflight raw component
+  output views with the same high-bit-depth validation used by the decoder.
+- Add `Raw_Sample_At` so callers can read packed 8-bit or 16-bit raw component
+  samples using the same byte-order policy as decoder output.
+- Add an options-based `Raw_Sample_At` overload so callers can read raw samples
+  with the same effective precision and byte-order settings used for decode.
+- Add `Raw_Sample_Position_Is_Valid` helpers so callers can preflight packed raw
+  sample coordinates and storage before using `Raw_Sample_At`.
+- Add `Try_Raw_Sample_At` helpers for non-raising packed raw sample reads with a
+  `Result` outcome on invalid coordinates or insufficient storage.
 - Add the complete-plus competitive gap matrix and `jpeglib_complete_plus`
   tracker for multi-platform CI, expanded corpus, transform, optimization,
   precision/buffer, and performance work, explicitly excluding libjpeg API/ABI
@@ -44,6 +77,9 @@
   `Optimize_Huffman`, `Target_Bytes`, and perceptual preset controls, optimized
   image-level Huffman DHT generation, and a deterministic
   `jpeglib_encoder_optimization` matrix gate.
+- Close the progressive-coefficient-extraction complete-plus gap with public
+  encoder-generated balanced and fast-preview progressive coefficient decode
+  coverage for grayscale, YCbCr/RGB, CMYK, and YCCK streams with AC detail.
 - Close the precision-buffer complete-plus gap with public raw component
   precision policies for scaling, clamping, source-precision preservation, and
   mismatch rejection, plus the `jpeglib_precision_buffer` matrix gate.
@@ -687,8 +723,9 @@
   tests.
 - Route covered SOF1 extended sequential 8-bit grayscale coefficient and image
   decode through the sequential Huffman path.
-- Route covered SOF1 extended sequential 12-bit grayscale image and raw
-  component decode through precision-aware IDCT reconstruction into byte output.
+- Route covered SOF1 extended sequential 12-bit grayscale, YCbCr, CMYK, and
+  YCCK image/raw/coefficient decode through precision-aware IDCT reconstruction
+  into byte output.
 - Route covered SOF3 lossless Huffman 8-bit grayscale image and raw component
   decode through direct predictor-1 through predictor-7 sample reconstruction,
   including nonzero category-bit deltas, header-ready decode entry points, and

@@ -37,6 +37,21 @@ package body Jpeglib.Internal.Transforms is
       end if;
    end Scale_To_Output_Byte;
 
+   function Clamp_To_Sample_Value
+     (Value : Dequantized_Coefficient;
+      Precision : Sample_Precision) return Sample_Value
+   is
+      Max_Sample : constant Dequantized_Coefficient := Dequantized_Coefficient (2 ** Natural (Precision) - 1);
+   begin
+      if Value < 0 then
+         return 0;
+      elsif Value > Max_Sample then
+         return Sample_Value (Max_Sample);
+      else
+         return Sample_Value (Value);
+      end if;
+   end Clamp_To_Sample_Value;
+
    function Rounded_Divide_By_8 (Value : Dequantized_Coefficient) return Dequantized_Coefficient is
    begin
       if Value >= 0 then
@@ -134,11 +149,66 @@ package body Jpeglib.Internal.Transforms is
       return Result;
    end Forward_Block;
 
-   function Reconstruct_Block
-     (Block : Dequantized_Block;
-      Precision : Sample_Precision := 8) return Sample_Block
+   function Forward_DC_Only_Values
+     (Samples : Sample_Value_Block;
+      Table : Quantization.Quantization_Table;
+      Precision : Sample_Precision := 8) return Jpeglib.Coefficients.DCT_Block
    is
-      Result : Sample_Block := [others => 0];
+      Sum : Wide_Coefficient := 0;
+      Quantized : Wide_Coefficient;
+      Divisor : constant Wide_Coefficient := 8 * Wide_Coefficient (Table (0));
+      Level_Shift : constant Wide_Coefficient := 2 ** (Natural (Precision) - 1);
+   begin
+      for Item of Samples loop
+         Sum := Sum + Wide_Coefficient (Item) - Level_Shift;
+      end loop;
+
+      Quantized := Rounded_Divide_By_Quantization (Sum, Divisor);
+      return [0 => Jpeglib.Coefficients.Quantized_Coefficient (Quantized), others => 0];
+   end Forward_DC_Only_Values;
+
+   function Forward_Block_Values
+     (Samples : Sample_Value_Block;
+      Table : Quantization.Quantization_Table;
+      Precision : Sample_Precision := 8) return Jpeglib.Coefficients.DCT_Block
+   is
+      Result : Jpeglib.Coefficients.DCT_Block := [others => 0];
+      Sum : Wide_Coefficient;
+      Dequantized : Wide_Coefficient;
+      Quantized : Wide_Coefficient;
+      Coefficient : Coefficient_Index;
+      Level_Shift : constant Wide_Coefficient := 2 ** (Natural (Precision) - 1);
+   begin
+      for V in Coefficient_Index range 0 .. 7 loop
+         for U in Coefficient_Index range 0 .. 7 loop
+            Sum := 0;
+            for Y in Coefficient_Index range 0 .. 7 loop
+               for X in Coefficient_Index range 0 .. 7 loop
+                  Sum :=
+                    Sum
+                    + (Wide_Coefficient (Samples (Coefficient_Index (Natural (Y) * 8 + Natural (X)))) - Level_Shift)
+                      * Weights (U, X)
+                      * Weights (V, Y);
+               end loop;
+            end loop;
+
+            Coefficient := Coefficient_Index (Natural (V) * 8 + Natural (U));
+            Dequantized := Rounded_Divide (Sum, IDCT_Divisor);
+            Quantized :=
+              Rounded_Divide_By_Quantization
+                (Dequantized, Wide_Coefficient (Table (Coefficient)));
+            Result (Coefficient) := Jpeglib.Coefficients.Quantized_Coefficient (Quantized);
+         end loop;
+      end loop;
+
+      return Result;
+   end Forward_Block_Values;
+
+   function Reconstruct_Block_Values
+     (Block : Dequantized_Block;
+      Precision : Sample_Precision := 8) return Sample_Value_Block
+   is
+      Result : Sample_Value_Block := [others => 0];
       Sum : Wide_Coefficient;
       Spatial : Wide_Coefficient;
       Index : Coefficient_Index;
@@ -159,22 +229,50 @@ package body Jpeglib.Internal.Transforms is
 
             Spatial := Rounded_Divide (Sum, IDCT_Divisor) + Level_Shift;
             Index := Coefficient_Index (Natural (Y) * 8 + Natural (X));
-            Result (Index) := Scale_To_Output_Byte (Dequantized_Coefficient (Spatial), Precision);
+            Result (Index) := Clamp_To_Sample_Value (Dequantized_Coefficient (Spatial), Precision);
          end loop;
+      end loop;
+
+      return Result;
+   end Reconstruct_Block_Values;
+
+   function Reconstruct_Block
+     (Block : Dequantized_Block;
+      Precision : Sample_Precision := 8) return Sample_Block
+   is
+      Values : constant Sample_Value_Block := Reconstruct_Block_Values (Block, Precision);
+      Result : Sample_Block := [others => 0];
+   begin
+      for Index in Coefficient_Index loop
+         Result (Index) := Scale_To_Output_Byte (Dequantized_Coefficient (Values (Index)), Precision);
       end loop;
 
       return Result;
    end Reconstruct_Block;
 
-   function Reconstruct_DC_Only
+   function Reconstruct_DC_Only_Values
      (Block : Dequantized_Block;
-      Precision : Sample_Precision := 8) return Sample_Block
+      Precision : Sample_Precision := 8) return Sample_Value_Block
    is
-      Sample : constant Byte :=
-        Scale_To_Output_Byte
+      Sample : constant Sample_Value :=
+        Clamp_To_Sample_Value
           (Rounded_Divide_By_8 (Block (0)) + Dequantized_Coefficient (2 ** (Natural (Precision) - 1)),
            Precision);
    begin
       return [others => Sample];
+   end Reconstruct_DC_Only_Values;
+
+   function Reconstruct_DC_Only
+     (Block : Dequantized_Block;
+      Precision : Sample_Precision := 8) return Sample_Block
+   is
+      Values : constant Sample_Value_Block := Reconstruct_DC_Only_Values (Block, Precision);
+      Result : Sample_Block := [others => 0];
+   begin
+      for Index in Coefficient_Index loop
+         Result (Index) := Scale_To_Output_Byte (Dequantized_Coefficient (Values (Index)), Precision);
+      end loop;
+
+      return Result;
    end Reconstruct_DC_Only;
 end Jpeglib.Internal.Transforms;

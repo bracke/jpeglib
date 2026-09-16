@@ -21,32 +21,88 @@ package Jpeglib.Internal.Frames is
 
    type Frame is private;
 
+   --  Parse sof.
+   --  @param Segment See package contract for this parameter.
+   --  @param Mode See package contract for this parameter.
+   --  @return Operation result.
    function Parse_SOF
      (Segment : in out Segments.Segment_Reader;
       Mode : Frame_Mode) return Frame;
 
+   --  Status.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Status (Item : Frame) return Results.Result;
+   --  Width.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Width (Item : Frame) return Image_Width;
+   --  Height.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Height (Item : Frame) return Image_Height;
+   --  Height defined.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Height_Defined (Item : Frame) return Boolean;
+   --  Define height.
+   --  @param Item See package contract for this parameter.
+   --  @param Height See package contract for this parameter.
+   --  @return Operation result.
    function Define_Height (Item : in out Frame; Height : Image_Height) return Results.Result;
+   --  Precision.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Precision (Item : Frame) return Sample_Precision;
+   --  Mode.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Mode (Item : Frame) return Frame_Mode;
+   --  Components.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Components (Item : Frame) return Component_Count;
+   --  Component.
+   --  @param Item See package contract for this parameter.
+   --  @param Index See package contract for this parameter.
+   --  @return Operation result.
    function Component (Item : Frame; Index : Component_Index) return Frame_Component
      with Pre => Index <= Component_Index (Components (Item));
+   --  Maximum horizontal sampling.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Maximum_Horizontal_Sampling (Item : Frame) return Sampling_Factor;
+   --  Maximum vertical sampling.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Maximum_Vertical_Sampling (Item : Frame) return Sampling_Factor;
+   --  Mcu columns.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function MCU_Columns (Item : Frame) return MCU_Column;
+   --  Mcu rows.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function MCU_Rows (Item : Frame) return MCU_Row;
+   --  Padded block columns.
+   --  @param Item See package contract for this parameter.
+   --  @param Component See package contract for this parameter.
+   --  @return Operation result.
    function Padded_Block_Columns
      (Item : Frame;
       Component : Component_Index) return Block_Column
      with Pre => Component <= Component_Index (Components (Item));
+   --  Padded block rows.
+   --  @param Item See package contract for this parameter.
+   --  @param Component See package contract for this parameter.
+   --  @return Operation result.
    function Padded_Block_Rows
      (Item : Frame;
       Component : Component_Index) return Block_Row
      with Pre => Component <= Component_Index (Components (Item));
+   --  Total blocks.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Total_Blocks (Item : Frame) return Block_Count;
 
 private

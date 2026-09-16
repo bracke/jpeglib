@@ -15,19 +15,47 @@ package Jpeglib.Internal.Scans is
 
    type Scan is private;
 
+   --  Parse sos.
+   --  @param Frame See package contract for this parameter.
+   --  @param Segment See package contract for this parameter.
+   --  @param Progressive See package contract for this parameter.
+   --  @param Lossless See package contract for this parameter.
+   --  @return Operation result.
    function Parse_SOS
      (Frame : Frames.Frame;
       Segment : in out Segments.Segment_Reader;
       Progressive : Boolean := False;
       Lossless : Boolean := False) return Scan;
 
+   --  Status.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Status (Item : Scan) return Results.Result;
+   --  Components.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Components (Item : Scan) return Component_Count;
+   --  Component.
+   --  @param Item See package contract for this parameter.
+   --  @param Index See package contract for this parameter.
+   --  @return Operation result.
    function Component (Item : Scan; Index : Component_Index) return Scan_Component
      with Pre => Index <= Component_Index (Components (Item));
+   --  Spectral start.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Spectral_Start (Item : Scan) return Spectral_Selection_Index;
+   --  Spectral end.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Spectral_End (Item : Scan) return Spectral_Selection_Index;
+   --  Successive high.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Successive_High (Item : Scan) return Successive_Approximation_Value;
+   --  Successive low.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Successive_Low (Item : Scan) return Successive_Approximation_Value;
 
 private

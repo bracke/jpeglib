@@ -21,12 +21,38 @@ The runtime-checked access-bearing views, `Image_View` and
 access components. Their public validators first reject null storage and then
 delegate all descriptor arithmetic to `Descriptor_Is_Valid`.
 
+Raw component output is also caller-buffered. `Jpeglib.Decoding` exposes
+runtime helpers for that contract because raw output can be either one byte per
+sample or two bytes per sample when callers preserve 12-bit precision:
+
+- `Effective_Raw_Output_Precision` derives the output precision from decode
+  options and source precision
+- `Raw_Bytes_Per_Sample`, `Raw_Minimum_Row_Bytes`, and
+  `Raw_Accessible_Bytes` compute row and storage requirements, saturating at
+  `Byte_Count'Last` for impossible dimensions
+- `Raw_Component_View_Is_Valid` applies the same storage checks used by
+  `Decode_Raw_Components`
+- `Raw_Sample_Position_Is_Valid` and `Try_Raw_Sample_At` let callers preflight
+  or perform packed 8-bit and 16-bit raw sample reads without raising on
+  invalid coordinates or short storage
+
 ## Runtime-Enforced Boundaries
 
 The release gate keeps runtime tests tied to the proved boundary:
 `foundation.images.descriptor_overflow` covers descriptor overflow rejection and
 `foundation.decoder.decode_invalid_view` covers public decoder rejection of
 invalid caller views before writing pixels.
+`foundation.decoder.raw_component_helpers` covers raw high-bit-depth sizing,
+view validation, packed sample coordinate validation, byte-order-aware sample
+reads, and non-raising sample failures.
+
+High-bit-depth raw caller-buffer behavior is runtime-checked by
+`jpeglib_precision_buffer`, covering 12-bit DCT and lossless precision policies,
+and by `foundation.decoder.decode_twelve_bit_dct_color`, covering public 12-bit
+YCbCr/CMYK DCT image, raw component, and coefficient decode. The matrix also
+checks byte order, raw view sizing, saturated oversized-dimension handling,
+single-row views with oversized strides, packed sample position validation, and
+non-raising packed sample reads.
 
 The public decoder also enforces configured output byte limits before pixel
 writes through `foundation.decoder.decode_output_limit`. The public encoder

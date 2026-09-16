@@ -7,5 +7,7 @@ package Jpeglib.Version is
    Pre_Release : constant String := "dev";
    Semantic_Version : constant String := "0.1.0-dev";
 
+   --  Current.
+   --  @return Operation result.
    function Current return String;
 end Jpeglib.Version;

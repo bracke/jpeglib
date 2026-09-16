@@ -69,7 +69,17 @@ package Jpeglib.Errors is
       Context : Diagnostic_Context;
    end record;
 
+   --  Identifier for.
+   --  @param Code See package contract for this parameter.
+   --  @return Operation result.
    function Identifier_For (Code : Error_Code) return String;
+   --  Make.
+   --  @param Code See package contract for this parameter.
+   --  @param Context See package contract for this parameter.
+   --  @return Operation result.
    function Make (Code : Error_Code; Context : Diagnostic_Context := (others => <>)) return Error;
+   --  Is fatal.
+   --  @param Item See package contract for this parameter.
+   --  @return Operation result.
    function Is_Fatal (Item : Error) return Boolean is (Item.Code /= No_Error);
 end Jpeglib.Errors;

@@ -42,6 +42,14 @@ package Jpeglib.Internal.Decoder is
       Saw_SOS : Boolean := False;
    end record;
 
+   --  Read header.
+   --  @param Input See package contract for this parameter.
+   --  @param Metadata_Policy See package contract for this parameter.
+   --  @param Selected_Metadata See package contract for this parameter.
+   --  @param Metadata_Callback See package contract for this parameter.
+   --  @param Metadata_Buffer See package contract for this parameter.
+   --  @param Decode_Limits See package contract for this parameter.
+   --  @return Operation result.
    function Read_Header
      (Input : not null access Streams.Source'Class;
       Metadata_Policy : Metadata.Metadata_Policy := Metadata.Parse_Known_Without_Retention;
@@ -58,6 +66,15 @@ package Jpeglib.Internal.Decoder is
       Ending_Source : Source_Offset := 0;
    end record;
 
+   --  Decode baseline coefficients.
+   --  @param Input See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Metadata_Policy See package contract for this parameter.
+   --  @param Selected_Metadata See package contract for this parameter.
+   --  @param Metadata_Callback See package contract for this parameter.
+   --  @param Metadata_Buffer See package contract for this parameter.
+   --  @param Decode_Limits See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Baseline_Coefficients
      (Input : not null access Streams.Source'Class;
       Blocks : in out Coefficients.Block_Array;
@@ -67,16 +84,35 @@ package Jpeglib.Internal.Decoder is
       Metadata_Buffer : Streams.Byte_Array_Access := null;
       Decode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Coefficient_Result;
 
+   --  Decode baseline coefficients.
+   --  @param Header See package contract for this parameter.
+   --  @param Input See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Baseline_Coefficients
      (Header : Header_Result;
       Input : not null access Streams.Source'Class;
       Blocks : in out Coefficients.Block_Array) return Coefficient_Result;
 
+   --  Decode arithmetic coefficients.
+   --  @param Header See package contract for this parameter.
+   --  @param Input See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Arithmetic_Coefficients
      (Header : Header_Result;
       Input : not null access Streams.Source'Class;
       Blocks : in out Coefficients.Block_Array) return Coefficient_Result;
 
+   --  Decode progressive coefficients.
+   --  @param Input See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Metadata_Policy See package contract for this parameter.
+   --  @param Selected_Metadata See package contract for this parameter.
+   --  @param Metadata_Callback See package contract for this parameter.
+   --  @param Metadata_Buffer See package contract for this parameter.
+   --  @param Decode_Limits See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_Coefficients
      (Input : not null access Streams.Source'Class;
       Blocks : in out Coefficients.Block_Array;
@@ -86,6 +122,11 @@ package Jpeglib.Internal.Decoder is
       Metadata_Buffer : Streams.Byte_Array_Access := null;
       Decode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Coefficient_Result;
 
+   --  Decode progressive coefficients.
+   --  @param Header See package contract for this parameter.
+   --  @param Input See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_Coefficients
      (Header : Header_Result;
       Input : not null access Streams.Source'Class;

@@ -13,6 +13,9 @@ package Jpeglib.Images is
       CMYK_32,
       YCCK_32);
 
+   --  Bytes per pixel.
+   --  @param Format See package contract for this parameter.
+   --  @return Operation result.
    function Bytes_Per_Pixel (Format : Pixel_Format) return Byte_Count
       with SPARK_Mode => On,
            Post => Bytes_Per_Pixel'Result in 1 .. 4;
@@ -35,14 +38,28 @@ package Jpeglib.Images is
       Storage : access Streams.Byte_Array;
    end record;
 
+   --  Minimum row bytes.
+   --  @param Width See package contract for this parameter.
+   --  @param Format See package contract for this parameter.
+   --  @return Operation result.
    function Minimum_Row_Bytes (Width : Image_Width; Format : Pixel_Format) return Byte_Count
       with SPARK_Mode => On;
+   --  Descriptor is valid.
+   --  @param Descriptor See package contract for this parameter.
+   --  @param Storage_Length See package contract for this parameter.
+   --  @return Operation result.
    function Descriptor_Is_Valid
      (Descriptor : Image_Descriptor;
       Storage_Length : Natural) return Boolean
       with SPARK_Mode => On;
+   --  Is valid.
+   --  @param View See package contract for this parameter.
+   --  @return Operation result.
    function Is_Valid (View : Image_View) return Boolean
       with SPARK_Mode => Off;
+   --  Is valid.
+   --  @param View See package contract for this parameter.
+   --  @return Operation result.
    function Is_Valid (View : Mutable_Image_View) return Boolean
       with SPARK_Mode => Off;
 end Jpeglib.Images;

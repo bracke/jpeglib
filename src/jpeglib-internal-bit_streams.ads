@@ -16,6 +16,10 @@ package Jpeglib.Internal.Bit_Streams is
       Value : Entropy_Value := 0;
    end record;
 
+   --  Sign extend.
+   --  @param Category See package contract for this parameter.
+   --  @param Bits See package contract for this parameter.
+   --  @return Operation result.
    function Sign_Extend (Category : Entropy_Category; Bits : Entropy_Bits) return Sign_Extend_Result;
 
    type Entropy_Byte_Kind is
@@ -34,12 +38,25 @@ package Jpeglib.Internal.Bit_Streams is
 
    type Entropy_Reader (Input : not null access Streams.Source'Class) is limited private;
 
+   --  Read byte.
+   --  @param Reader See package contract for this parameter.
+   --  @return Operation result.
    function Read_Byte (Reader : in out Entropy_Reader) return Entropy_Read_Result;
+   --  Has pending marker.
+   --  @param Reader See package contract for this parameter.
+   --  @return Operation result.
    function Has_Pending_Marker (Reader : Entropy_Reader) return Boolean;
+   --  Put back marker.
+   --  @param Reader See package contract for this parameter.
+   --  @param Source See package contract for this parameter.
+   --  @param Marker See package contract for this parameter.
    procedure Put_Back_Marker
      (Reader : in out Entropy_Reader;
       Source : Source_Offset;
       Marker : Marker_Code);
+   --  Take pending marker.
+   --  @param Reader See package contract for this parameter.
+   --  @return Operation result.
    function Take_Pending_Marker (Reader : in out Entropy_Reader) return Markers.Marker_Result
      with Pre => Has_Pending_Marker (Reader);
 
@@ -51,20 +68,38 @@ package Jpeglib.Internal.Bit_Streams is
 
    type Bit_Reader (Entropy : not null access Entropy_Reader) is limited private;
 
+   --  Read bit.
+   --  @param Reader See package contract for this parameter.
+   --  @return Operation result.
    function Read_Bit (Reader : in out Bit_Reader) return Bit_Result;
+   --  Byte align.
+   --  @param Reader See package contract for this parameter.
    procedure Byte_Align (Reader : in out Bit_Reader);
 
    type Bit_Writer (Output : not null access Streams.Destination'Class) is limited private;
 
+   --  Write bits.
+   --  @param Writer See package contract for this parameter.
+   --  @param Width See package contract for this parameter.
+   --  @param Bits See package contract for this parameter.
+   --  @return Operation result.
    function Write_Bits
      (Writer : in out Bit_Writer;
       Width : Entropy_Category;
       Bits : Entropy_Bits) return Results.Result;
 
+   --  Flush byte.
+   --  @param Writer See package contract for this parameter.
+   --  @param Pad See package contract for this parameter.
+   --  @return Operation result.
    function Flush_Byte
      (Writer : in out Bit_Writer;
       Pad : Bit_Value := 1) return Results.Result;
 
+   --  Write restart marker.
+   --  @param Writer See package contract for this parameter.
+   --  @param Marker See package contract for this parameter.
+   --  @return Operation result.
    function Write_Restart_Marker
      (Writer : in out Bit_Writer;
       Marker : Marker_Code) return Results.Result

@@ -31,33 +31,67 @@ package Jpeglib.Internal.Image_Blocks is
    Subsampling_411 : constant Subsampling_Layout :=
      (Chroma_Horizontal_Factor => 4, Chroma_Vertical_Factor => 1);
 
+   --  Required block count.
+   --  @param Descriptor See package contract for this parameter.
+   --  @return Operation result.
    function Required_Block_Count (Descriptor : Images.Image_Descriptor) return Block_Count;
 
+   --  Required plane block count.
+   --  @param Width See package contract for this parameter.
+   --  @param Height See package contract for this parameter.
+   --  @return Operation result.
    function Required_Plane_Block_Count
      (Width : Image_Width;
       Height : Image_Height) return Block_Count;
 
+   --  Chroma width.
+   --  @param Width See package contract for this parameter.
+   --  @param Layout See package contract for this parameter.
+   --  @return Operation result.
    function Chroma_Width
      (Width : Image_Width;
       Layout : Subsampling_Layout) return Image_Width;
 
+   --  Chroma height.
+   --  @param Height See package contract for this parameter.
+   --  @param Layout See package contract for this parameter.
+   --  @return Operation result.
    function Chroma_Height
      (Height : Image_Height;
       Layout : Subsampling_Layout) return Image_Height;
 
    type Transform_Mode is (DC_Only, Full_Forward);
 
+   --  Encode gray blocks.
+   --  @param Input See package contract for this parameter.
+   --  @param Table See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Mode See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Gray_Blocks
      (Input : Images.Image_View;
       Table : Quantization.Quantization_Table;
       Blocks : in out Jpeglib.Coefficients.DCT_Block_Array;
       Mode : Transform_Mode := Full_Forward) return Image_Block_Result;
 
+   --  Encode gray dc blocks.
+   --  @param Input See package contract for this parameter.
+   --  @param Table See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Gray_DC_Blocks
      (Input : Images.Image_View;
       Table : Quantization.Quantization_Table;
       Blocks : in out Jpeglib.Coefficients.DCT_Block_Array) return Image_Block_Result;
 
+   --  Encode plane blocks.
+   --  @param Plane See package contract for this parameter.
+   --  @param Width See package contract for this parameter.
+   --  @param Height See package contract for this parameter.
+   --  @param Table See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Mode See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Plane_Blocks
      (Plane : Streams.Byte_Array;
       Width : Image_Width;
@@ -66,17 +100,36 @@ package Jpeglib.Internal.Image_Blocks is
       Blocks : in out Jpeglib.Coefficients.DCT_Block_Array;
       Mode : Transform_Mode := Full_Forward) return Image_Block_Result;
 
+   --  Fill ycbcr planes.
+   --  @param Input See package contract for this parameter.
+   --  @param Y_Plane See package contract for this parameter.
+   --  @param Cb_Plane See package contract for this parameter.
+   --  @param Cr_Plane See package contract for this parameter.
+   --  @return Operation result.
    function Fill_YCbCr_Planes
      (Input : Images.Image_View;
       Y_Plane : in out Streams.Byte_Array;
       Cb_Plane : in out Streams.Byte_Array;
       Cr_Plane : in out Streams.Byte_Array) return Plane_Result;
 
+   --  Fill gray alpha planes.
+   --  @param Input See package contract for this parameter.
+   --  @param Gray_Plane See package contract for this parameter.
+   --  @param Alpha_Plane See package contract for this parameter.
+   --  @return Operation result.
    function Fill_Gray_Alpha_Planes
      (Input : Images.Image_View;
       Gray_Plane : in out Streams.Byte_Array;
       Alpha_Plane : in out Streams.Byte_Array) return Plane_Result;
 
+   --  Downsample plane.
+   --  @param Source See package contract for this parameter.
+   --  @param Source_Width See package contract for this parameter.
+   --  @param Source_Height See package contract for this parameter.
+   --  @param Horizontal_Factor See package contract for this parameter.
+   --  @param Vertical_Factor See package contract for this parameter.
+   --  @param Target See package contract for this parameter.
+   --  @return Operation result.
    function Downsample_Plane
      (Source : Streams.Byte_Array;
       Source_Width : Image_Width;
@@ -86,6 +139,15 @@ package Jpeglib.Internal.Image_Blocks is
       Target : in out Streams.Byte_Array) return Plane_Result
      with Pre => Horizontal_Factor <= 4 and then Vertical_Factor <= 4;
 
+   --  Subsample chroma planes.
+   --  @param Cb_Source See package contract for this parameter.
+   --  @param Cr_Source See package contract for this parameter.
+   --  @param Source_Width See package contract for this parameter.
+   --  @param Source_Height See package contract for this parameter.
+   --  @param Layout See package contract for this parameter.
+   --  @param Cb_Target See package contract for this parameter.
+   --  @param Cr_Target See package contract for this parameter.
+   --  @return Operation result.
    function Subsample_Chroma_Planes
      (Cb_Source : Streams.Byte_Array;
       Cr_Source : Streams.Byte_Array;

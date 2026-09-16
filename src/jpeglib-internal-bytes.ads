@@ -18,6 +18,12 @@ package Jpeglib.Internal.Bytes is
       End_Of_Input : Boolean := False;
    end record;
 
+   --  Read byte.
+   --  @param Input See package contract for this parameter.
+   --  @return Operation result.
    function Read_Byte (Input : in out Streams.Source'Class) return Read_Byte_Result;
+   --  Read big endian u16.
+   --  @param Input See package contract for this parameter.
+   --  @return Operation result.
    function Read_Big_Endian_U16 (Input : in out Streams.Source'Class) return Read_U16_Result;
 end Jpeglib.Internal.Bytes;

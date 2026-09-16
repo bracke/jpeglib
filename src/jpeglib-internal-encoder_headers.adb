@@ -48,6 +48,7 @@ package body Jpeglib.Internal.Encoder_Headers is
       Marker : Marker_Code;
       Width : Image_Width;
       Height : Image_Height;
+      Precision : Sample_Precision := 8;
       Quantization_Table : Quantization_Table_Index := 0) return Results.Result
    is
       Payload : Streams.Byte_Array (1 .. 9);
@@ -57,7 +58,7 @@ package body Jpeglib.Internal.Encoder_Headers is
       end if;
 
       Payload :=
-        [8,
+        [Byte (Precision),
          Byte (Natural (Height) / 256),
          Byte (Natural (Height) mod 256),
          Byte (Natural (Width) / 256),
@@ -105,6 +106,7 @@ package body Jpeglib.Internal.Encoder_Headers is
       Height : Image_Height;
       Luma_Horizontal_Sampling : Positive;
       Luma_Vertical_Sampling : Positive;
+      Precision : Sample_Precision := 8;
       Luma_Quantization_Table : Quantization_Table_Index := 0;
       Chroma_Quantization_Table : Quantization_Table_Index := 1) return Results.Result
    is
@@ -119,7 +121,7 @@ package body Jpeglib.Internal.Encoder_Headers is
       end if;
 
       Payload :=
-        [8,
+        [Byte (Precision),
          Byte (Natural (Height) / 256),
          Byte (Natural (Height) mod 256),
          Byte (Natural (Width) / 256),
@@ -142,6 +144,7 @@ package body Jpeglib.Internal.Encoder_Headers is
       Marker : Marker_Code;
       Width : Image_Width;
       Height : Image_Height;
+      Precision : Sample_Precision := 8;
       Quantization_Table : Quantization_Table_Index := 0) return Results.Result
    is
       Payload : Streams.Byte_Array (1 .. 18);
@@ -151,7 +154,7 @@ package body Jpeglib.Internal.Encoder_Headers is
       end if;
 
       Payload :=
-        [8,
+        [Byte (Precision),
          Byte (Natural (Height) / 256),
          Byte (Natural (Height) mod 256),
          Byte (Natural (Width) / 256),

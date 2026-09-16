@@ -729,6 +729,8 @@ package body Jpeglib_Testing.Test_Foundation is
      (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Progressive_Interleaved_Color_Coefficients
      (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Decoder_Decodes_Generated_Progressive_Coefficients
+     (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Coefficient_Transforms_Block (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Coefficient_Transforms_Image (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Coefficient_Encoding_Grayscale_Baseline
@@ -747,9 +749,14 @@ package body Jpeglib_Testing.Test_Foundation is
    procedure Public_Fixture_Corpus_Rejects_Invalid_Coefficients (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Fixture_Corpus_Decodes_Images (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Raw_Components (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Raw_Component_Helper_API (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Twelve_Bit_Raw_Components
      (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Twelve_Bit_Lossless_Raw_Components
+     (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Decoder_Decodes_Twelve_Bit_Progressive_Raw_Components
+     (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Decoder_Decodes_Twelve_Bit_Progressive_Color_Raw_Components
      (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Progressive_Raw_Components
      (T : in out AUnit.Test_Cases.Test_Case'Class);
@@ -855,6 +862,8 @@ package body Jpeglib_Testing.Test_Foundation is
    procedure Public_Decoder_Decodes_Extended_Sequential_Grayscale_Image
      (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Twelve_Bit_Grayscale_Image
+     (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Public_Decoder_Decodes_Twelve_Bit_DCT_Color_Image
      (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Decoder_Decodes_Twelve_Bit_Lossless_Grayscale_Image
      (T : in out AUnit.Test_Cases.Test_Case'Class);
@@ -1120,6 +1129,10 @@ package body Jpeglib_Testing.Test_Foundation is
          "foundation.decoder.public_progressive_coefficients_interleaved_color");
       Register_Routine
         (T,
+         Public_Decoder_Decodes_Generated_Progressive_Coefficients'Access,
+         "foundation.decoder.public_progressive_coefficients_generated");
+      Register_Routine
+        (T,
          Public_Coefficient_Transforms_Block'Access,
          "foundation.coefficients.public_transforms");
       Register_Routine
@@ -1176,12 +1189,24 @@ package body Jpeglib_Testing.Test_Foundation is
          "foundation.decoder.raw_components");
       Register_Routine
         (T,
+         Public_Raw_Component_Helper_API'Access,
+         "foundation.decoder.raw_component_helpers");
+      Register_Routine
+        (T,
          Public_Decoder_Decodes_Twelve_Bit_Raw_Components'Access,
          "foundation.decoder.raw_components_twelve_bit");
       Register_Routine
         (T,
          Public_Decoder_Decodes_Twelve_Bit_Lossless_Raw_Components'Access,
          "foundation.decoder.raw_components_lossless_twelve_bit");
+      Register_Routine
+        (T,
+         Public_Decoder_Decodes_Twelve_Bit_Progressive_Raw_Components'Access,
+         "foundation.decoder.raw_components_progressive_twelve_bit");
+      Register_Routine
+        (T,
+         Public_Decoder_Decodes_Twelve_Bit_Progressive_Color_Raw_Components'Access,
+         "foundation.decoder.raw_components_progressive_twelve_bit_color");
       Register_Routine
         (T,
          Public_Decoder_Decodes_Progressive_Raw_Components'Access,
@@ -1394,6 +1419,10 @@ package body Jpeglib_Testing.Test_Foundation is
         (T,
          Public_Decoder_Decodes_Twelve_Bit_Grayscale_Image'Access,
          "foundation.decoder.decode_twelve_bit_grayscale");
+      Register_Routine
+        (T,
+         Public_Decoder_Decodes_Twelve_Bit_DCT_Color_Image'Access,
+         "foundation.decoder.decode_twelve_bit_dct_color");
       Register_Routine
         (T,
          Public_Decoder_Decodes_Twelve_Bit_Lossless_Grayscale_Image'Access,
@@ -3095,6 +3124,240 @@ package body Jpeglib_Testing.Test_Foundation is
       Assert (AC_Blocks (6) (16) = 77, "public progressive color AC Cr block 2 was modified");
    end Public_Decoder_Decodes_Progressive_Interleaved_Color_Coefficients;
 
+   procedure Public_Decoder_Decodes_Generated_Progressive_Coefficients
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Decoder_State;
+      use type Jpeglib.Encoding.Progressive_Script;
+
+      Expected_AC_Block : constant Jpeglib.Internal.Transforms.Sample_Block :=
+        Jpeglib.Internal.Transforms.Reconstruct_Block ([0 => 0, 1 => 32, others => 0]);
+
+      procedure Assert_Progressive_Coefficients
+        (Storage : Jpeglib.Streams.Const_Byte_Array_Access;
+         Expected_Blocks : Jpeglib.Block_Count;
+         Expected_Blocks_Decoded : Jpeglib.Block_Count;
+         Expected_Color_Model : Jpeglib.Encoded_Color_Model;
+         Label : String)
+      is
+         Source : aliased Jpeglib.Streams.Memory_Source;
+         Decoder : Jpeglib.Decoding.Decoder;
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 4) := [others => [others => 0]];
+         Blocks_Decoded : Jpeglib.Block_Count := 0;
+         Header : Jpeglib.Decoding.Image_Info;
+         Outcome : Jpeglib.Results.Result;
+         Has_AC : Boolean := False;
+      begin
+         Assert (Storage /= null, Label & " generated progressive storage was null");
+         Jpeglib.Streams.Open (Source, Storage);
+         Jpeglib.Decoding.Initialize (Decoder, Source'Access);
+         Outcome := Jpeglib.Decoding.Decode_Coefficients (Decoder, Blocks, Blocks_Decoded);
+         Assert
+           (Jpeglib.Results.Succeeded (Outcome),
+            Label & " generated progressive coefficient decode failed: "
+            & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+         Assert
+           (Jpeglib.Decoding.State (Decoder) = Jpeglib.Decoding.Completed,
+            Label & " generated progressive coefficient decoder state mismatch");
+
+         Header := Jpeglib.Decoding.Header (Decoder);
+         Assert (Header.Progressive, Label & " generated progressive header not marked progressive");
+         Assert (Header.Mode = Jpeglib.Progressive_DCT, Label & " generated progressive mode mismatch");
+         Assert
+           (Header.Color_Model = Expected_Color_Model,
+            Label & " generated progressive color model mismatch");
+         Assert
+           (Header.Coefficient_Blocks = Expected_Blocks,
+            Label & " generated progressive coefficient block count mismatch");
+         Assert
+           (Blocks_Decoded = Expected_Blocks_Decoded,
+            Label & " generated progressive coefficient scan visit count mismatch");
+
+         for Block_Index in 1 .. Natural (Expected_Blocks) loop
+            for Coefficient in Jpeglib.Coefficient_Index range 1 .. 63 loop
+               if Blocks (Block_Index) (Coefficient) /= 0 then
+                  Has_AC := True;
+               end if;
+            end loop;
+         end loop;
+         Assert (Has_AC, Label & " generated progressive coefficient extraction lost AC detail");
+      end Assert_Progressive_Coefficients;
+
+      procedure Encode_Gray_With
+        (Script : Jpeglib.Encoding.Progressive_Script;
+         Label : String)
+      is
+         Input_Storage : aliased Jpeglib.Streams.Byte_Array :=
+           [134, 133, 131, 129, 127, 125, 123, 122,
+            134, 133, 131, 129, 127, 125, 123, 122,
+            134, 133, 131, 129, 127, 125, 123, 122,
+            134, 133, 131, 129, 127, 125, 123, 122,
+            134, 133, 131, 129, 127, 125, 123, 122,
+            134, 133, 131, 129, 127, 125, 123, 122,
+            134, 133, 131, 129, 127, 125, 123, 122,
+            134, 133, 131, 129, 127, 125, 123, 122];
+         Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 1536 => 0];
+         Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+         Encoder : Jpeglib.Encoding.Encoder;
+         Input : constant Jpeglib.Images.Image_View :=
+           (Descriptor =>
+              (Width => 8,
+               Height => 8,
+               Format => Jpeglib.Images.Gray_8,
+               Stride => 8,
+               Accessible_Bytes => 64),
+            Storage => Input_Storage'Unchecked_Access);
+         Outcome : Jpeglib.Results.Result;
+      begin
+         Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+         Jpeglib.Encoding.Initialize
+           (Encoder,
+            Destination'Access,
+            (Quality => 100, Progressive => Script, others => <>));
+         Outcome := Jpeglib.Encoding.Encode_Image (Encoder, Input);
+         Assert
+           (Jpeglib.Results.Succeeded (Outcome),
+            Label & " generated progressive grayscale encode failed");
+         Assert
+           (Jpeglib.Encoding.State (Encoder) = Jpeglib.Encoding.Completed,
+            Label & " generated progressive grayscale encoder state mismatch");
+
+         Assert_Progressive_Coefficients
+           (Encoded_Storage'Unchecked_Access,
+            1,
+            (if Script = Jpeglib.Encoding.Balanced_Progressive then 6 else 2),
+            Jpeglib.Grayscale,
+            Label & " grayscale");
+      end Encode_Gray_With;
+
+      procedure Encode_RGB_With
+        (Script : Jpeglib.Encoding.Progressive_Script;
+         Label : String)
+      is
+         Input_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 * 3 => 128];
+         Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 4096 => 0];
+         Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+         Encoder : Jpeglib.Encoding.Encoder;
+         Input : constant Jpeglib.Images.Image_View :=
+           (Descriptor =>
+              (Width => 8,
+               Height => 8,
+               Format => Jpeglib.Images.RGB_24,
+               Stride => Jpeglib.Row_Stride (8 * 3),
+               Accessible_Bytes => 8 * 8 * 3),
+            Storage => Input_Storage'Unchecked_Access);
+         Outcome : Jpeglib.Results.Result;
+      begin
+         for Index in Jpeglib.Coefficient_Index range 0 .. 63 loop
+            Input_Storage (Input_Storage'First + Natural (Index) * 3) := Expected_AC_Block (Index);
+            Input_Storage (Input_Storage'First + Natural (Index) * 3 + 1) := Expected_AC_Block (Index);
+            Input_Storage (Input_Storage'First + Natural (Index) * 3 + 2) := Expected_AC_Block (Index);
+         end loop;
+
+         Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+         Jpeglib.Encoding.Initialize
+           (Encoder,
+            Destination'Access,
+            (Quality => 100,
+             Progressive => Script,
+             Subsampling => Jpeglib.Encoding.Subsampling_444,
+             others => <>));
+         Outcome := Jpeglib.Encoding.Encode_Image (Encoder, Input);
+         Assert
+           (Jpeglib.Results.Succeeded (Outcome),
+            Label & " generated progressive RGB encode failed");
+         Assert
+           (Jpeglib.Encoding.State (Encoder) = Jpeglib.Encoding.Completed,
+            Label & " generated progressive RGB encoder state mismatch");
+
+         Assert_Progressive_Coefficients
+           (Encoded_Storage'Unchecked_Access,
+            3,
+            (if Script = Jpeglib.Encoding.Balanced_Progressive then 18 else 6),
+            Jpeglib.YCbCr,
+            Label & " RGB");
+      end Encode_RGB_With;
+
+      procedure Encode_Four_Component_With
+        (Script : Jpeglib.Encoding.Progressive_Script;
+         Format : Jpeglib.Images.Pixel_Format;
+         Expected_Color_Model : Jpeglib.Encoded_Color_Model;
+         Channel : Natural;
+         Label : String)
+      is
+         Input_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 * 4 => 128];
+         Encoded_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 4096 => 0];
+         Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+         Encoder : Jpeglib.Encoding.Encoder;
+         Input : constant Jpeglib.Images.Image_View :=
+           (Descriptor =>
+              (Width => 8,
+               Height => 8,
+               Format => Format,
+               Stride => Jpeglib.Row_Stride (8 * 4),
+               Accessible_Bytes => 8 * 8 * 4),
+            Storage => Input_Storage'Unchecked_Access);
+         Outcome : Jpeglib.Results.Result;
+      begin
+         for Index in Jpeglib.Coefficient_Index range 0 .. 63 loop
+            Input_Storage (Input_Storage'First + Natural (Index) * 4 + Channel) := Expected_AC_Block (Index);
+         end loop;
+
+         Jpeglib.Streams.Open (Destination, Encoded_Storage'Unchecked_Access);
+         Jpeglib.Encoding.Initialize
+           (Encoder,
+            Destination'Access,
+            (Quality => 100, Progressive => Script, others => <>));
+         Outcome := Jpeglib.Encoding.Encode_Image (Encoder, Input);
+         Assert
+           (Jpeglib.Results.Succeeded (Outcome),
+            Label & " generated progressive four-component encode failed");
+         Assert
+           (Jpeglib.Encoding.State (Encoder) = Jpeglib.Encoding.Completed,
+            Label & " generated progressive four-component encoder state mismatch");
+
+         Assert_Progressive_Coefficients
+           (Encoded_Storage'Unchecked_Access,
+            4,
+            (if Script = Jpeglib.Encoding.Balanced_Progressive then 24 else 8),
+            Expected_Color_Model,
+            Label & " four-component");
+      end Encode_Four_Component_With;
+   begin
+      Encode_Gray_With (Jpeglib.Encoding.Balanced_Progressive, "balanced");
+      Encode_Gray_With (Jpeglib.Encoding.Fast_Preview_Progressive, "fast-preview");
+      Encode_RGB_With (Jpeglib.Encoding.Balanced_Progressive, "balanced");
+      Encode_RGB_With (Jpeglib.Encoding.Fast_Preview_Progressive, "fast-preview");
+
+      for Channel in Natural range 0 .. 3 loop
+         Encode_Four_Component_With
+           (Jpeglib.Encoding.Balanced_Progressive,
+            Jpeglib.Images.CMYK_32,
+            Jpeglib.CMYK,
+            Channel,
+            "balanced CMYK");
+         Encode_Four_Component_With
+           (Jpeglib.Encoding.Fast_Preview_Progressive,
+            Jpeglib.Images.CMYK_32,
+            Jpeglib.CMYK,
+            Channel,
+            "fast-preview CMYK");
+         Encode_Four_Component_With
+           (Jpeglib.Encoding.Balanced_Progressive,
+            Jpeglib.Images.YCCK_32,
+            Jpeglib.YCCK,
+            Channel,
+            "balanced YCCK");
+         Encode_Four_Component_With
+           (Jpeglib.Encoding.Fast_Preview_Progressive,
+            Jpeglib.Images.YCCK_32,
+            Jpeglib.YCCK,
+            Channel,
+            "fast-preview YCCK");
+      end loop;
+   end Public_Decoder_Decodes_Generated_Progressive_Coefficients;
+
    procedure Public_Coefficient_Transforms_Block (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
 
@@ -3812,6 +4075,106 @@ package body Jpeglib_Testing.Test_Foundation is
       Assert (Cr_Storage (1) = 128, "raw Cr first sample mismatch");
    end Public_Decoder_Decodes_Raw_Components;
 
+   procedure Public_Raw_Component_Helper_API (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Raw_Sample_Byte_Order;
+      Storage : aliased Jpeglib.Streams.Byte_Array :=
+        [1 => 16#08#,
+         2 => 16#00#,
+         3 => 16#34#,
+         4 => 16#02#,
+         5 => 0,
+         6 => 0,
+         7 => 16#BC#,
+         8 => 16#0A#,
+         9 .. 12 => 77];
+      View : constant Jpeglib.Decoding.Raw_Component_View :=
+        (Width => 2,
+         Height => 2,
+         Stride => 4,
+         Accessible_Bytes => 8,
+         Storage => Storage'Unchecked_Access);
+      Short_View : constant Jpeglib.Decoding.Raw_Component_View :=
+        (Width => 2,
+         Height => 2,
+         Stride => 4,
+         Accessible_Bytes => 7,
+         Storage => Storage'Unchecked_Access);
+      Null_View : constant Jpeglib.Decoding.Raw_Component_View :=
+        (Width => 2,
+         Height => 2,
+         Stride => 4,
+         Accessible_Bytes => 8,
+         Storage => null);
+      Preserve_LE : constant Jpeglib.Decoding.Options :=
+        (Raw_Precision => Jpeglib.Decoding.Preserve_Source_Precision,
+         Raw_Byte_Order => Jpeglib.Decoding.Least_Significant_Byte_First,
+         others => <>);
+      Try_Sample : Jpeglib.Decoding.Raw_Sample_Result;
+   begin
+      Assert
+        (Jpeglib.Decoding.Effective_Raw_Output_Precision (Preserve_LE, 12) = 12,
+         "raw helper did not preserve source precision");
+      Assert
+        (Jpeglib.Decoding.Raw_Bytes_Per_Sample (8) = 1,
+         "raw helper 8-bit byte count mismatch");
+      Assert
+        (Jpeglib.Decoding.Raw_Bytes_Per_Sample (12) = 2,
+         "raw helper 12-bit byte count mismatch");
+      Assert
+        (Jpeglib.Decoding.Raw_Minimum_Row_Bytes (2, Preserve_LE, 12) = 4,
+         "raw helper row byte count mismatch");
+      Assert
+        (Jpeglib.Decoding.Raw_Accessible_Bytes (2, 2, 4, Preserve_LE, 12) = 8,
+         "raw helper accessible byte count mismatch");
+      Assert
+        (Jpeglib.Decoding.Raw_Accessible_Bytes (2, 0, 4, Preserve_LE, 12) = 0,
+         "raw helper zero-height accessible byte count mismatch");
+
+      Assert
+        (Jpeglib.Decoding.Raw_Component_View_Is_Valid (View, 2, 2, Preserve_LE, 12),
+         "raw helper rejected valid component view");
+      Assert
+        (not Jpeglib.Decoding.Raw_Component_View_Is_Valid (Short_View, 2, 2, Preserve_LE, 12),
+         "raw helper accepted truncated component view");
+      Assert
+        (not Jpeglib.Decoding.Raw_Component_View_Is_Valid (Null_View, 2, 2, Preserve_LE, 12),
+         "raw helper accepted null component storage");
+
+      Assert
+        (Jpeglib.Decoding.Raw_Sample_Position_Is_Valid (View, 1, 1, Preserve_LE, 12),
+         "raw helper rejected valid sample position");
+      Assert
+        (not Jpeglib.Decoding.Raw_Sample_Position_Is_Valid (View, 2, 0, Preserve_LE, 12),
+         "raw helper accepted out-of-range sample row");
+      Assert
+        (not Jpeglib.Decoding.Raw_Sample_Position_Is_Valid (View, 0, 2, Preserve_LE, 12),
+         "raw helper accepted out-of-range sample column");
+      Assert
+        (not Jpeglib.Decoding.Raw_Sample_Position_Is_Valid (Short_View, 1, 1, Preserve_LE, 12),
+         "raw helper accepted truncated sample storage");
+
+      Assert
+        (Jpeglib.Decoding.Raw_Sample_At (View, 0, 0, 12) = 2048,
+         "raw helper big-endian sample read mismatch");
+      Assert
+        (Jpeglib.Decoding.Raw_Sample_At (View, 0, 1, Preserve_LE, 12) = 564,
+         "raw helper little-endian options sample read mismatch");
+
+      Try_Sample := Jpeglib.Decoding.Try_Raw_Sample_At (View, 1, 1, Preserve_LE, 12);
+      Assert (Jpeglib.Results.Succeeded (Try_Sample.Outcome), "raw helper try sample failed");
+      Assert (Try_Sample.Sample = 2748, "raw helper try sample value mismatch");
+
+      Try_Sample := Jpeglib.Decoding.Try_Raw_Sample_At (Short_View, 1, 1, Preserve_LE, 12);
+      Assert
+        (not Jpeglib.Results.Succeeded (Try_Sample.Outcome),
+         "raw helper try sample accepted truncated storage");
+      Assert
+        (Try_Sample.Outcome.First_Error.Code = Jpeglib.Errors.Output_Limit_Exceeded,
+         "raw helper try sample error mismatch");
+      Assert (Try_Sample.Sample = 0, "raw helper try sample failure value mismatch");
+   end Public_Raw_Component_Helper_API;
+
    procedure Public_Decoder_Decodes_Twelve_Bit_Raw_Components
      (T : in out AUnit.Test_Cases.Test_Case'Class)
    is
@@ -3928,6 +4291,313 @@ package body Jpeglib_Testing.Test_Foundation is
          Assert (Sample = 128, "12-bit lossless raw sample mismatch");
       end loop;
    end Public_Decoder_Decodes_Twelve_Bit_Lossless_Raw_Components;
+
+   procedure Public_Decoder_Decodes_Twelve_Bit_Progressive_Raw_Components
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Decoder_State;
+      Storage : aliased constant Jpeglib.Streams.Byte_Array :=
+        [16#FF#, 16#D8#,
+         16#FF#, 16#DB#,
+         0, 67, 0,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         16#FF#, 16#C4#,
+         0, 20, 0,
+         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0,
+         16#FF#, 16#C2#,
+         0, 11,
+         12, 0, 8, 0, 8, 1,
+         1, 16#11#, 0,
+         16#FF#, 16#DA#,
+         0, 8,
+         1,
+         1, 16#00#,
+         0, 0, 0,
+         0,
+         16#FF#, 16#D9#];
+      Source : aliased Jpeglib.Streams.Memory_Source;
+      Decoder : Jpeglib.Decoding.Decoder;
+      Outcome : Jpeglib.Results.Result;
+      Preserve_Source : constant Jpeglib.Decoding.Options :=
+        (Raw_Precision => Jpeglib.Decoding.Preserve_Source_Precision,
+         Raw_Byte_Order => Jpeglib.Decoding.Most_Significant_Byte_First,
+         others => <>);
+      Raw_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 * 2 => 0];
+      Raw : Jpeglib.Decoding.Raw_Component_View_Array (1 .. 1) :=
+        [1 =>
+           (Width => 8,
+            Height => 8,
+            Stride => 16,
+            Accessible_Bytes => 8 * 8 * 2,
+            Storage => Raw_Storage'Unchecked_Access)];
+   begin
+      Jpeglib.Streams.Open (Source, Storage'Unchecked_Access);
+      Jpeglib.Decoding.Initialize (Decoder, Source'Access, Preserve_Source);
+      Outcome := Jpeglib.Decoding.Decode_Raw_Components (Decoder, Raw);
+      Assert
+        (Jpeglib.Results.Succeeded (Outcome),
+         "12-bit progressive raw component decode failed: "
+         & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+      Assert
+        (Jpeglib.Decoding.State (Decoder) = Jpeglib.Decoding.Completed,
+         "12-bit progressive raw component decoder did not complete");
+      Assert (Jpeglib.Decoding.Header (Decoder).Precision = 12, "12-bit progressive raw precision mismatch");
+      Assert
+        (Jpeglib.Decoding.Header (Decoder).Mode = Jpeglib.Progressive_DCT,
+         "12-bit progressive raw mode mismatch");
+
+      for Sample in Natural range 0 .. 8 * 8 - 1 loop
+         Assert
+           (Raw_Storage (Raw_Storage'First + Sample * 2) = 8
+            and then Raw_Storage (Raw_Storage'First + Sample * 2 + 1) = 0,
+            "12-bit progressive raw preserved sample mismatch");
+      end loop;
+   end Public_Decoder_Decodes_Twelve_Bit_Progressive_Raw_Components;
+
+   procedure Public_Decoder_Decodes_Twelve_Bit_Progressive_Color_Raw_Components
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Decoder_State;
+
+      Three_Component_Storage : aliased constant Jpeglib.Streams.Byte_Array :=
+        [16#FF#, 16#D8#,
+         16#FF#, 16#DB#,
+         0, 67, 0,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         16#FF#, 16#C4#,
+         0, 20, 0,
+         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0,
+         16#FF#, 16#C2#,
+         0, 17,
+         12, 0, 8, 0, 8, 3,
+         1, 16#11#, 0,
+         2, 16#11#, 0,
+         3, 16#11#, 0,
+         16#FF#, 16#DA#,
+         0, 12,
+         3,
+         1, 16#00#,
+         2, 16#00#,
+         3, 16#00#,
+         0, 0, 0,
+         0,
+         16#FF#, 16#D9#];
+      RGB_Storage : aliased constant Jpeglib.Streams.Byte_Array :=
+        [16#FF#, 16#D8#,
+         16#FF#, 16#DB#,
+         0, 67, 0,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         16#FF#, 16#C4#,
+         0, 20, 0,
+         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0,
+         16#FF#, 16#C2#,
+         0, 17,
+         12, 0, 8, 0, 8, 3,
+         16#52#, 16#11#, 0,
+         16#47#, 16#11#, 0,
+         16#42#, 16#11#, 0,
+         16#FF#, 16#DA#,
+         0, 12,
+         3,
+         16#52#, 16#00#,
+         16#47#, 16#00#,
+         16#42#, 16#00#,
+         0, 0, 0,
+         0,
+         16#FF#, 16#D9#];
+      Four_Component_Storage : aliased constant Jpeglib.Streams.Byte_Array :=
+        [16#FF#, 16#D8#,
+         16#FF#, 16#EE#,
+         0, 14,
+         16#41#, 16#64#, 16#6F#, 16#62#, 16#65#, 0,
+         100,
+         0, 0,
+         0, 0,
+         0,
+         16#FF#, 16#DB#,
+         0, 67, 0,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         16#FF#, 16#C4#,
+         0, 20, 0,
+         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0,
+         16#FF#, 16#C2#,
+         0, 20,
+         12, 0, 8, 0, 8, 4,
+         16#43#, 16#11#, 0,
+         16#4D#, 16#11#, 0,
+         16#59#, 16#11#, 0,
+         16#4B#, 16#11#, 0,
+         16#FF#, 16#DA#,
+         0, 14,
+         4,
+         16#43#, 16#00#,
+         16#4D#, 16#00#,
+         16#59#, 16#00#,
+         16#4B#, 16#00#,
+         0, 0, 0,
+         0,
+         16#FF#, 16#D9#];
+      YCCK_Storage : aliased constant Jpeglib.Streams.Byte_Array :=
+        [16#FF#, 16#D8#,
+         16#FF#, 16#EE#,
+         0, 14,
+         16#41#, 16#64#, 16#6F#, 16#62#, 16#65#, 0,
+         100,
+         0, 0,
+         0, 0,
+         2,
+         16#FF#, 16#DB#,
+         0, 67, 0,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         16#FF#, 16#C4#,
+         0, 20, 0,
+         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0,
+         16#FF#, 16#C2#,
+         0, 20,
+         12, 0, 8, 0, 8, 4,
+         16#43#, 16#11#, 0,
+         16#4D#, 16#11#, 0,
+         16#59#, 16#11#, 0,
+         16#4B#, 16#11#, 0,
+         16#FF#, 16#DA#,
+         0, 14,
+         4,
+         16#43#, 16#00#,
+         16#4D#, 16#00#,
+         16#59#, 16#00#,
+         16#4B#, 16#00#,
+         0, 0, 0,
+         0,
+         16#FF#, 16#D9#];
+      Preserve_Source : constant Jpeglib.Decoding.Options :=
+        (Raw_Precision => Jpeglib.Decoding.Preserve_Source_Precision,
+         Raw_Byte_Order => Jpeglib.Decoding.Most_Significant_Byte_First,
+         others => <>);
+
+      procedure Decode_Color
+        (Storage : not null Jpeglib.Streams.Const_Byte_Array_Access;
+         Components : Jpeglib.Component_Count;
+         Expected_Model : Jpeglib.Encoded_Color_Model;
+         Label : String)
+      is
+         Source : aliased Jpeglib.Streams.Memory_Source;
+         Decoder : Jpeglib.Decoding.Decoder;
+         Outcome : Jpeglib.Results.Result;
+         C1 : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 * 2 => 0];
+         C2 : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 * 2 => 0];
+         C3 : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 * 2 => 0];
+         C4 : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 * 2 => 0];
+         Raw_All : Jpeglib.Decoding.Raw_Component_View_Array (1 .. 4) :=
+           [1 =>
+              (Width => 8,
+               Height => 8,
+               Stride => 16,
+               Accessible_Bytes => 8 * 8 * 2,
+               Storage => C1'Unchecked_Access),
+            2 =>
+              (Width => 8,
+               Height => 8,
+               Stride => 16,
+               Accessible_Bytes => 8 * 8 * 2,
+               Storage => C2'Unchecked_Access),
+            3 =>
+              (Width => 8,
+               Height => 8,
+               Stride => 16,
+               Accessible_Bytes => 8 * 8 * 2,
+               Storage => C3'Unchecked_Access),
+            4 =>
+              (Width => 8,
+               Height => 8,
+               Stride => 16,
+               Accessible_Bytes => 8 * 8 * 2,
+               Storage => C4'Unchecked_Access)];
+
+         procedure Assert_Plane (Plane : Jpeglib.Streams.Byte_Array; Plane_Label : String) is
+         begin
+            for Sample in Natural range 0 .. 8 * 8 - 1 loop
+               Assert
+                 (Plane (Plane'First + Sample * 2) = 8
+                  and then Plane (Plane'First + Sample * 2 + 1) = 0,
+                  Label & " 12-bit progressive " & Plane_Label & " raw sample mismatch");
+            end loop;
+         end Assert_Plane;
+      begin
+         Jpeglib.Streams.Open (Source, Storage);
+         Jpeglib.Decoding.Initialize (Decoder, Source'Access, Preserve_Source);
+         Outcome :=
+           Jpeglib.Decoding.Decode_Raw_Components
+             (Decoder, Raw_All (1 .. Jpeglib.Component_Index (Components)));
+         Assert
+           (Jpeglib.Results.Succeeded (Outcome),
+            Label & " 12-bit progressive color raw decode failed: "
+            & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+         Assert
+           (Jpeglib.Decoding.State (Decoder) = Jpeglib.Decoding.Completed,
+            Label & " 12-bit progressive color raw decoder did not complete");
+         Assert (Jpeglib.Decoding.Header (Decoder).Precision = 12, Label & " precision mismatch");
+         Assert
+           (Jpeglib.Decoding.Header (Decoder).Mode = Jpeglib.Progressive_DCT,
+            Label & " mode mismatch");
+         Assert
+           (Jpeglib.Decoding.Header (Decoder).Color_Model = Expected_Model,
+            Label & " color model mismatch");
+
+         Assert_Plane (C1, "first");
+         Assert_Plane (C2, "second");
+         Assert_Plane (C3, "third");
+         if Components = 4 then
+            Assert_Plane (C4, "fourth");
+         end if;
+      end Decode_Color;
+   begin
+      Decode_Color (Three_Component_Storage'Unchecked_Access, 3, Jpeglib.YCbCr, "YCbCr");
+      Decode_Color (RGB_Storage'Unchecked_Access, 3, Jpeglib.RGB, "RGB");
+      Decode_Color (Four_Component_Storage'Unchecked_Access, 4, Jpeglib.CMYK, "CMYK");
+      Decode_Color (YCCK_Storage'Unchecked_Access, 4, Jpeglib.YCCK, "YCCK");
+   end Public_Decoder_Decodes_Twelve_Bit_Progressive_Color_Raw_Components;
 
    procedure Public_Decoder_Decodes_Progressive_Raw_Components
      (T : in out AUnit.Test_Cases.Test_Case'Class)
@@ -4613,18 +5283,18 @@ package body Jpeglib_Testing.Test_Foundation is
          16#FF#, 16#C0#,
          0, 23,
          8, 0, 8, 0, 8, 5,
-         1, 16#11#, 0,
-         2, 16#11#, 0,
-         3, 16#11#, 0,
-         4, 16#11#, 0,
+         16#43#, 16#11#, 0,
+         16#4D#, 16#11#, 0,
+         16#59#, 16#11#, 0,
+         16#4B#, 16#11#, 0,
          5, 16#11#, 0,
          16#FF#, 16#DA#,
          0, 16,
          5,
-         1, 16#00#,
-         2, 16#00#,
-         3, 16#00#,
-         4, 16#00#,
+         16#43#, 16#00#,
+         16#4D#, 16#00#,
+         16#59#, 16#00#,
+         16#4B#, 16#00#,
          5, 16#00#,
          0, 63, 0,
          0, 0,
@@ -13698,6 +14368,230 @@ package body Jpeglib_Testing.Test_Foundation is
          Assert (Sample = 128, "12-bit grayscale sample mismatch");
       end loop;
    end Public_Decoder_Decodes_Twelve_Bit_Grayscale_Image;
+
+   procedure Public_Decoder_Decodes_Twelve_Bit_DCT_Color_Image
+     (T : in out AUnit.Test_Cases.Test_Case'Class)
+   is
+      pragma Unreferenced (T);
+      use type Jpeglib.Decoding.Decoder_State;
+
+      Three_Component_Storage : aliased constant Jpeglib.Streams.Byte_Array :=
+        [16#FF#, 16#D8#,
+         16#FF#, 16#DB#,
+         0, 67, 0,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         16#FF#, 16#C4#,
+         0, 20, 0,
+         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0,
+         16#FF#, 16#C4#,
+         0, 20, 16#10#,
+         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0,
+         16#FF#, 16#C1#,
+         0, 17,
+         12, 0, 8, 0, 8, 3,
+         1, 16#11#, 0,
+         2, 16#11#, 0,
+         3, 16#11#, 0,
+         16#FF#, 16#DA#,
+         0, 12,
+         3,
+         1, 16#00#,
+         2, 16#00#,
+         3, 16#00#,
+         0, 63, 0,
+         0,
+         16#FF#, 16#D9#];
+      Four_Component_Storage : aliased constant Jpeglib.Streams.Byte_Array :=
+        [16#FF#, 16#D8#,
+         16#FF#, 16#EE#,
+         0, 14,
+         16#41#, 16#64#, 16#6F#, 16#62#, 16#65#, 0,
+         100,
+         0, 0,
+         0, 0,
+         0,
+         16#FF#, 16#DB#,
+         0, 67, 0,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 1, 1, 1, 1, 1,
+         16#FF#, 16#C4#,
+         0, 20, 0,
+         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0,
+         16#FF#, 16#C4#,
+         0, 20, 16#10#,
+         1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0,
+         16#FF#, 16#C1#,
+         0, 20,
+         12, 0, 8, 0, 8, 4,
+         16#43#, 16#11#, 0,
+         16#4D#, 16#11#, 0,
+         16#59#, 16#11#, 0,
+         16#4B#, 16#11#, 0,
+         16#FF#, 16#DA#,
+         0, 14,
+         4,
+         16#43#, 16#00#,
+         16#4D#, 16#00#,
+         16#59#, 16#00#,
+         16#4B#, 16#00#,
+         0, 63, 0,
+         0,
+         16#FF#, 16#D9#];
+
+      procedure Decode_Color
+        (Storage : not null Jpeglib.Streams.Const_Byte_Array_Access;
+         Components : Jpeglib.Component_Count;
+         Expected_Model : Jpeglib.Encoded_Color_Model;
+         Expected_Image_Sample : Jpeglib.Byte;
+         Label : String)
+      is
+         Image_Source : aliased Jpeglib.Streams.Memory_Source;
+         Raw_Source : aliased Jpeglib.Streams.Memory_Source;
+         Coefficient_Source : aliased Jpeglib.Streams.Memory_Source;
+         Image_Decoder : Jpeglib.Decoding.Decoder;
+         Raw_Decoder : Jpeglib.Decoding.Decoder;
+         Coefficient_Decoder : Jpeglib.Decoding.Decoder;
+         Image_Output : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 * 3 => 77];
+         Image_View : Jpeglib.Images.Mutable_Image_View :=
+           (Descriptor =>
+              (Width => 8,
+               Height => 8,
+               Format => Jpeglib.Images.RGB_24,
+               Stride => Jpeglib.Row_Stride (8 * 3),
+               Accessible_Bytes => 8 * 8 * 3),
+            Storage => Image_Output'Unchecked_Access);
+         C1 : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 => 0];
+         C2 : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 => 0];
+         C3 : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 => 0];
+         C4 : aliased Jpeglib.Streams.Byte_Array := [1 .. 8 * 8 => 0];
+         Raw_All : Jpeglib.Decoding.Raw_Component_View_Array (1 .. 4) :=
+           [1 =>
+              (Width => 8,
+               Height => 8,
+               Stride => 8,
+               Accessible_Bytes => 8 * 8,
+               Storage => C1'Unchecked_Access),
+            2 =>
+              (Width => 8,
+               Height => 8,
+               Stride => 8,
+               Accessible_Bytes => 8 * 8,
+               Storage => C2'Unchecked_Access),
+            3 =>
+              (Width => 8,
+               Height => 8,
+               Stride => 8,
+               Accessible_Bytes => 8 * 8,
+               Storage => C3'Unchecked_Access),
+            4 =>
+              (Width => 8,
+               Height => 8,
+               Stride => 8,
+               Accessible_Bytes => 8 * 8,
+               Storage => C4'Unchecked_Access)];
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. 4) := [others => [others => 99]];
+         Blocks_Decoded : Jpeglib.Block_Count := 0;
+         Outcome : Jpeglib.Results.Result;
+         Header : Jpeglib.Decoding.Image_Info;
+      begin
+         Jpeglib.Streams.Open (Image_Source, Storage);
+         Jpeglib.Decoding.Initialize
+           (Image_Decoder,
+            Image_Source'Access,
+            (Output_Format => Jpeglib.Images.RGB_24, others => <>));
+         Outcome := Jpeglib.Decoding.Decode_Image (Image_Decoder, Image_View);
+         Assert
+           (Jpeglib.Results.Succeeded (Outcome),
+            Label & " 12-bit DCT image decode failed: "
+            & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+         Assert
+           (Jpeglib.Decoding.State (Image_Decoder) = Jpeglib.Decoding.Completed,
+            Label & " 12-bit DCT image decoder state mismatch");
+         Header := Jpeglib.Decoding.Header (Image_Decoder);
+         Assert (Header.Precision = 12, Label & " 12-bit DCT image precision mismatch");
+         Assert (Header.Mode = Jpeglib.Extended_Sequential_DCT, Label & " 12-bit DCT image mode mismatch");
+         Assert (Header.Color_Model = Expected_Model, Label & " 12-bit DCT image color model mismatch");
+         for Sample of Image_Output loop
+            Assert (Sample = Expected_Image_Sample, Label & " 12-bit DCT image sample mismatch");
+         end loop;
+
+         Jpeglib.Streams.Open (Raw_Source, Storage);
+         Jpeglib.Decoding.Initialize (Raw_Decoder, Raw_Source'Access);
+         Outcome :=
+           Jpeglib.Decoding.Decode_Raw_Components
+             (Raw_Decoder, Raw_All (1 .. Jpeglib.Component_Index (Components)));
+         Assert
+           (Jpeglib.Results.Succeeded (Outcome),
+            Label & " 12-bit DCT raw decode failed: "
+            & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+         Header := Jpeglib.Decoding.Header (Raw_Decoder);
+         Assert (Header.Precision = 12, Label & " 12-bit DCT raw precision mismatch");
+         Assert (Header.Color_Model = Expected_Model, Label & " 12-bit DCT raw color model mismatch");
+         for Sample of C1 loop
+            Assert (Sample = 128, Label & " 12-bit DCT first raw plane mismatch");
+         end loop;
+         for Sample of C2 loop
+            Assert (Sample = 128, Label & " 12-bit DCT second raw plane mismatch");
+         end loop;
+         for Sample of C3 loop
+            Assert (Sample = 128, Label & " 12-bit DCT third raw plane mismatch");
+         end loop;
+         if Components = 4 then
+            for Sample of C4 loop
+               Assert (Sample = 128, Label & " 12-bit DCT fourth raw plane mismatch");
+            end loop;
+         end if;
+
+         Jpeglib.Streams.Open (Coefficient_Source, Storage);
+         Jpeglib.Decoding.Initialize (Coefficient_Decoder, Coefficient_Source'Access);
+         Outcome := Jpeglib.Decoding.Decode_Coefficients
+           (Coefficient_Decoder, Blocks, Blocks_Decoded);
+         Assert
+           (Jpeglib.Results.Succeeded (Outcome),
+            Label & " 12-bit DCT coefficient decode failed: "
+            & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+         Assert
+           (Blocks_Decoded = Jpeglib.Block_Count (Components),
+            Label & " 12-bit DCT coefficient count mismatch");
+         for Block_Index in 1 .. Natural (Components) loop
+            for Coefficient in Jpeglib.Coefficient_Index loop
+               Assert
+                 (Blocks (Block_Index) (Coefficient) = 0,
+                  Label & " 12-bit DCT coefficient mismatch");
+            end loop;
+         end loop;
+      end Decode_Color;
+   begin
+      Decode_Color
+        (Three_Component_Storage'Unchecked_Access,
+         3,
+         Jpeglib.YCbCr,
+         128,
+         "YCbCr");
+      Decode_Color
+        (Four_Component_Storage'Unchecked_Access,
+         4,
+         Jpeglib.CMYK,
+         0,
+         "CMYK");
+   end Public_Decoder_Decodes_Twelve_Bit_DCT_Color_Image;
 
    procedure Public_Decoder_Decodes_Twelve_Bit_Lossless_Grayscale_Image
      (T : in out AUnit.Test_Cases.Test_Case'Class)

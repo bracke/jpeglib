@@ -82,18 +82,56 @@ package body Jpeglib.Coefficients.Encoding is
       end if;
 
       return Jpeglib.Internal.Baseline_Encoder.Encode_Grayscale_Coefficients
-        (Output,
-         Width,
-         Height,
-         Blocks,
-         Restart,
-         Quality,
-         Optimize_Huffman,
-         Encoded_Metadata);
+        (Output => Output,
+         Width => Width,
+         Height => Height,
+         Blocks => Blocks,
+         Restart => Restart,
+         Quality => Quality,
+         Optimize_Huffman => Optimize_Huffman,
+         Encoded_Metadata => Encoded_Metadata);
    exception
       when Constraint_Error =>
          return Results.Failure (Errors.Internal_Invariant_Failed);
    end Encode_Grayscale_Baseline;
+
+   function Encode_Grayscale_Twelve_Bit
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : DCT_Block_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
+      Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
+   is
+      Limit_Outcome : constant Results.Result := Validate_Encode_Limits (Width, Height, Blocks, Encode_Limits);
+   begin
+      if not Results.Succeeded (Limit_Outcome) then
+         return Limit_Outcome;
+      elsif Width > 65_535 or else Height > 65_535 then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      elsif Block_Count (Blocks'Length) /= Required_Blocks (Width, Height) then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      elsif not Coefficients_Are_In_Baseline_Range (Blocks) then
+         return Results.Failure (Errors.Coefficient_Invalid_Encoding);
+      end if;
+
+      return Jpeglib.Internal.Baseline_Encoder.Encode_Grayscale_Coefficients
+        (Output => Output,
+         Width => Width,
+         Height => Height,
+         Blocks => Blocks,
+         Restart => Restart,
+         Quality => Quality,
+         Optimize_Huffman => Optimize_Huffman,
+         Precision => 12,
+         Encoded_Metadata => Encoded_Metadata);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_Grayscale_Twelve_Bit;
 
    function Encode_Grayscale_Progressive
      (Output : in out Streams.Destination'Class;
@@ -120,15 +158,15 @@ package body Jpeglib.Coefficients.Encoding is
       end if;
 
       return Jpeglib.Internal.Baseline_Encoder.Encode_Progressive_Grayscale_Coefficients
-        (Output,
-         Width,
-         Height,
-         Blocks,
-         Restart,
-         Quality,
-         Refine,
-         Optimize_Huffman,
-         Encoded_Metadata);
+        (Output => Output,
+         Width => Width,
+         Height => Height,
+         Blocks => Blocks,
+         Restart => Restart,
+         Quality => Quality,
+         Refine => Refine,
+         Optimize_Huffman => Optimize_Huffman,
+         Encoded_Metadata => Encoded_Metadata);
    exception
       when Constraint_Error =>
          return Results.Failure (Errors.Internal_Invariant_Failed);
@@ -161,19 +199,140 @@ package body Jpeglib.Coefficients.Encoding is
       end if;
 
       return Jpeglib.Internal.Baseline_Encoder.Encode_YCbCr_Coefficients
-        (Output,
-         Width,
-         Height,
-         Blocks,
-         Layouts,
-         Restart,
-         Quality,
-         Optimize_Huffman,
-         Encoded_Metadata);
+        (Output => Output,
+         Width => Width,
+         Height => Height,
+         Blocks => Blocks,
+         Layouts => Layouts,
+         Restart => Restart,
+         Quality => Quality,
+         Optimize_Huffman => Optimize_Huffman,
+         Encoded_Metadata => Encoded_Metadata);
    exception
       when Constraint_Error =>
          return Results.Failure (Errors.Internal_Invariant_Failed);
    end Encode_YCbCr_Baseline;
+
+   function Encode_YCbCr_Twelve_Bit
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : DCT_Block_Array;
+      Layouts : Component_Block_Layout_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
+      Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
+   is
+      Limit_Outcome : constant Results.Result := Validate_Encode_Limits (Width, Height, Blocks, Encode_Limits);
+   begin
+      if not Results.Succeeded (Limit_Outcome) then
+         return Limit_Outcome;
+      elsif Width > 65_535 or else Height > 65_535 then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      elsif Layouts'Length /= 3 or else Layouts'First /= 1 then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      elsif Total_Block_Count (Layouts) /= Block_Count (Blocks'Length) then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      elsif not Coefficients_Are_In_Baseline_Range (Blocks) then
+         return Results.Failure (Errors.Coefficient_Invalid_Encoding);
+      end if;
+
+      return Jpeglib.Internal.Baseline_Encoder.Encode_YCbCr_Coefficients
+        (Output => Output,
+         Width => Width,
+         Height => Height,
+         Blocks => Blocks,
+         Layouts => Layouts,
+         Restart => Restart,
+         Quality => Quality,
+         Optimize_Huffman => Optimize_Huffman,
+         Precision => 12,
+         Encoded_Metadata => Encoded_Metadata);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_YCbCr_Twelve_Bit;
+
+   function Encode_CMYK_Twelve_Bit
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : DCT_Block_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
+      Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
+   is
+      Limit_Outcome : constant Results.Result := Validate_Encode_Limits (Width, Height, Blocks, Encode_Limits);
+      Component_Blocks : constant Block_Count := Required_Blocks (Width, Height);
+   begin
+      if not Results.Succeeded (Limit_Outcome) then
+         return Limit_Outcome;
+      elsif Width > 65_535 or else Height > 65_535 then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      elsif Block_Count (Blocks'Length) /= Component_Blocks * 4 then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      elsif not Coefficients_Are_In_Baseline_Range (Blocks) then
+         return Results.Failure (Errors.Coefficient_Invalid_Encoding);
+      end if;
+
+      return Jpeglib.Internal.Baseline_Encoder.Encode_CMYK_Coefficients
+        (Output => Output,
+         Width => Width,
+         Height => Height,
+         Blocks => Blocks,
+         Restart => Restart,
+         Quality => Quality,
+         Optimize_Huffman => Optimize_Huffman,
+         Precision => 12,
+         Encoded_Metadata => Encoded_Metadata);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_CMYK_Twelve_Bit;
+
+   function Encode_YCCK_Twelve_Bit
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : DCT_Block_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments;
+      Encode_Limits : Limits.Limit_Set := Limits.Default_Limits) return Results.Result
+   is
+      Limit_Outcome : constant Results.Result := Validate_Encode_Limits (Width, Height, Blocks, Encode_Limits);
+      Component_Blocks : constant Block_Count := Required_Blocks (Width, Height);
+   begin
+      if not Results.Succeeded (Limit_Outcome) then
+         return Limit_Outcome;
+      elsif Width > 65_535 or else Height > 65_535 then
+         return Results.Failure (Errors.Frame_Invalid_Definition);
+      elsif Block_Count (Blocks'Length) /= Component_Blocks * 4 then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      elsif not Coefficients_Are_In_Baseline_Range (Blocks) then
+         return Results.Failure (Errors.Coefficient_Invalid_Encoding);
+      end if;
+
+      return Jpeglib.Internal.Baseline_Encoder.Encode_CMYK_Coefficients
+        (Output => Output,
+         Width => Width,
+         Height => Height,
+         Blocks => Blocks,
+         Restart => Restart,
+         Quality => Quality,
+         Optimize_Huffman => Optimize_Huffman,
+         Precision => 12,
+         Adobe_YCCK => True,
+         Encoded_Metadata => Encoded_Metadata);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_YCCK_Twelve_Bit;
 
    function Encode_YCbCr_Progressive
      (Output : in out Streams.Destination'Class;
@@ -203,16 +362,16 @@ package body Jpeglib.Coefficients.Encoding is
       end if;
 
       return Jpeglib.Internal.Baseline_Encoder.Encode_Progressive_YCbCr_Coefficients
-        (Output,
-         Width,
-         Height,
-         Blocks,
-         Layouts,
-         Restart,
-         Quality,
-         Refine,
-         Optimize_Huffman,
-         Encoded_Metadata);
+        (Output => Output,
+         Width => Width,
+         Height => Height,
+         Blocks => Blocks,
+         Layouts => Layouts,
+         Restart => Restart,
+         Quality => Quality,
+         Refine => Refine,
+         Optimize_Huffman => Optimize_Huffman,
+         Encoded_Metadata => Encoded_Metadata);
    exception
       when Constraint_Error =>
          return Results.Failure (Errors.Internal_Invariant_Failed);

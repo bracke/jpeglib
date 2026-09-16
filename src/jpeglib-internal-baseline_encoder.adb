@@ -31,6 +31,7 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Optimize_Huffman : Boolean := False;
+      Precision : Sample_Precision := 8;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
       DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
@@ -78,7 +79,13 @@ package body Jpeglib.Internal.Baseline_Encoder is
          return Outcome;
       end if;
 
-      Outcome := Write_DCT_SOF_Grayscale (Output, Markers.SOF0, Width, Height);
+      Outcome :=
+        Write_DCT_SOF_Grayscale
+          (Output,
+           Marker => (if Precision = 12 then Markers.SOF1 else Markers.SOF0),
+           Width => Width,
+           Height => Height,
+           Precision => Precision);
       if not Results.Succeeded (Outcome) then
          return Outcome;
       end if;
@@ -115,6 +122,7 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Restart : Restart_Interval := 0;
       Quality : Positive := 75;
       Optimize_Huffman : Boolean := False;
+      Precision : Sample_Precision := 8;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
       Luma_DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
@@ -243,11 +251,12 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Outcome :=
         Write_DCT_SOF_YCbCr
           (Output,
-           Marker => Markers.SOF0,
+           Marker => (if Precision = 12 then Markers.SOF1 else Markers.SOF0),
            Width => Width,
            Height => Height,
            Luma_Horizontal_Sampling => Layout.Chroma_Horizontal_Factor,
-           Luma_Vertical_Sampling => Layout.Chroma_Vertical_Factor);
+           Luma_Vertical_Sampling => Layout.Chroma_Vertical_Factor,
+           Precision => Precision);
       if not Results.Succeeded (Outcome) then
          return Outcome;
       end if;
@@ -290,6 +299,138 @@ package body Jpeglib.Internal.Baseline_Encoder is
          return Results.Failure (Errors.Internal_Invariant_Failed);
    end Encode_YCbCr_Coefficients;
 
+   function Encode_CMYK_Coefficients
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Optimize_Huffman : Boolean := False;
+      Precision : Sample_Precision := 8;
+      Adobe_YCCK : Boolean := False;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
+   is
+      DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
+      AC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
+      Quantization_Table : constant Quantization.Quantization_Table :=
+        Quantization.Luma_Table_For_Quality (Quality);
+      Block_Columns : constant Natural := (Natural (Width) + 7) / 8;
+      Block_Rows : constant Natural := (Natural (Height) + 7) / 8;
+      Component_Blocks : constant Block_Count := Block_Count (Block_Columns * Block_Rows);
+      Total_Blocks : constant Block_Count := Component_Blocks * 4;
+      M_Start : Positive;
+      Y_Start : Positive;
+      K_Start : Positive;
+      Outcome : Results.Result;
+      SOS_Payload : constant Streams.Byte_Array :=
+        [4,
+         Byte (Character'Pos ('C')), 0,
+         Byte (Character'Pos ('M')), 0,
+         Byte (Character'Pos ('Y')), 0,
+         Byte (Character'Pos ('K')), 0,
+         0, 63, 0];
+   begin
+      if Huffman.Symbol_Total (DC_Definition) = 0 or else Huffman.Symbol_Total (AC_Definition) = 0 then
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+      elsif Blocks'Length = 0 or else Block_Count (Blocks'Length) /= Total_Blocks then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      end if;
+
+      M_Start := Blocks'First + Positive (Component_Blocks);
+      Y_Start := M_Start + Positive (Component_Blocks);
+      K_Start := Y_Start + Positive (Component_Blocks);
+
+      if Optimize_Huffman then
+         Encoder_Huffman_Optimization.Optimized_Definitions_For_CMYK_Blocks
+           (Blocks (Blocks'First .. M_Start - 1),
+            Blocks (M_Start .. Y_Start - 1),
+            Blocks (Y_Start .. K_Start - 1),
+            Blocks (K_Start .. Blocks'Last),
+            Positive (Block_Columns),
+            Positive (Block_Rows),
+            Restart,
+            DC_Definition,
+            AC_Definition);
+      end if;
+
+      Outcome := Write_SOI_And_Metadata (Output, Encoded_Metadata);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_JFIF_APP0 (Output);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      if Adobe_YCCK then
+         Outcome := Writers.Write_Adobe_APP14 (Output, Transform => 2);
+         if not Results.Succeeded (Outcome) then
+            return Outcome;
+         end if;
+      end if;
+
+      Outcome := Writers.Write_DQT (Output, 0, Quantization_Table);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.DC, 0, DC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.AC, 0, AC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome :=
+        Write_DCT_SOF_CMYK
+          (Output,
+           Marker => (if Precision = 12 then Markers.SOF1 else Markers.SOF0),
+           Width => Width,
+           Height => Height,
+           Precision => Precision);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      if Restart /= 0 then
+         Outcome := Writers.Write_DRI (Output, Restart);
+         if not Results.Succeeded (Outcome) then
+            return Outcome;
+         end if;
+      end if;
+
+      Outcome := Writers.Write_Segment (Output, Markers.SOS, SOS_Payload);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome :=
+        Encode_CMYK_Blocks
+          (Output,
+           DC_Definition,
+           AC_Definition,
+           Blocks (Blocks'First .. M_Start - 1),
+           Blocks (M_Start .. Y_Start - 1),
+           Blocks (Y_Start .. K_Start - 1),
+           Blocks (K_Start .. Blocks'Last),
+           Positive (Block_Columns),
+           Positive (Block_Rows),
+           Restart);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      return Writers.Write_Marker (Output, Markers.EOI);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_CMYK_Coefficients;
+
    function Encode_Progressive_YCbCr_Coefficients
      (Output : in out Streams.Destination'Class;
       Width : Image_Width;
@@ -300,6 +441,7 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Quality : Positive := 75;
       Refine : Boolean := False;
       Optimize_Huffman : Boolean := False;
+      Precision : Sample_Precision := 8;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
       Luma_DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
@@ -432,7 +574,8 @@ package body Jpeglib.Internal.Baseline_Encoder is
            Width => Width,
            Height => Height,
            Luma_Horizontal_Sampling => Layout.Chroma_Horizontal_Factor,
-           Luma_Vertical_Sampling => Layout.Chroma_Vertical_Factor);
+           Luma_Vertical_Sampling => Layout.Chroma_Vertical_Factor,
+           Precision => Precision);
       if not Results.Succeeded (Outcome) then
          return Outcome;
       end if;
@@ -484,6 +627,7 @@ package body Jpeglib.Internal.Baseline_Encoder is
       Quality : Positive := 75;
       Refine : Boolean := False;
       Optimize_Huffman : Boolean := False;
+      Precision : Sample_Precision := 8;
       Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
    is
       DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
@@ -531,7 +675,7 @@ package body Jpeglib.Internal.Baseline_Encoder is
          return Outcome;
       end if;
 
-      Outcome := Write_DCT_SOF_Grayscale (Output, Markers.SOF2, Width, Height);
+      Outcome := Write_DCT_SOF_Grayscale (Output, Markers.SOF2, Width, Height, Precision => Precision);
       if not Results.Succeeded (Outcome) then
          return Outcome;
       end if;
@@ -553,6 +697,157 @@ package body Jpeglib.Internal.Baseline_Encoder is
       when Constraint_Error =>
          return Results.Failure (Errors.Internal_Invariant_Failed);
    end Encode_Progressive_Grayscale_Coefficients;
+
+   function Encode_Progressive_CMYK_Coefficients
+     (Output : in out Streams.Destination'Class;
+      Width : Image_Width;
+      Height : Image_Height;
+      Blocks : Jpeglib.Coefficients.DCT_Block_Array;
+      Restart : Restart_Interval := 0;
+      Quality : Positive := 75;
+      Refine : Boolean := False;
+      Optimize_Huffman : Boolean := False;
+      Precision : Sample_Precision := 8;
+      Adobe_YCCK : Boolean := False;
+      Encoded_Metadata : Metadata.Encode_Segment_Array := Metadata.No_Encode_Segments) return Results.Result
+   is
+      DC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_DC;
+      AC_Definition : Huffman.Huffman_Definition := Huffman.Standard_Luminance_AC;
+      Quantization_Table : constant Quantization.Quantization_Table :=
+        Quantization.Luma_Table_For_Quality (Quality);
+      Block_Columns : constant Natural := (Natural (Width) + 7) / 8;
+      Block_Rows : constant Natural := (Natural (Height) + 7) / 8;
+      Component_Blocks : constant Block_Count := Block_Count (Block_Columns * Block_Rows);
+      Total_Blocks : constant Block_Count := Component_Blocks * 4;
+      M_Start : Positive;
+      Y_Start : Positive;
+      K_Start : Positive;
+      Outcome : Results.Result;
+   begin
+      if Huffman.Symbol_Total (DC_Definition) = 0 or else Huffman.Symbol_Total (AC_Definition) = 0 then
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+      elsif Blocks'Length = 0 or else Block_Count (Blocks'Length) /= Total_Blocks then
+         return Results.Failure (Errors.Output_Limit_Exceeded);
+      end if;
+
+      M_Start := Blocks'First + Positive (Component_Blocks);
+      Y_Start := M_Start + Positive (Component_Blocks);
+      K_Start := Y_Start + Positive (Component_Blocks);
+
+      if Optimize_Huffman and then not Refine then
+         Encoder_Huffman_Optimization.Optimized_Definitions_For_CMYK_Blocks
+           (Blocks (Blocks'First .. M_Start - 1),
+            Blocks (M_Start .. Y_Start - 1),
+            Blocks (Y_Start .. K_Start - 1),
+            Blocks (K_Start .. Blocks'Last),
+            Positive (Block_Columns),
+            Positive (Block_Rows),
+            Restart,
+            DC_Definition,
+            AC_Definition);
+      end if;
+
+      Outcome := Write_SOI_And_Metadata (Output, Encoded_Metadata);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_JFIF_APP0 (Output);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      if Adobe_YCCK then
+         Outcome := Writers.Write_Adobe_APP14 (Output, Transform => 2);
+         if not Results.Succeeded (Outcome) then
+            return Outcome;
+         end if;
+      end if;
+
+      Outcome := Writers.Write_DQT (Output, 0, Quantization_Table);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.DC, 0, DC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Writers.Write_DHT (Output, Huffman.AC, 0, AC_Definition);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome := Write_DCT_SOF_CMYK (Output, Markers.SOF2, Width, Height, Precision => Precision);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      if Restart /= 0 then
+         Outcome := Writers.Write_DRI (Output, Restart);
+         if not Results.Succeeded (Outcome) then
+            return Outcome;
+         end if;
+      end if;
+
+      Outcome :=
+        Encode_Progressive_Component_Blocks
+          (Output,
+           DC_Definition,
+           AC_Definition,
+           Component_Identifier (Character'Pos ('C')),
+           Blocks (Blocks'First .. M_Start - 1),
+           Restart,
+           Refine);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome :=
+        Encode_Progressive_Component_Blocks
+          (Output,
+           DC_Definition,
+           AC_Definition,
+           Component_Identifier (Character'Pos ('M')),
+           Blocks (M_Start .. Y_Start - 1),
+           Restart,
+           Refine);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome :=
+        Encode_Progressive_Component_Blocks
+          (Output,
+           DC_Definition,
+           AC_Definition,
+           Component_Identifier (Character'Pos ('Y')),
+           Blocks (Y_Start .. K_Start - 1),
+           Restart,
+           Refine);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      Outcome :=
+        Encode_Progressive_Component_Blocks
+          (Output,
+           DC_Definition,
+           AC_Definition,
+           Component_Identifier (Character'Pos ('K')),
+           Blocks (K_Start .. Blocks'Last),
+           Restart,
+           Refine);
+      if not Results.Succeeded (Outcome) then
+         return Outcome;
+      end if;
+
+      return Writers.Write_Marker (Output, Markers.EOI);
+   exception
+      when Constraint_Error =>
+         return Results.Failure (Errors.Internal_Invariant_Failed);
+   end Encode_Progressive_CMYK_Coefficients;
 
    function Encode_Gray_Image
      (Output : in out Streams.Destination'Class;

@@ -18,28 +18,63 @@ package Jpeglib.Internal.Huffman is
    type Compiled_Huffman is private;
    type Huffman_State is private;
 
+   --  Has table.
+   --  @param State See package contract for this parameter.
+   --  @param Class See package contract for this parameter.
+   --  @param Index See package contract for this parameter.
+   --  @return Operation result.
    function Has_Table
      (State : Huffman_State;
       Class : Huffman_Class;
       Index : Huffman_Table_Index) return Boolean;
 
+   --  Definition.
+   --  @param State See package contract for this parameter.
+   --  @param Class See package contract for this parameter.
+   --  @param Index See package contract for this parameter.
+   --  @return Operation result.
    function Definition
      (State : Huffman_State;
       Class : Huffman_Class;
       Index : Huffman_Table_Index) return Huffman_Definition
      with Pre => Has_Table (State, Class, Index);
 
+   --  Counts.
+   --  @param Definition See package contract for this parameter.
+   --  @return Operation result.
    function Counts (Definition : Huffman_Definition) return Length_Counts;
+   --  Symbol total.
+   --  @param Definition See package contract for this parameter.
+   --  @return Operation result.
    function Symbol_Total (Definition : Huffman_Definition) return Symbol_Count;
+   --  Symbol.
+   --  @param Definition See package contract for this parameter.
+   --  @param Index See package contract for this parameter.
+   --  @return Operation result.
    function Symbol (Definition : Huffman_Definition; Index : Symbol_Index) return Byte
      with Pre => Natural (Index) <= Natural (Symbol_Total (Definition));
 
+   --  Standard luminance dc.
+   --  @return Operation result.
    function Standard_Luminance_DC return Huffman_Definition;
+   --  Standard luminance ac.
+   --  @return Operation result.
    function Standard_Luminance_AC return Huffman_Definition;
+   --  Standard chrominance dc.
+   --  @return Operation result.
    function Standard_Chrominance_DC return Huffman_Definition;
+   --  Standard chrominance ac.
+   --  @return Operation result.
    function Standard_Chrominance_AC return Huffman_Definition;
+   --  Optimized definition.
+   --  @param Frequencies See package contract for this parameter.
+   --  @return Operation result.
    function Optimized_Definition (Frequencies : Symbol_Frequencies) return Huffman_Definition;
 
+   --  Parse dht.
+   --  @param State See package contract for this parameter.
+   --  @param Segment See package contract for this parameter.
+   --  @return Operation result.
    function Parse_DHT
      (State : in out Huffman_State;
       Segment : in out Segments.Segment_Reader) return Results.Result;
@@ -55,10 +90,22 @@ package Jpeglib.Internal.Huffman is
       Symbol : Byte := 0;
    end record;
 
+   --  Compile.
+   --  @param Definition See package contract for this parameter.
+   --  @return Operation result.
    function Compile (Definition : Huffman_Definition) return Compile_Result;
+   --  Decode.
+   --  @param Table See package contract for this parameter.
+   --  @param Bits See package contract for this parameter.
+   --  @return Operation result.
    function Decode
      (Table : Compiled_Huffman;
       Bits : in out Bit_Streams.Bit_Reader) return Decode_Result;
+   --  Encode.
+   --  @param Table See package contract for this parameter.
+   --  @param Bits See package contract for this parameter.
+   --  @param Symbol See package contract for this parameter.
+   --  @return Operation result.
    function Encode
      (Table : Compiled_Huffman;
       Bits : in out Bit_Streams.Bit_Writer;

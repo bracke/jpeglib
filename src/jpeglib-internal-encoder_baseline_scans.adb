@@ -284,32 +284,36 @@ package body Jpeglib.Internal.Encoder_Baseline_Scans is
          for Block_Row in 0 .. Block_Rows - 1 loop
             for Block_Column in 0 .. Block_Columns - 1 loop
                declare
-                  Block_Index : constant Positive := C_Blocks'First + Block_Row * Block_Columns + Block_Column;
+                  Offset : constant Natural := Block_Row * Block_Columns + Block_Column;
+                  C_Index : constant Positive := C_Blocks'First + Offset;
+                  M_Index : constant Positive := M_Blocks'First + Offset;
+                  Y_Index : constant Positive := Y_Blocks'First + Offset;
+                  K_Index : constant Positive := K_Blocks'First + Offset;
                begin
                   Outcome :=
                     Coefficients.Encode_Baseline_Block
-                      (Bits, DC_Compile.Table, AC_Compile.Table, C_Predictor, C_Blocks (Block_Index));
+                      (Bits, DC_Compile.Table, AC_Compile.Table, C_Predictor, C_Blocks (C_Index));
                   if not Results.Succeeded (Outcome) then
                      return Outcome;
                   end if;
 
                   Outcome :=
                     Coefficients.Encode_Baseline_Block
-                      (Bits, DC_Compile.Table, AC_Compile.Table, M_Predictor, M_Blocks (Block_Index));
+                      (Bits, DC_Compile.Table, AC_Compile.Table, M_Predictor, M_Blocks (M_Index));
                   if not Results.Succeeded (Outcome) then
                      return Outcome;
                   end if;
 
                   Outcome :=
                     Coefficients.Encode_Baseline_Block
-                      (Bits, DC_Compile.Table, AC_Compile.Table, Y_Predictor, Y_Blocks (Block_Index));
+                      (Bits, DC_Compile.Table, AC_Compile.Table, Y_Predictor, Y_Blocks (Y_Index));
                   if not Results.Succeeded (Outcome) then
                      return Outcome;
                   end if;
 
                   Outcome :=
                     Coefficients.Encode_Baseline_Block
-                      (Bits, DC_Compile.Table, AC_Compile.Table, K_Predictor, K_Blocks (Block_Index));
+                      (Bits, DC_Compile.Table, AC_Compile.Table, K_Predictor, K_Blocks (K_Index));
                   if not Results.Succeeded (Outcome) then
                      return Outcome;
                   end if;

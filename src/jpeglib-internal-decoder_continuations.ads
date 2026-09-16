@@ -8,6 +8,12 @@ package Jpeglib.Internal.Decoder_Continuations is
 
    type Lossless_Sample_Array is array (Component_Index range <>, Positive range <>) of Integer;
 
+   --  Decode hierarchical lossless continuation.
+   --  @param Header See package contract for this parameter.
+   --  @param Input See package contract for this parameter.
+   --  @param Ending See package contract for this parameter.
+   --  @param Samples See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Hierarchical_Lossless_Continuation
      (Header : in out Internal.Decoder.Header_Result;
       Input : not null access Streams.Source'Class;

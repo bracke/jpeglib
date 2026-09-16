@@ -8,7 +8,9 @@ package Jpeglib.Capabilities is
    Progressive_Encode : constant Boolean := True;
    Huffman_Coding : constant Boolean := True;
    Arithmetic_Coding : constant Boolean := True;
-   Twelve_Bit_DCT : constant Boolean := True;
+   Twelve_Bit_DCT_Decode : constant Boolean := True;
+   Twelve_Bit_DCT_Encode : constant Boolean := True;
+   Twelve_Bit_DCT : constant Boolean := Twelve_Bit_DCT_Decode;
    Lossless_JPEG : constant Boolean := True;
    Hierarchical_JPEG : constant Boolean := True;
    Grayscale : constant Boolean := True;

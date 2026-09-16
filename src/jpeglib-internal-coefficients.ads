@@ -20,12 +20,25 @@ package Jpeglib.Internal.Coefficients is
       Block : Jpeglib.Coefficients.DCT_Block := [others => 0];
    end record;
 
+   --  Decode baseline block.
+   --  @param Bits See package contract for this parameter.
+   --  @param DC_Table See package contract for this parameter.
+   --  @param AC_Table See package contract for this parameter.
+   --  @param Predictor See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Baseline_Block
      (Bits : in out Bit_Streams.Bit_Reader;
       DC_Table : Huffman.Compiled_Huffman;
       AC_Table : Huffman.Compiled_Huffman;
       Predictor : in out DC_Predictor) return Block_Result;
 
+   --  Decode progressive dc first.
+   --  @param Bits See package contract for this parameter.
+   --  @param DC_Table See package contract for this parameter.
+   --  @param Predictor See package contract for this parameter.
+   --  @param Al See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_DC_First
      (Bits : in out Bit_Streams.Bit_Reader;
       DC_Table : Huffman.Compiled_Huffman;
@@ -33,11 +46,25 @@ package Jpeglib.Internal.Coefficients is
       Al : Successive_Approximation_Value;
       Block : in out Jpeglib.Coefficients.DCT_Block) return Results.Result;
 
+   --  Decode progressive dc refine.
+   --  @param Bits See package contract for this parameter.
+   --  @param Al See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_DC_Refine
      (Bits : in out Bit_Streams.Bit_Reader;
       Al : Successive_Approximation_Value;
       Block : in out Jpeglib.Coefficients.DCT_Block) return Results.Result;
 
+   --  Decode progressive ac first.
+   --  @param Bits See package contract for this parameter.
+   --  @param AC_Table See package contract for this parameter.
+   --  @param Ss See package contract for this parameter.
+   --  @param Se See package contract for this parameter.
+   --  @param Al See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @param EOB_Run See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_AC_First
      (Bits : in out Bit_Streams.Bit_Reader;
       AC_Table : Huffman.Compiled_Huffman;
@@ -47,6 +74,15 @@ package Jpeglib.Internal.Coefficients is
       Block : in out Jpeglib.Coefficients.DCT_Block;
       EOB_Run : in out EOB_Run_Count) return Results.Result;
 
+   --  Decode progressive ac refine.
+   --  @param Bits See package contract for this parameter.
+   --  @param AC_Table See package contract for this parameter.
+   --  @param Ss See package contract for this parameter.
+   --  @param Se See package contract for this parameter.
+   --  @param Al See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @param EOB_Run See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_AC_Refine
      (Bits : in out Bit_Streams.Bit_Reader;
       AC_Table : Huffman.Compiled_Huffman;
@@ -56,6 +92,13 @@ package Jpeglib.Internal.Coefficients is
       Block : in out Jpeglib.Coefficients.DCT_Block;
       EOB_Run : in out EOB_Run_Count) return Results.Result;
 
+   --  Encode baseline block.
+   --  @param Bits See package contract for this parameter.
+   --  @param DC_Table See package contract for this parameter.
+   --  @param AC_Table See package contract for this parameter.
+   --  @param Predictor See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Baseline_Block
      (Bits : in out Bit_Streams.Bit_Writer;
       DC_Table : Huffman.Compiled_Huffman;
@@ -63,11 +106,23 @@ package Jpeglib.Internal.Coefficients is
       Predictor : in out DC_Predictor;
       Block : Jpeglib.Coefficients.DCT_Block) return Results.Result;
 
+   --  Encode lossless difference.
+   --  @param Bits See package contract for this parameter.
+   --  @param DC_Table See package contract for this parameter.
+   --  @param Difference See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Lossless_Difference
      (Bits : in out Bit_Streams.Bit_Writer;
       DC_Table : Huffman.Compiled_Huffman;
       Difference : Interfaces.Integer_32) return Results.Result;
 
+   --  Encode progressive dc first block.
+   --  @param Bits See package contract for this parameter.
+   --  @param DC_Table See package contract for this parameter.
+   --  @param Predictor See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @param Al See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Progressive_DC_First_Block
      (Bits : in out Bit_Streams.Bit_Writer;
       DC_Table : Huffman.Compiled_Huffman;
@@ -75,17 +130,36 @@ package Jpeglib.Internal.Coefficients is
       Block : Jpeglib.Coefficients.DCT_Block;
       Al : Successive_Approximation_Value := 0) return Results.Result;
 
+   --  Encode progressive dc refine block.
+   --  @param Bits See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @param Al See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Progressive_DC_Refine_Block
      (Bits : in out Bit_Streams.Bit_Writer;
       Block : Jpeglib.Coefficients.DCT_Block;
       Al : Successive_Approximation_Value := 0) return Results.Result;
 
+   --  Encode progressive ac first block.
+   --  @param Bits See package contract for this parameter.
+   --  @param AC_Table See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @param Al See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Progressive_AC_First_Block
      (Bits : in out Bit_Streams.Bit_Writer;
       AC_Table : Huffman.Compiled_Huffman;
       Block : Jpeglib.Coefficients.DCT_Block;
       Al : Successive_Approximation_Value := 0) return Results.Result;
 
+   --  Encode progressive ac refine block.
+   --  @param Bits See package contract for this parameter.
+   --  @param AC_Table See package contract for this parameter.
+   --  @param Block See package contract for this parameter.
+   --  @param Ss See package contract for this parameter.
+   --  @param Se See package contract for this parameter.
+   --  @param Al See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Progressive_AC_Refine_Block
      (Bits : in out Bit_Streams.Bit_Writer;
       AC_Table : Huffman.Compiled_Huffman;
@@ -101,6 +175,14 @@ package Jpeglib.Internal.Coefficients is
       Blocks_Decoded : Block_Count := 0;
    end record;
 
+   --  Decode baseline scan.
+   --  @param Frame See package contract for this parameter.
+   --  @param Scan See package contract for this parameter.
+   --  @param Tables See package contract for this parameter.
+   --  @param Entropy See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Restart See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Baseline_Scan
      (Frame : Frames.Frame;
       Scan : Scans.Scan;
@@ -109,6 +191,16 @@ package Jpeglib.Internal.Coefficients is
       Blocks : in out Block_Array;
       Restart : Restart_Interval := 0) return Scan_Result;
 
+   --  Decode baseline scan.
+   --  @param Frame See package contract for this parameter.
+   --  @param Scan See package contract for this parameter.
+   --  @param Tables See package contract for this parameter.
+   --  @param Entropy See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Next_Block See package contract for this parameter.
+   --  @param Predictors See package contract for this parameter.
+   --  @param Restart See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Baseline_Scan
      (Frame : Frames.Frame;
       Scan : Scans.Scan;
@@ -119,6 +211,19 @@ package Jpeglib.Internal.Coefficients is
       Predictors : in out Predictor_Array;
       Restart : Restart_Interval := 0) return Scan_Result;
 
+   --  Decode arithmetic dc eob scan.
+   --  @param Frame See package contract for this parameter.
+   --  @param Scan See package contract for this parameter.
+   --  @param Tables See package contract for this parameter.
+   --  @param Entropy See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Next_Block See package contract for this parameter.
+   --  @param Predictors See package contract for this parameter.
+   --  @param DC_Bins See package contract for this parameter.
+   --  @param AC_Bins See package contract for this parameter.
+   --  @param DC_Contexts See package contract for this parameter.
+   --  @param Restart See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Arithmetic_DC_EOB_Scan
      (Frame : Frames.Frame;
       Scan : Scans.Scan;
@@ -134,6 +239,20 @@ package Jpeglib.Internal.Coefficients is
      with Pre => DC_Bins'First <= 0 and then DC_Bins'Last >= 48
                  and then AC_Bins'First <= 0 and then AC_Bins'Last >= 0;
 
+   --  Decode arithmetic sequential scan.
+   --  @param Frame See package contract for this parameter.
+   --  @param Scan See package contract for this parameter.
+   --  @param Tables See package contract for this parameter.
+   --  @param Entropy See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Next_Block See package contract for this parameter.
+   --  @param Predictors See package contract for this parameter.
+   --  @param DC_Bins See package contract for this parameter.
+   --  @param AC_Bins See package contract for this parameter.
+   --  @param Fixed_Bin See package contract for this parameter.
+   --  @param DC_Contexts See package contract for this parameter.
+   --  @param Restart See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Arithmetic_Sequential_Scan
      (Frame : Frames.Frame;
       Scan : Scans.Scan;
@@ -150,6 +269,19 @@ package Jpeglib.Internal.Coefficients is
      with Pre => DC_Bins'First <= 0 and then DC_Bins'Last >= 48
                  and then AC_Bins'First <= 0 and then AC_Bins'Last >= 245;
 
+   --  Decode arithmetic progressive scan.
+   --  @param Frame See package contract for this parameter.
+   --  @param Scan See package contract for this parameter.
+   --  @param Tables See package contract for this parameter.
+   --  @param Entropy See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Decoded_Coefficients See package contract for this parameter.
+   --  @param Predictors See package contract for this parameter.
+   --  @param DC_Bins See package contract for this parameter.
+   --  @param AC_Bins See package contract for this parameter.
+   --  @param DC_Contexts See package contract for this parameter.
+   --  @param Restart See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Arithmetic_Progressive_Scan
      (Frame : Frames.Frame;
       Scan : Scans.Scan;
@@ -165,6 +297,14 @@ package Jpeglib.Internal.Coefficients is
      with Pre => DC_Bins'First <= 0 and then DC_Bins'Last >= 48
                  and then AC_Bins'First <= 0 and then AC_Bins'Last >= 245;
 
+   --  Decode progressive scan.
+   --  @param Frame See package contract for this parameter.
+   --  @param Scan See package contract for this parameter.
+   --  @param Tables See package contract for this parameter.
+   --  @param Entropy See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Restart See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_Scan
      (Frame : Frames.Frame;
       Scan : Scans.Scan;
@@ -173,6 +313,15 @@ package Jpeglib.Internal.Coefficients is
       Blocks : in out Block_Array;
       Restart : Restart_Interval := 0) return Scan_Result;
 
+   --  Decode progressive scan.
+   --  @param Frame See package contract for this parameter.
+   --  @param Scan See package contract for this parameter.
+   --  @param Tables See package contract for this parameter.
+   --  @param Entropy See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param State See package contract for this parameter.
+   --  @param Restart See package contract for this parameter.
+   --  @return Operation result.
    function Decode_Progressive_Scan
      (Frame : Frames.Frame;
       Scan : Scans.Scan;
@@ -182,6 +331,14 @@ package Jpeglib.Internal.Coefficients is
       State : in out Progressive.Scan_State;
       Restart : Restart_Interval := 0) return Scan_Result;
 
+   --  Encode baseline scan.
+   --  @param Frame See package contract for this parameter.
+   --  @param Scan See package contract for this parameter.
+   --  @param Tables See package contract for this parameter.
+   --  @param Bits See package contract for this parameter.
+   --  @param Blocks See package contract for this parameter.
+   --  @param Restart See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Baseline_Scan
      (Frame : Frames.Frame;
       Scan : Scans.Scan;

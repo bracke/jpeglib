@@ -40,7 +40,9 @@ package body Jpeglib_Testing.Test_Capabilities_Release is
       Assert (Jpeglib.Capabilities.Progressive_Decode, "progressive image decode must be advertised");
       Assert (Jpeglib.Capabilities.Progressive_Encode, "progressive encode must be advertised");
       Assert (Jpeglib.Capabilities.Arithmetic_Coding, "arithmetic coding must be advertised");
-      Assert (Jpeglib.Capabilities.Twelve_Bit_DCT, "12-bit DCT must be advertised");
+      Assert (Jpeglib.Capabilities.Twelve_Bit_DCT_Decode, "12-bit DCT decode must be advertised");
+      Assert (Jpeglib.Capabilities.Twelve_Bit_DCT_Encode, "12-bit DCT encode must be advertised");
+      Assert (Jpeglib.Capabilities.Twelve_Bit_DCT, "legacy 12-bit DCT capability must remain advertised");
       Assert (Jpeglib.Capabilities.Lossless_JPEG, "lossless JPEG must be advertised");
       Assert (Jpeglib.Capabilities.Hierarchical_JPEG, "hierarchical JPEG must be advertised");
       Assert (Jpeglib.Capabilities.YCCK, "YCCK must be advertised");

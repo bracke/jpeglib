@@ -49,23 +49,47 @@ package Jpeglib.Internal.Markers is
    COM : constant Marker_Code := 16#FE#;
    TEM : constant Marker_Code := 16#01#;
 
+   --  Is restart.
+   --  @param Marker See package contract for this parameter.
+   --  @return Operation result.
    function Is_Restart (Marker : Marker_Code) return Boolean is (Marker in RST0 .. RST7)
      with SPARK_Mode => On;
+   --  Restart number.
+   --  @param Marker See package contract for this parameter.
+   --  @return Operation result.
    function Restart_Number (Marker : Marker_Code) return Natural
      with Pre => Is_Restart (Marker),
           Post => Restart_Number'Result <= 7,
           SPARK_Mode => On;
 
+   --  Is app.
+   --  @param Marker See package contract for this parameter.
+   --  @return Operation result.
    function Is_APP (Marker : Marker_Code) return Boolean is (Marker in APP0 .. APP15)
      with SPARK_Mode => On;
+   --  Is jpg extension.
+   --  @param Marker See package contract for this parameter.
+   --  @return Operation result.
    function Is_JPG_Extension (Marker : Marker_Code) return Boolean is (Marker in JPG0 .. JPG13)
      with SPARK_Mode => On;
+   --  Is frame.
+   --  @param Marker See package contract for this parameter.
+   --  @return Operation result.
    function Is_Frame (Marker : Marker_Code) return Boolean
      with SPARK_Mode => On;
+   --  Is standalone.
+   --  @param Marker See package contract for this parameter.
+   --  @return Operation result.
    function Is_Standalone (Marker : Marker_Code) return Boolean
      with SPARK_Mode => On;
+   --  Has length.
+   --  @param Marker See package contract for this parameter.
+   --  @return Operation result.
    function Has_Length (Marker : Marker_Code) return Boolean
      with SPARK_Mode => On;
+   --  Is reserved.
+   --  @param Marker See package contract for this parameter.
+   --  @return Operation result.
    function Is_Reserved (Marker : Marker_Code) return Boolean
      with SPARK_Mode => On;
 
@@ -75,5 +99,8 @@ package Jpeglib.Internal.Markers is
       Marker : Marker_Code := 0;
    end record;
 
+   --  Read next.
+   --  @param Input See package contract for this parameter.
+   --  @return Operation result.
    function Read_Next (Input : in out Streams.Source'Class) return Marker_Result;
 end Jpeglib.Internal.Markers;

@@ -35,7 +35,11 @@ raw-component streams. Adobe APP14 transform 2 YCCK
 decode is implemented for four-component images. Reduced IDCT output can decode
 at full, half, quarter, or eighth size. Arithmetic-coded and differential DCT
 decode and encode, DHP-marked hierarchical DCT encode, multi-frame
-hierarchical lossless encode, 12-bit sequential DCT byte-output decode,
+hierarchical lossless encode, 12-bit sequential DCT byte-output decode
+through the public image/raw/coefficient decode paths, 12-bit sequential DCT
+coefficient encode for grayscale, YCbCr, CMYK, and YCCK streams,
+packed raw 12-bit grayscale, full-resolution YCbCr, CMYK, and YCCK sequential
+and progressive DCT encode,
 Huffman, arithmetic, differential, and hierarchical lossless decode and encode,
 and hierarchical header reporting are implemented for the public V1 API. Unknown
 two-component image decode maps the first component as gray and the second as

@@ -46,35 +46,72 @@ package Jpeglib.Coefficients is
       Invalid_Window,
       Output_Too_Small);
 
+   --  Transform.
+   --  @param Block See package contract for this parameter.
+   --  @param Operation See package contract for this parameter.
+   --  @return Operation result.
    function Transform
      (Block : DCT_Block;
       Operation : Block_Transform) return DCT_Block;
 
+   --  Apply transform.
+   --  @param Block See package contract for this parameter.
+   --  @param Operation See package contract for this parameter.
    procedure Apply_Transform
      (Block : in out DCT_Block;
       Operation : Block_Transform);
 
+   --  Block count for.
+   --  @param Layout See package contract for this parameter.
+   --  @return Operation result.
    function Block_Count_For
      (Layout : Component_Block_Layout) return Component_Block_Count;
 
+   --  Total block count.
+   --  @param Layouts See package contract for this parameter.
+   --  @return Operation result.
    function Total_Block_Count
      (Layouts : Component_Block_Layout_Array) return Component_Block_Count;
 
+   --  Full windows.
+   --  @param Layouts See package contract for this parameter.
+   --  @return Operation result.
    function Full_Windows
      (Layouts : Component_Block_Layout_Array) return Component_Block_Window_Array;
 
+   --  Transformed layout.
+   --  @param Window See package contract for this parameter.
+   --  @param Operation See package contract for this parameter.
+   --  @return Operation result.
    function Transformed_Layout
      (Window : Component_Block_Window;
       Operation : Block_Transform) return Component_Block_Layout;
 
+   --  Transformed layouts.
+   --  @param Windows See package contract for this parameter.
+   --  @param Operation See package contract for this parameter.
+   --  @return Operation result.
    function Transformed_Layouts
      (Windows : Component_Block_Window_Array;
       Operation : Block_Transform) return Component_Block_Layout_Array;
 
+   --  Validate windows.
+   --  @param Layouts See package contract for this parameter.
+   --  @param Windows See package contract for this parameter.
+   --  @return Operation result.
    function Validate_Windows
      (Layouts : Component_Block_Layout_Array;
       Windows : Component_Block_Window_Array) return Transform_Status;
 
+   --  Transform image.
+   --  @param Input_Blocks See package contract for this parameter.
+   --  @param Input_Layouts See package contract for this parameter.
+   --  @param Windows See package contract for this parameter.
+   --  @param Operation See package contract for this parameter.
+   --  @param Output_Blocks See package contract for this parameter.
+   --  @param Output_Layouts See package contract for this parameter.
+   --  @param Blocks_Written See package contract for this parameter.
+   --  @param Status See package contract for this parameter.
    procedure Transform_Image
      (Input_Blocks : DCT_Block_Array;
       Input_Layouts : Component_Block_Layout_Array;

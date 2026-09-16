@@ -24,6 +24,9 @@ package Jpeglib.Encoding is
    type Chroma_Subsampling is (Subsampling_444, Subsampling_422, Subsampling_420, Subsampling_411);
    type Progressive_Script is (No_Progressive, Balanced_Progressive, Fast_Preview_Progressive);
    type Encoding_Preset is (Default_Preset, Photo_Preset, Graphic_Preset, Small_File_Preset);
+   type Raw_Sample_Byte_Order is
+     (Most_Significant_Byte_First,
+      Least_Significant_Byte_First);
    type Encoding_Mode is
      (Sequential_DCT,
       Arithmetic_Sequential_DCT,
@@ -58,23 +61,102 @@ package Jpeglib.Encoding is
 
    type Encoder is limited private;
 
+   type Raw_Component_View is record
+      Width : Natural := 0;
+      Height : Natural := 0;
+      Stride : Row_Stride := 0;
+      Accessible_Bytes : Byte_Count := 0;
+      Storage : Streams.Byte_Array_Access := null;
+   end record;
+   type Raw_Component_View_Array is array (Component_Index range <>) of Raw_Component_View;
+
+   --  Initialize.
+   --  @param Object See package contract for this parameter.
+   --  @param Output See package contract for this parameter.
+   --  @param Encode_Options See package contract for this parameter.
+   --  @param Encode_Limits See package contract for this parameter.
    procedure Initialize
      (Object : in out Encoder;
       Output : not null access Streams.Destination'Class;
       Encode_Options : Options := (others => <>);
       Encode_Limits : Limits.Limit_Set := Limits.Default_Limits);
 
+   --  Reset.
+   --  @param Object See package contract for this parameter.
+   --  @param Output See package contract for this parameter.
    procedure Reset (Object : in out Encoder; Output : not null access Streams.Destination'Class);
+   --  State.
+   --  @param Object See package contract for this parameter.
+   --  @return Operation result.
    function State (Object : Encoder) return Encoder_State;
+   --  Define image.
+   --  @param Object See package contract for this parameter.
+   --  @param Descriptor See package contract for this parameter.
+   --  @return Operation result.
    function Define_Image (Object : in out Encoder; Descriptor : Images.Image_Descriptor) return Results.Result;
+   --  Add metadata segment.
+   --  @param Object See package contract for this parameter.
+   --  @param Marker See package contract for this parameter.
+   --  @param Payload See package contract for this parameter.
+   --  @return Operation result.
    function Add_Metadata_Segment
      (Object : in out Encoder;
       Marker : Marker_Code;
       Payload : not null Streams.Const_Byte_Array_Access) return Results.Result;
+   --  Encode raw grayscale twelve bit.
+   --  @param Object See package contract for this parameter.
+   --  @param Input See package contract for this parameter.
+   --  @param Byte_Order See package contract for this parameter.
+   --  @return Operation result.
+   function Encode_Raw_Grayscale_Twelve_Bit
+     (Object : in out Encoder;
+      Input : Raw_Component_View;
+      Byte_Order : Raw_Sample_Byte_Order := Most_Significant_Byte_First) return Results.Result;
+   --  Encode raw ycbcr twelve bit.
+   --  @param Object See package contract for this parameter.
+   --  @param Components See package contract for this parameter.
+   --  @param Byte_Order See package contract for this parameter.
+   --  @return Operation result.
+   function Encode_Raw_YCbCr_Twelve_Bit
+     (Object : in out Encoder;
+      Components : Raw_Component_View_Array;
+      Byte_Order : Raw_Sample_Byte_Order := Most_Significant_Byte_First) return Results.Result;
+   --  Encode raw cmyk twelve bit.
+   --  @param Object See package contract for this parameter.
+   --  @param Components See package contract for this parameter.
+   --  @param Byte_Order See package contract for this parameter.
+   --  @return Operation result.
+   function Encode_Raw_CMYK_Twelve_Bit
+     (Object : in out Encoder;
+      Components : Raw_Component_View_Array;
+      Byte_Order : Raw_Sample_Byte_Order := Most_Significant_Byte_First) return Results.Result;
+   --  Encode raw ycck twelve bit.
+   --  @param Object See package contract for this parameter.
+   --  @param Components See package contract for this parameter.
+   --  @param Byte_Order See package contract for this parameter.
+   --  @return Operation result.
+   function Encode_Raw_YCCK_Twelve_Bit
+     (Object : in out Encoder;
+      Components : Raw_Component_View_Array;
+      Byte_Order : Raw_Sample_Byte_Order := Most_Significant_Byte_First) return Results.Result;
+   --  Encode image.
+   --  @param Object See package contract for this parameter.
+   --  @param Input See package contract for this parameter.
+   --  @return Operation result.
    function Encode_Image (Object : in out Encoder; Input : Images.Image_View) return Results.Result;
+   --  Finish.
+   --  @param Object See package contract for this parameter.
+   --  @return Operation result.
    function Finish (Object : in out Encoder) return Results.Result;
+   --  Last error.
+   --  @param Object See package contract for this parameter.
+   --  @return Operation result.
    function Last_Error (Object : Encoder) return Errors.Error;
+   --  Cancel.
+   --  @param Object See package contract for this parameter.
    procedure Cancel (Object : in out Encoder);
+   --  Finalize.
+   --  @param Object See package contract for this parameter.
    procedure Finalize (Object : in out Encoder);
 
 private

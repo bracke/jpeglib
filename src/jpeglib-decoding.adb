@@ -21,6 +21,271 @@ package body Jpeglib.Decoding is
    use type Internal.Sampling.Visible_Sample_Count;
    use type Streams.Byte_Array_Access;
 
+   function Effective_Raw_Output_Precision
+     (Decode_Options : Options;
+      Source_Precision : Sample_Precision) return Sample_Precision is
+   begin
+      if Decode_Options.Raw_Precision = Preserve_Source_Precision then
+         return Source_Precision;
+      else
+         return Decode_Options.Raw_Output_Precision;
+      end if;
+   end Effective_Raw_Output_Precision;
+
+   function Raw_Bytes_Per_Sample
+     (Output_Precision : Sample_Precision) return Byte_Count is
+   begin
+      if Output_Precision = 8 then
+         return 1;
+      else
+         return 2;
+      end if;
+   end Raw_Bytes_Per_Sample;
+
+   function Raw_Minimum_Row_Bytes
+     (Width : Natural;
+      Decode_Options : Options;
+      Source_Precision : Sample_Precision) return Byte_Count
+   is
+      Sample_Bytes : constant Byte_Count :=
+        Raw_Bytes_Per_Sample
+          (Effective_Raw_Output_Precision (Decode_Options, Source_Precision));
+   begin
+      if Byte_Count (Width) > Byte_Count'Last / Sample_Bytes then
+         return Byte_Count'Last;
+      end if;
+
+      return
+        Byte_Count (Width)
+        * Sample_Bytes;
+   end Raw_Minimum_Row_Bytes;
+
+   function Raw_Accessible_Bytes
+     (Width : Natural;
+      Height : Natural;
+      Stride : Row_Stride;
+      Decode_Options : Options;
+      Source_Precision : Sample_Precision) return Byte_Count
+   is
+      Row_Bytes : constant Byte_Count :=
+        Raw_Minimum_Row_Bytes (Width, Decode_Options, Source_Precision);
+   begin
+      if Height = 0 then
+         return 0;
+      elsif Row_Bytes = Byte_Count'Last then
+         return Byte_Count'Last;
+      elsif Height > 1
+        and then Stride > Row_Stride (Byte_Count'Last / Byte_Count (Height - 1))
+      then
+         return Byte_Count'Last;
+      else
+         declare
+            Prefix : constant Byte_Count :=
+              Byte_Count (Stride) * Byte_Count (Height - 1);
+         begin
+            if Prefix > Byte_Count'Last - Row_Bytes then
+               return Byte_Count'Last;
+            else
+               return Prefix + Row_Bytes;
+            end if;
+         end;
+      end if;
+   end Raw_Accessible_Bytes;
+
+   function Raw_Component_View_Is_Valid
+     (View : Raw_Component_View;
+      Expected_Width : Natural;
+      Expected_Height : Natural;
+      Decode_Options : Options;
+      Source_Precision : Sample_Precision) return Boolean
+   is
+      Minimum : constant Byte_Count :=
+        Raw_Accessible_Bytes
+          (Expected_Width,
+           Expected_Height,
+           View.Stride,
+           Decode_Options,
+           Source_Precision);
+   begin
+      return View.Storage /= null
+        and then View.Width = Expected_Width
+        and then View.Height = Expected_Height
+        and then
+          View.Stride
+          >= Row_Stride
+               (Raw_Minimum_Row_Bytes
+                  (Expected_Width,
+                   Decode_Options,
+                   Source_Precision))
+        and then View.Accessible_Bytes >= Minimum
+        and then Byte_Count (View.Storage'Length) >= Minimum;
+   end Raw_Component_View_Is_Valid;
+
+   function Raw_Sample_Offset
+     (View : Raw_Component_View;
+      Row : Natural;
+      Column : Natural;
+      Output_Precision : Sample_Precision;
+      Offset : out Byte_Count) return Boolean
+   is
+      Sample_Bytes : constant Byte_Count :=
+        Raw_Bytes_Per_Sample (Output_Precision);
+   begin
+      Offset := 0;
+
+      if View.Storage = null
+        or else Row >= View.Height
+        or else Column >= View.Width
+      then
+         return False;
+      end if;
+
+      if Row > 0 then
+         if View.Stride > Row_Stride (Byte_Count'Last / Byte_Count (Row)) then
+            return False;
+         end if;
+
+         Offset := Byte_Count (View.Stride) * Byte_Count (Row);
+      end if;
+
+      if Column > 0 then
+         if Byte_Count (Column) > Byte_Count'Last / Sample_Bytes then
+            return False;
+         elsif Offset > Byte_Count'Last - Byte_Count (Column) * Sample_Bytes then
+            return False;
+         end if;
+
+         Offset := Offset + Byte_Count (Column) * Sample_Bytes;
+      end if;
+
+      if Offset > Byte_Count'Last - Sample_Bytes then
+         return False;
+      end if;
+
+      return Offset + Sample_Bytes <= View.Accessible_Bytes
+        and then Offset + Sample_Bytes <= Byte_Count (View.Storage'Length);
+   end Raw_Sample_Offset;
+
+   function Raw_Sample_Position_Is_Valid
+     (View : Raw_Component_View;
+      Row : Natural;
+      Column : Natural;
+      Output_Precision : Sample_Precision) return Boolean
+   is
+      Offset : Byte_Count := 0;
+   begin
+      return Raw_Sample_Offset (View, Row, Column, Output_Precision, Offset);
+   end Raw_Sample_Position_Is_Valid;
+
+   function Raw_Sample_Position_Is_Valid
+     (View : Raw_Component_View;
+      Row : Natural;
+      Column : Natural;
+      Decode_Options : Options;
+      Source_Precision : Sample_Precision) return Boolean is
+   begin
+      return
+        Raw_Sample_Position_Is_Valid
+          (View,
+           Row,
+           Column,
+           Effective_Raw_Output_Precision (Decode_Options, Source_Precision));
+   end Raw_Sample_Position_Is_Valid;
+
+   function Raw_Sample_At
+     (View : Raw_Component_View;
+      Row : Natural;
+      Column : Natural;
+      Output_Precision : Sample_Precision;
+      Byte_Order : Raw_Sample_Byte_Order := Most_Significant_Byte_First) return Raw_Sample_Value
+   is
+      Sample_Bytes : constant Positive :=
+        Positive (Raw_Bytes_Per_Sample (Output_Precision));
+      Offset : Byte_Count := 0;
+   begin
+      if not Raw_Sample_Offset (View, Row, Column, Output_Precision, Offset) then
+         return 0;
+      end if;
+
+      declare
+         First : constant Natural := View.Storage'First + Natural (Offset);
+      begin
+      if Sample_Bytes = 1 then
+         return Raw_Sample_Value (View.Storage (First));
+      elsif Byte_Order = Most_Significant_Byte_First then
+         return
+           Raw_Sample_Value
+             (Natural (View.Storage (First)) * 256
+              + Natural (View.Storage (First + 1)));
+      else
+         return
+           Raw_Sample_Value
+             (Natural (View.Storage (First + 1)) * 256
+              + Natural (View.Storage (First)));
+      end if;
+      end;
+   end Raw_Sample_At;
+
+   function Try_Raw_Sample_At
+     (View : Raw_Component_View;
+      Row : Natural;
+      Column : Natural;
+      Output_Precision : Sample_Precision;
+      Byte_Order : Raw_Sample_Byte_Order := Most_Significant_Byte_First) return Raw_Sample_Result is
+   begin
+      if not Raw_Sample_Position_Is_Valid (View, Row, Column, Output_Precision) then
+         return
+           (Outcome =>
+              Results.Failure
+                (Errors.Make
+                   (Errors.Output_Limit_Exceeded,
+                    (Detail => Long_Long_Integer (Row), others => <>))),
+            Sample => 0);
+      end if;
+
+      return
+        (Outcome => Results.Success,
+         Sample =>
+           Raw_Sample_At
+             (View,
+              Row,
+              Column,
+              Output_Precision,
+              Byte_Order));
+   end Try_Raw_Sample_At;
+
+   function Try_Raw_Sample_At
+     (View : Raw_Component_View;
+      Row : Natural;
+      Column : Natural;
+      Decode_Options : Options;
+      Source_Precision : Sample_Precision) return Raw_Sample_Result is
+   begin
+      return
+        Try_Raw_Sample_At
+          (View,
+           Row,
+           Column,
+           Effective_Raw_Output_Precision (Decode_Options, Source_Precision),
+           Decode_Options.Raw_Byte_Order);
+   end Try_Raw_Sample_At;
+
+   function Raw_Sample_At
+     (View : Raw_Component_View;
+      Row : Natural;
+      Column : Natural;
+      Decode_Options : Options;
+      Source_Precision : Sample_Precision) return Raw_Sample_Value is
+   begin
+      return
+        Raw_Sample_At
+          (View,
+           Row,
+           Column,
+           Effective_Raw_Output_Precision (Decode_Options, Source_Precision),
+           Decode_Options.Raw_Byte_Order);
+   end Raw_Sample_At;
+
    function Compose_Hierarchical_DCT_Continuation
      (Object : in out Decoder;
       Base_Result : Internal.Decoder.Coefficient_Result;
@@ -1410,32 +1675,24 @@ package body Jpeglib.Decoding is
 
       function Effective_Raw_Precision return Sample_Precision is
       begin
-         if Object.Decode_Options.Raw_Precision = Preserve_Source_Precision then
-            return Internal.Frames.Precision (Header.Frame);
-         else
-            return Object.Decode_Options.Raw_Output_Precision;
-         end if;
+         return
+           Effective_Raw_Output_Precision
+             (Object.Decode_Options,
+              Internal.Frames.Precision (Header.Frame));
       end Effective_Raw_Precision;
 
       function Raw_View_Is_Valid
         (View : Raw_Component_View;
          Expected_Width : Natural;
-         Expected_Height : Natural) return Boolean
-      is
-         Sample_Bytes : constant Positive :=
-           (if Effective_Raw_Precision = 8 then 1 else 2);
-         Minimum : constant Byte_Count :=
-           (if Expected_Height = 0 then 0
-            else
-              Byte_Count (View.Stride) * Byte_Count (Expected_Height - 1)
-              + Byte_Count (Expected_Width * Sample_Bytes));
+         Expected_Height : Natural) return Boolean is
       begin
-         return View.Storage /= null
-           and then View.Width = Expected_Width
-           and then View.Height = Expected_Height
-           and then View.Stride >= Row_Stride (Expected_Width * Sample_Bytes)
-           and then View.Accessible_Bytes >= Minimum
-           and then Byte_Count (View.Storage'Length) >= Minimum;
+         return
+           Raw_Component_View_Is_Valid
+             (View,
+              Expected_Width,
+              Expected_Height,
+              Object.Decode_Options,
+              Internal.Frames.Precision (Header.Frame));
       end Raw_View_Is_Valid;
 
       function Raw_Output_Error (Detail : Long_Long_Integer := 0) return Errors.Error is
@@ -1476,15 +1733,29 @@ package body Jpeglib.Decoding is
       is
          Value : constant Integer := Converted_Raw_Sample (Sample, Internal.Frames.Precision (Header.Frame));
          Sample_Bytes : constant Positive :=
-           (if Effective_Raw_Precision = 8 then 1 else 2);
-         Offset : constant Natural := Row * Natural (Target.Stride) + Column * Sample_Bytes;
+           Positive (Raw_Bytes_Per_Sample (Effective_Raw_Precision));
+         Offset : Byte_Count := Byte_Count (Column) * Byte_Count (Sample_Bytes);
       begin
-         if Sample_Bytes = 1 then
-            Target.Storage (Target.Storage'First + Offset) := Byte (Value);
-         else
-            Target.Storage (Target.Storage'First + Offset) := Byte (Value / 256);
-            Target.Storage (Target.Storage'First + Offset + 1) := Byte (Value mod 256);
+         if Row > 0 then
+            Offset := Offset + Byte_Count (Row) * Byte_Count (Target.Stride);
          end if;
+
+         declare
+            First : constant Natural := Target.Storage'First + Natural (Offset);
+         begin
+            if Sample_Bytes = 1 then
+               Target.Storage (First) := Byte (Value);
+            else
+               case Object.Decode_Options.Raw_Byte_Order is
+                  when Most_Significant_Byte_First =>
+                     Target.Storage (First) := Byte (Value / 256);
+                     Target.Storage (First + 1) := Byte (Value mod 256);
+                  when Least_Significant_Byte_First =>
+                     Target.Storage (First) := Byte (Value mod 256);
+                     Target.Storage (First + 1) := Byte (Value / 256);
+               end case;
+            end if;
+         end;
       end Store_Raw_Sample;
 
       function Validate_Raw_Output return Results.Result is
@@ -1554,8 +1825,8 @@ package body Jpeglib.Decoding is
            Internal.Quantization.Table (Header.Quantization_State, Component.Quantization_Table);
          Dequantized : constant Internal.Transforms.Dequantized_Block :=
            Internal.Transforms.Dequantize (Blocks (Block_Number), Table);
-         Samples : constant Internal.Transforms.Sample_Block :=
-           Internal.Transforms.Reconstruct_Block
+         Samples : constant Internal.Transforms.Sample_Value_Block :=
+           Internal.Transforms.Reconstruct_Block_Values
              (Dequantized, Internal.Frames.Precision (Header.Frame));
          Placement : constant Internal.Sampling.Block_Placement :=
            Internal.Sampling.Placement (Header.Frame, Component_Index_Value, MCU_C, MCU_R, H, V);
@@ -1564,12 +1835,11 @@ package body Jpeglib.Decoding is
          if Placement.Visible_Width > 0 and then Placement.Visible_Height > 0 then
             for Y in Natural range 0 .. Natural (Placement.Visible_Height) - 1 loop
                for X in Natural range 0 .. Natural (Placement.Visible_Width) - 1 loop
-                  Target.Storage
-                    (Target.Storage'First
-                     + (Natural (Placement.Row) + Y) * Natural (Target.Stride)
-                     + Natural (Placement.Column)
-                     + X) :=
-                    Samples (Coefficient_Index (Y * 8 + X));
+                  Store_Raw_Sample
+                    (Target,
+                     Natural (Placement.Row) + Y,
+                     Natural (Placement.Column) + X,
+                     Integer (Samples (Coefficient_Index (Y * 8 + X))));
                end loop;
             end loop;
          end if;
