@@ -1,3 +1,4 @@
+with Jpeglib.Internal.Block_Heap;
 with Jpeglib.Errors;
 with Jpeglib.Internal.Encoder_Headers;
 with Jpeglib.Internal.Encoder_Arithmetic_Scans;
@@ -876,7 +877,8 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
+         Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Blocks_Room.Data.all;
          Image_Result : constant Image_Blocks.Image_Block_Result :=
            Image_Blocks.Encode_Gray_Blocks
              (Input, Luma_Quantization, Blocks, Mode => Image_Blocks.Full_Forward);
@@ -978,9 +980,12 @@ package body Jpeglib.Internal.Baseline_Encoder is
       declare
          Gray_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
          Alpha_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
-         Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
-         Alpha_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed * 2)) := [others => [others => 0]];
+         Gray_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Gray_Blocks_Room.Data.all;
+         Alpha_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Alpha_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Alpha_Blocks_Room.Data.all;
+         Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed * 2));
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Blocks_Room.Data.all;
          Plane_Result : constant Image_Blocks.Plane_Result :=
            Image_Blocks.Fill_Gray_Alpha_Planes (Input, Gray_Plane, Alpha_Plane);
          Gray_Result : Image_Blocks.Image_Block_Result;
@@ -1101,8 +1106,10 @@ package body Jpeglib.Internal.Baseline_Encoder is
       declare
          Gray_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
          Alpha_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
-         Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
-         Alpha_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
+         Gray_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Gray_Blocks_Room.Data.all;
+         Alpha_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Alpha_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Alpha_Blocks_Room.Data.all;
          Plane_Result : constant Image_Blocks.Plane_Result :=
            Image_Blocks.Fill_Gray_Alpha_Planes (Input, Gray_Plane, Alpha_Plane);
          Gray_Result : Image_Blocks.Image_Block_Result;
@@ -1233,7 +1240,8 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
+         Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Blocks_Room.Data.all;
          Image_Result : constant Image_Blocks.Image_Block_Result :=
            Image_Blocks.Encode_Gray_Blocks
              (Input, Luma_Quantization, Blocks, Mode => Image_Blocks.Full_Forward);
@@ -2119,10 +2127,14 @@ package body Jpeglib.Internal.Baseline_Encoder is
          M_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
          Y_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
          K_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         C_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         M_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         K_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
+         C_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         C_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames C_Blocks_Room.Data.all;
+         M_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         M_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames M_Blocks_Room.Data.all;
+         Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
+         K_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         K_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames K_Blocks_Room.Data.all;
          Plane_Result : Image_Blocks.Plane_Result;
          Block_Result : Image_Blocks.Image_Block_Result;
       begin
@@ -2346,10 +2358,14 @@ package body Jpeglib.Internal.Baseline_Encoder is
          M_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
          Y_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
          K_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         C_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         M_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         K_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
+         C_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         C_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames C_Blocks_Room.Data.all;
+         M_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         M_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames M_Blocks_Room.Data.all;
+         Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
+         K_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         K_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames K_Blocks_Room.Data.all;
          Shared_AC_Bins : Arithmetic.Probability_Bin_Array (0 .. 255) :=
            [others => Arithmetic.Initial_Probability_Bin];
          Plane_Result : Image_Blocks.Plane_Result;
@@ -2528,12 +2544,12 @@ package body Jpeglib.Internal.Baseline_Encoder is
          Y_Padded : Streams.Byte_Array (1 .. Positive (Y_Padded_Count)) := [others => 0];
          Cb_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
          Cr_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
-         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Y_Block_Total)) :=
-           [others => [others => 0]];
-         Cb_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Chroma_Block_Total)) :=
-           [others => [others => 0]];
-         Cr_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Chroma_Block_Total)) :=
-           [others => [others => 0]];
+         Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Y_Block_Total));
+         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
+         Cb_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
+         Cb_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Cb_Blocks_Room.Data.all;
+         Cr_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
+         Cr_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Cr_Blocks_Room.Data.all;
          Plane_Result : Image_Blocks.Plane_Result;
          Block_Result : Image_Blocks.Image_Block_Result;
       begin
@@ -2779,12 +2795,12 @@ package body Jpeglib.Internal.Baseline_Encoder is
          Y_Padded : Streams.Byte_Array (1 .. Positive (Y_Padded_Count)) := [others => 0];
          Cb_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
          Cr_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
-         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Y_Block_Total)) :=
-           [others => [others => 0]];
-         Cb_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Chroma_Block_Total)) :=
-           [others => [others => 0]];
-         Cr_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Chroma_Block_Total)) :=
-           [others => [others => 0]];
+         Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Y_Block_Total));
+         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
+         Cb_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
+         Cb_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Cb_Blocks_Room.Data.all;
+         Cr_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
+         Cr_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Cr_Blocks_Room.Data.all;
          Shared_AC_Bins : Arithmetic.Probability_Bin_Array (0 .. 255) :=
            [others => Arithmetic.Initial_Probability_Bin];
          Plane_Result : Image_Blocks.Plane_Result;
@@ -2980,7 +2996,8 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
+         Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Blocks_Room.Data.all;
          Image_Result : constant Image_Blocks.Image_Block_Result :=
            Image_Blocks.Encode_Gray_Blocks
              (Input, Luma_Quantization, Blocks, Mode => Image_Blocks.Full_Forward);
@@ -3052,8 +3069,10 @@ package body Jpeglib.Internal.Baseline_Encoder is
       declare
          Gray_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
          Alpha_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
-         Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
-         Alpha_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
+         Gray_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Gray_Blocks_Room.Data.all;
+         Alpha_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Alpha_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Alpha_Blocks_Room.Data.all;
          Plane_Result : constant Image_Blocks.Plane_Result :=
            Image_Blocks.Fill_Gray_Alpha_Planes (Input, Gray_Plane, Alpha_Plane);
          Gray_Result : Image_Blocks.Image_Block_Result;
@@ -3247,7 +3266,8 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
+         Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Blocks_Room.Data.all;
          Shared_AC_Bins : Arithmetic.Probability_Bin_Array (0 .. 255) :=
            [others => Arithmetic.Initial_Probability_Bin];
          Image_Result : constant Image_Blocks.Image_Block_Result :=
@@ -3313,8 +3333,10 @@ package body Jpeglib.Internal.Baseline_Encoder is
       declare
          Gray_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
          Alpha_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
-         Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
-         Alpha_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
+         Gray_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Gray_Blocks_Room.Data.all;
+         Alpha_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Alpha_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Alpha_Blocks_Room.Data.all;
          Plane_Result : constant Image_Blocks.Plane_Result :=
            Image_Blocks.Fill_Gray_Alpha_Planes (Input, Gray_Plane, Alpha_Plane);
          Gray_Result : Image_Blocks.Image_Block_Result;
@@ -3437,12 +3459,12 @@ package body Jpeglib.Internal.Baseline_Encoder is
          Y_Padded : Streams.Byte_Array (1 .. Positive (Y_Padded_Count)) := [others => 0];
          Cb_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
          Cr_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
-         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Y_Block_Total)) :=
-           [others => [others => 0]];
-         Cb_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Chroma_Block_Total)) :=
-           [others => [others => 0]];
-         Cr_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Chroma_Block_Total)) :=
-           [others => [others => 0]];
+         Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Y_Block_Total));
+         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
+         Cb_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
+         Cb_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Cb_Blocks_Room.Data.all;
+         Cr_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
+         Cr_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Cr_Blocks_Room.Data.all;
          Plane_Result : Image_Blocks.Plane_Result;
          Block_Result : Image_Blocks.Image_Block_Result;
       begin
@@ -3684,10 +3706,14 @@ package body Jpeglib.Internal.Baseline_Encoder is
          M_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
          Y_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
          K_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         C_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         M_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         K_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
+         C_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         C_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames C_Blocks_Room.Data.all;
+         M_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         M_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames M_Blocks_Room.Data.all;
+         Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
+         K_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         K_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames K_Blocks_Room.Data.all;
          Plane_Result : Image_Blocks.Plane_Result;
          Block_Result : Image_Blocks.Image_Block_Result;
       begin
@@ -3892,10 +3918,14 @@ package body Jpeglib.Internal.Baseline_Encoder is
          M_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
          Y_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
          K_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         C_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         M_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
-         K_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Block_Total)) := [others => [others => 0]];
+         C_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         C_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames C_Blocks_Room.Data.all;
+         M_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         M_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames M_Blocks_Room.Data.all;
+         Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
+         K_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
+         K_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames K_Blocks_Room.Data.all;
          Plane_Result : Image_Blocks.Plane_Result;
          Block_Result : Image_Blocks.Image_Block_Result;
       begin
@@ -4093,12 +4123,12 @@ package body Jpeglib.Internal.Baseline_Encoder is
          Y_Padded : Streams.Byte_Array (1 .. Positive (Y_Padded_Count)) := [others => 0];
          Cb_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
          Cr_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
-         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Y_Block_Total)) :=
-           [others => [others => 0]];
-         Cb_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Chroma_Block_Total)) :=
-           [others => [others => 0]];
-         Cr_Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Chroma_Block_Total)) :=
-           [others => [others => 0]];
+         Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Y_Block_Total));
+         Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
+         Cb_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
+         Cb_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Cb_Blocks_Room.Data.all;
+         Cr_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
+         Cr_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Cr_Blocks_Room.Data.all;
          Plane_Result : Image_Blocks.Plane_Result;
          Block_Result : Image_Blocks.Image_Block_Result;
       begin

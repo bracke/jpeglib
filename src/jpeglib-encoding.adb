@@ -1,3 +1,4 @@
+with Jpeglib.Internal.Block_Heap;
 with Jpeglib.Coefficients;
 with Jpeglib.Internal.Baseline_Encoder;
 with Jpeglib.Internal.Checked_Arithmetic;
@@ -625,7 +626,8 @@ package body Jpeglib.Encoding is
       declare
          Quantization_Table : constant Internal.Quantization.Quantization_Table :=
            Internal.Quantization.Luma_Table_For_Quality (Object.Encode_Options.Quality);
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Needed)) := [others => [others => 0]];
+         Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Blocks_Room.Data.all;
          Samples : Internal.Transforms.Sample_Value_Block;
          Next_Block : Positive := Blocks'First;
       begin
@@ -762,7 +764,8 @@ package body Jpeglib.Encoding is
            Internal.Quantization.Luma_Table_For_Quality (Object.Encode_Options.Quality);
          Chroma_Table : constant Internal.Quantization.Quantization_Table :=
            Internal.Quantization.Chroma_Table_For_Quality (Object.Encode_Options.Quality);
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Total_Blocks)) := [others => [others => 0]];
+         Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Total_Blocks));
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Blocks_Room.Data.all;
          Layouts : constant Jpeglib.Coefficients.Component_Block_Layout_Array (1 .. 3) :=
            [others =>
               (Width_In_Blocks => Needed / Block_Count (Block_Rows),
@@ -914,7 +917,8 @@ package body Jpeglib.Encoding is
       declare
          Quantization_Table : constant Internal.Quantization.Quantization_Table :=
            Internal.Quantization.Luma_Table_For_Quality (Object.Encode_Options.Quality);
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Total_Blocks)) := [others => [others => 0]];
+         Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Total_Blocks));
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Blocks_Room.Data.all;
          Samples : Internal.Transforms.Sample_Value_Block;
 
          procedure Encode_Component
@@ -1060,7 +1064,8 @@ package body Jpeglib.Encoding is
       declare
          Quantization_Table : constant Internal.Quantization.Quantization_Table :=
            Internal.Quantization.Luma_Table_For_Quality (Object.Encode_Options.Quality);
-         Blocks : Jpeglib.Coefficients.DCT_Block_Array (1 .. Positive (Total_Blocks)) := [others => [others => 0]];
+         Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Total_Blocks));
+         Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Blocks_Room.Data.all;
          Samples : Internal.Transforms.Sample_Value_Block;
 
          procedure Encode_Component

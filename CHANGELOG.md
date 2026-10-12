@@ -2,6 +2,14 @@
 
 ## 0.1.0-dev
 
+- A picture's coefficient blocks and component planes are held on the heap
+  rather than the stack (`Jpeglib.Internal.Block_Heap`, `Plane_Heap`): a
+  block is 256 bytes for every 64 samples of every component, so a 3840x2160
+  wallpaper in full colour needed about 100 MB of stack and failed with a
+  stack overflow -- reported as an internal invariant failure -- on any
+  stack a caller would think to give it; even 1920x1080 needed more than a
+  default 8 MB stack. A 2560x1440 picture now decodes on an 8 MB task stack,
+  which the suite checks.
 - A refinement bit is ORed into a coefficient rather than added, in both
   entropy coders, for the DC and for AC coefficients: a bit already set --
   which only a corrupt stream sends twice at one plane -- leaves the

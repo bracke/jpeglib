@@ -1029,6 +1029,7 @@ package body Jpeglib_Testing.Test_Foundation is
    procedure Baseline_Encoder_Writes_Standard_Huffman_Tables (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Baseline_Encoder_Gray_Roundtrips (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Baseline_Encoder_YCbCr_Roundtrips (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Large_Picture_Decodes_On_A_Small_Stack (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Finish_After_Completed_Succeeds (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Finish_Without_Input_Fails (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Cancel_Is_Terminal (T : in out AUnit.Test_Cases.Test_Case'Class);
@@ -1870,6 +1871,10 @@ package body Jpeglib_Testing.Test_Foundation is
         (T,
          Baseline_Encoder_YCbCr_Roundtrips'Access,
          "foundation.encoder.ycbcr_roundtrip");
+      Register_Routine
+        (T,
+         Large_Picture_Decodes_On_A_Small_Stack'Access,
+         "foundation.decoder.large_picture_small_stack");
       Register_Routine
         (T,
          Public_Encoder_Finish_After_Completed_Succeeds'Access,
@@ -39401,6 +39406,113 @@ package body Jpeglib_Testing.Test_Foundation is
       Assert (Jpeglib.Results.Succeeded (Outcome), "baseline gray roundtrip decode failed");
       Assert (Decoded_Storage (1) = 129, "baseline gray roundtrip pixel mismatch");
    end Baseline_Encoder_Gray_Roundtrips;
+
+   --  A picture's coefficients and planes are held on the heap: a 2560 by
+   --  1440 picture in full colour -- 44 MB of coefficients, 11 MB of planes
+   --  -- decodes on a task with an eight-megabyte stack, as a 3840 by 2160
+   --  wallpaper did not on any stack a caller would think to give it.
+   procedure Large_Picture_Decodes_On_A_Small_Stack (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+
+      Width  : constant := 2560;
+      Height : constant := 1440;
+      Bytes  : constant := Width * Height * 3;
+
+      Input_Storage   : constant Jpeglib.Streams.Byte_Array_Access :=
+        new Jpeglib.Streams.Byte_Array (1 .. Bytes);
+      Encoded_Storage : constant Jpeglib.Streams.Byte_Array_Access :=
+        new Jpeglib.Streams.Byte_Array (1 .. Bytes);
+      Decoded_Storage : constant Jpeglib.Streams.Byte_Array_Access :=
+        new Jpeglib.Streams.Byte_Array (1 .. Bytes);
+      Encoded_Ok, Decoded_Ok : Boolean := False;
+      Encoded_Last : Natural := 0;
+   begin
+      for Row in 0 .. Height - 1 loop
+         for Column in 0 .. Width - 1 loop
+            declare
+               At_Byte : constant Positive := (Row * Width + Column) * 3 + 1;
+            begin
+               Input_Storage (At_Byte) := Jpeglib.Byte (Column mod 256);
+               Input_Storage (At_Byte + 1) := Jpeglib.Byte (Row mod 256);
+               Input_Storage (At_Byte + 2) := Jpeglib.Byte ((Row + Column) mod 256);
+            end;
+         end loop;
+      end loop;
+
+      declare
+         task Encoding_Task is
+            pragma Storage_Size (256 * 1024 * 1024);
+         end Encoding_Task;
+
+         task body Encoding_Task is
+            Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+            Input : constant Jpeglib.Images.Image_View :=
+              (Descriptor =>
+                 (Width => Width, Height => Height, Format => Jpeglib.Images.RGB_24,
+                  Stride => Jpeglib.Row_Stride (Width * 3), Accessible_Bytes => Bytes),
+               Storage => Input_Storage);
+            Outcome : Jpeglib.Results.Result;
+         begin
+            Jpeglib.Streams.Open (Destination, Encoded_Storage);
+            Outcome :=
+              Jpeglib.Internal.Baseline_Encoder.Encode_YCbCr_Image
+                (Destination, Input,
+                 Layout => Jpeglib.Internal.Image_Blocks.Subsampling_444,
+                 Quality => 90);
+            Encoded_Ok := Jpeglib.Results.Succeeded (Outcome);
+            Encoded_Last := Natural (Jpeglib.Streams.Offset (Destination));
+         exception
+            when others =>
+               Encoded_Ok := False;
+         end Encoding_Task;
+      begin
+         null;
+      end;
+      Assert (Encoded_Ok and then Encoded_Last > 0, "the large picture would not encode");
+
+      declare
+         task Decoding_Task is
+            pragma Storage_Size (8 * 1024 * 1024);
+         end Decoding_Task;
+
+         task body Decoding_Task is
+            Encoded : constant Jpeglib.Streams.Const_Byte_Array_Access :=
+              new Jpeglib.Streams.Byte_Array'(Encoded_Storage (1 .. Encoded_Last));
+            Source : aliased Jpeglib.Streams.Memory_Source;
+            Decoder : Jpeglib.Decoding.Decoder;
+            Output : Jpeglib.Images.Mutable_Image_View :=
+              (Descriptor =>
+                 (Width => Width, Height => Height, Format => Jpeglib.Images.RGB_24,
+                  Stride => Jpeglib.Row_Stride (Width * 3), Accessible_Bytes => Bytes),
+               Storage => Decoded_Storage);
+            Outcome : Jpeglib.Results.Result;
+         begin
+            Jpeglib.Streams.Open (Source, Encoded);
+            Jpeglib.Decoding.Initialize
+              (Decoder, Source'Unchecked_Access,
+               (Output_Format => Jpeglib.Images.RGB_24, others => <>));
+            Outcome := Jpeglib.Decoding.Decode_Image (Decoder, Output);
+            Decoded_Ok := Jpeglib.Results.Succeeded (Outcome);
+            Jpeglib.Decoding.Finalize (Decoder);
+         exception
+            when others =>
+               Decoded_Ok := False;
+         end Decoding_Task;
+      begin
+         null;
+      end;
+      Assert (Decoded_Ok, "the large picture would not decode on an eight-megabyte stack");
+
+      declare
+         Worst : Natural := 0;
+      begin
+         for Index in Input_Storage'Range loop
+            Worst := Natural'Max
+              (Worst, abs (Integer (Input_Storage (Index)) - Integer (Decoded_Storage (Index))));
+         end loop;
+         Assert (Worst <= 48, "the large picture decoded" & Natural'Image (Worst) & " away from its input");
+      end;
+   end Large_Picture_Decodes_On_A_Small_Stack;
 
    procedure Baseline_Encoder_YCbCr_Roundtrips (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
