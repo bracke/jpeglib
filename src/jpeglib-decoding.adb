@@ -3545,9 +3545,11 @@ package body Jpeglib.Decoding is
             declare
                C1_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 1);
                C2_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 2);
-               C1_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Natural (C1_Component.Component_Width) * Natural (C1_Component.Component_Height), 128);
+               C1_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder
+                 (Natural (C1_Component.Component_Width) * Natural (C1_Component.Component_Height), 128);
                C1_Plane : Jpeglib.Streams.Byte_Array renames C1_Plane_Room.Data.all;
-               C2_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Natural (C2_Component.Component_Width) * Natural (C2_Component.Component_Height), 128);
+               C2_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder
+                 (Natural (C2_Component.Component_Width) * Natural (C2_Component.Component_Height), 128);
                C2_Plane : Jpeglib.Streams.Byte_Array renames C2_Plane_Room.Data.all;
             begin
                Write_Two_Component_Blocks
@@ -3562,11 +3564,14 @@ package body Jpeglib.Decoding is
                Y_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 1);
                Cb_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 2);
                Cr_Component : constant Internal.Frames.Frame_Component := Internal.Frames.Component (Header.Frame, 3);
-               Y_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Natural (Y_Component.Component_Width) * Natural (Y_Component.Component_Height), 128);
+               Y_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder
+                 (Natural (Y_Component.Component_Width) * Natural (Y_Component.Component_Height), 128);
                Y_Plane : Jpeglib.Streams.Byte_Array renames Y_Plane_Room.Data.all;
-               Cb_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Natural (Cb_Component.Component_Width) * Natural (Cb_Component.Component_Height), 128);
+               Cb_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder
+                 (Natural (Cb_Component.Component_Width) * Natural (Cb_Component.Component_Height), 128);
                Cb_Plane : Jpeglib.Streams.Byte_Array renames Cb_Plane_Room.Data.all;
-               Cr_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Natural (Cr_Component.Component_Width) * Natural (Cr_Component.Component_Height), 128);
+               Cr_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder
+                 (Natural (Cr_Component.Component_Width) * Natural (Cr_Component.Component_Height), 128);
                Cr_Plane : Jpeglib.Streams.Byte_Array renames Cr_Plane_Room.Data.all;
             begin
                Write_Three_Component_Blocks
@@ -3590,13 +3595,17 @@ package body Jpeglib.Decoding is
                Samples : Internal.Transforms.Sample_Block;
                Placement : Internal.Sampling.Block_Placement;
                Block_Number : Positive := Blocks'First;
-               C_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Natural (C_Component.Component_Width) * Natural (C_Component.Component_Height), 128);
+               C_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder
+                 (Natural (C_Component.Component_Width) * Natural (C_Component.Component_Height), 128);
                C_Plane : Jpeglib.Streams.Byte_Array renames C_Plane_Room.Data.all;
-               M_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Natural (M_Component.Component_Width) * Natural (M_Component.Component_Height), 128);
+               M_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder
+                 (Natural (M_Component.Component_Width) * Natural (M_Component.Component_Height), 128);
                M_Plane : Jpeglib.Streams.Byte_Array renames M_Plane_Room.Data.all;
-               Y_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Natural (Y_Component.Component_Width) * Natural (Y_Component.Component_Height), 128);
+               Y_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder
+                 (Natural (Y_Component.Component_Width) * Natural (Y_Component.Component_Height), 128);
                Y_Plane : Jpeglib.Streams.Byte_Array renames Y_Plane_Room.Data.all;
-               K_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Natural (K_Component.Component_Width) * Natural (K_Component.Component_Height), 128);
+               K_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder
+                 (Natural (K_Component.Component_Width) * Natural (K_Component.Component_Height), 128);
                K_Plane : Jpeglib.Streams.Byte_Array renames K_Plane_Room.Data.all;
 
                procedure Store_Component_Block
