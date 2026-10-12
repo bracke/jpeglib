@@ -1,3 +1,4 @@
+with Jpeglib.Internal.Plane_Heap;
 with Jpeglib.Internal.Block_Heap;
 with Jpeglib.Errors;
 with Jpeglib.Internal.Encoder_Headers;
@@ -978,8 +979,10 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Gray_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
-         Alpha_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
+         Gray_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Samples_Needed), 0);
+         Gray_Plane : Jpeglib.Streams.Byte_Array renames Gray_Plane_Room.Data.all;
+         Alpha_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Samples_Needed), 0);
+         Alpha_Plane : Jpeglib.Streams.Byte_Array renames Alpha_Plane_Room.Data.all;
          Gray_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
          Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Gray_Blocks_Room.Data.all;
          Alpha_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
@@ -1104,8 +1107,10 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Gray_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
-         Alpha_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
+         Gray_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Samples_Needed), 0);
+         Gray_Plane : Jpeglib.Streams.Byte_Array renames Gray_Plane_Room.Data.all;
+         Alpha_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Samples_Needed), 0);
+         Alpha_Plane : Jpeglib.Streams.Byte_Array renames Alpha_Plane_Room.Data.all;
          Gray_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
          Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Gray_Blocks_Room.Data.all;
          Alpha_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
@@ -2119,14 +2124,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         C_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         M_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Y_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         K_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         C_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         M_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         Y_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         K_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
+         C_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         C_Full : Jpeglib.Streams.Byte_Array renames C_Full_Room.Data.all;
+         M_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         M_Full : Jpeglib.Streams.Byte_Array renames M_Full_Room.Data.all;
+         Y_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Y_Full : Jpeglib.Streams.Byte_Array renames Y_Full_Room.Data.all;
+         K_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         K_Full : Jpeglib.Streams.Byte_Array renames K_Full_Room.Data.all;
+         C_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         C_Padded : Jpeglib.Streams.Byte_Array renames C_Padded_Room.Data.all;
+         M_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         M_Padded : Jpeglib.Streams.Byte_Array renames M_Padded_Room.Data.all;
+         Y_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         Y_Padded : Jpeglib.Streams.Byte_Array renames Y_Padded_Room.Data.all;
+         K_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         K_Padded : Jpeglib.Streams.Byte_Array renames K_Padded_Room.Data.all;
          C_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
          C_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames C_Blocks_Room.Data.all;
          M_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
@@ -2350,14 +2363,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         C_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         M_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Y_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         K_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         C_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         M_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         Y_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         K_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
+         C_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         C_Full : Jpeglib.Streams.Byte_Array renames C_Full_Room.Data.all;
+         M_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         M_Full : Jpeglib.Streams.Byte_Array renames M_Full_Room.Data.all;
+         Y_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Y_Full : Jpeglib.Streams.Byte_Array renames Y_Full_Room.Data.all;
+         K_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         K_Full : Jpeglib.Streams.Byte_Array renames K_Full_Room.Data.all;
+         C_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         C_Padded : Jpeglib.Streams.Byte_Array renames C_Padded_Room.Data.all;
+         M_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         M_Padded : Jpeglib.Streams.Byte_Array renames M_Padded_Room.Data.all;
+         Y_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         Y_Padded : Jpeglib.Streams.Byte_Array renames Y_Padded_Room.Data.all;
+         K_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         K_Padded : Jpeglib.Streams.Byte_Array renames K_Padded_Room.Data.all;
          C_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
          C_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames C_Blocks_Room.Data.all;
          M_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
@@ -2536,14 +2557,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Y_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cb_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cr_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cb_Actual : Streams.Byte_Array (1 .. Positive (Chroma_Actual_Count)) := [others => 0];
-         Cr_Actual : Streams.Byte_Array (1 .. Positive (Chroma_Actual_Count)) := [others => 0];
-         Y_Padded : Streams.Byte_Array (1 .. Positive (Y_Padded_Count)) := [others => 0];
-         Cb_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
-         Cr_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
+         Y_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Y_Full : Jpeglib.Streams.Byte_Array renames Y_Full_Room.Data.all;
+         Cb_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Cb_Full : Jpeglib.Streams.Byte_Array renames Cb_Full_Room.Data.all;
+         Cr_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Cr_Full : Jpeglib.Streams.Byte_Array renames Cr_Full_Room.Data.all;
+         Cb_Actual_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Actual_Count), 0);
+         Cb_Actual : Jpeglib.Streams.Byte_Array renames Cb_Actual_Room.Data.all;
+         Cr_Actual_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Actual_Count), 0);
+         Cr_Actual : Jpeglib.Streams.Byte_Array renames Cr_Actual_Room.Data.all;
+         Y_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Y_Padded_Count), 0);
+         Y_Padded : Jpeglib.Streams.Byte_Array renames Y_Padded_Room.Data.all;
+         Cb_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Padded_Count), 0);
+         Cb_Padded : Jpeglib.Streams.Byte_Array renames Cb_Padded_Room.Data.all;
+         Cr_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Padded_Count), 0);
+         Cr_Padded : Jpeglib.Streams.Byte_Array renames Cr_Padded_Room.Data.all;
          Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Y_Block_Total));
          Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
          Cb_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
@@ -2787,14 +2816,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Y_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cb_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cr_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cb_Actual : Streams.Byte_Array (1 .. Positive (Chroma_Actual_Count)) := [others => 0];
-         Cr_Actual : Streams.Byte_Array (1 .. Positive (Chroma_Actual_Count)) := [others => 0];
-         Y_Padded : Streams.Byte_Array (1 .. Positive (Y_Padded_Count)) := [others => 0];
-         Cb_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
-         Cr_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
+         Y_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Y_Full : Jpeglib.Streams.Byte_Array renames Y_Full_Room.Data.all;
+         Cb_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Cb_Full : Jpeglib.Streams.Byte_Array renames Cb_Full_Room.Data.all;
+         Cr_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Cr_Full : Jpeglib.Streams.Byte_Array renames Cr_Full_Room.Data.all;
+         Cb_Actual_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Actual_Count), 0);
+         Cb_Actual : Jpeglib.Streams.Byte_Array renames Cb_Actual_Room.Data.all;
+         Cr_Actual_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Actual_Count), 0);
+         Cr_Actual : Jpeglib.Streams.Byte_Array renames Cr_Actual_Room.Data.all;
+         Y_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Y_Padded_Count), 0);
+         Y_Padded : Jpeglib.Streams.Byte_Array renames Y_Padded_Room.Data.all;
+         Cb_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Padded_Count), 0);
+         Cb_Padded : Jpeglib.Streams.Byte_Array renames Cb_Padded_Room.Data.all;
+         Cr_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Padded_Count), 0);
+         Cr_Padded : Jpeglib.Streams.Byte_Array renames Cr_Padded_Room.Data.all;
          Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Y_Block_Total));
          Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
          Cb_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
@@ -3067,8 +3104,10 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Gray_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
-         Alpha_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
+         Gray_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Samples_Needed), 0);
+         Gray_Plane : Jpeglib.Streams.Byte_Array renames Gray_Plane_Room.Data.all;
+         Alpha_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Samples_Needed), 0);
+         Alpha_Plane : Jpeglib.Streams.Byte_Array renames Alpha_Plane_Room.Data.all;
          Gray_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
          Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Gray_Blocks_Room.Data.all;
          Alpha_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
@@ -3331,8 +3370,10 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Gray_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
-         Alpha_Plane : Streams.Byte_Array (1 .. Positive (Samples_Needed)) := [others => 0];
+         Gray_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Samples_Needed), 0);
+         Gray_Plane : Jpeglib.Streams.Byte_Array renames Gray_Plane_Room.Data.all;
+         Alpha_Plane_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Samples_Needed), 0);
+         Alpha_Plane : Jpeglib.Streams.Byte_Array renames Alpha_Plane_Room.Data.all;
          Gray_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
          Gray_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Gray_Blocks_Room.Data.all;
          Alpha_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Needed));
@@ -3451,14 +3492,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Y_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cb_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cr_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cb_Actual : Streams.Byte_Array (1 .. Positive (Chroma_Actual_Count)) := [others => 0];
-         Cr_Actual : Streams.Byte_Array (1 .. Positive (Chroma_Actual_Count)) := [others => 0];
-         Y_Padded : Streams.Byte_Array (1 .. Positive (Y_Padded_Count)) := [others => 0];
-         Cb_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
-         Cr_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
+         Y_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Y_Full : Jpeglib.Streams.Byte_Array renames Y_Full_Room.Data.all;
+         Cb_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Cb_Full : Jpeglib.Streams.Byte_Array renames Cb_Full_Room.Data.all;
+         Cr_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Cr_Full : Jpeglib.Streams.Byte_Array renames Cr_Full_Room.Data.all;
+         Cb_Actual_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Actual_Count), 0);
+         Cb_Actual : Jpeglib.Streams.Byte_Array renames Cb_Actual_Room.Data.all;
+         Cr_Actual_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Actual_Count), 0);
+         Cr_Actual : Jpeglib.Streams.Byte_Array renames Cr_Actual_Room.Data.all;
+         Y_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Y_Padded_Count), 0);
+         Y_Padded : Jpeglib.Streams.Byte_Array renames Y_Padded_Room.Data.all;
+         Cb_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Padded_Count), 0);
+         Cb_Padded : Jpeglib.Streams.Byte_Array renames Cb_Padded_Room.Data.all;
+         Cr_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Padded_Count), 0);
+         Cr_Padded : Jpeglib.Streams.Byte_Array renames Cr_Padded_Room.Data.all;
          Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Y_Block_Total));
          Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
          Cb_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));
@@ -3698,14 +3747,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         C_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         M_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Y_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         K_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         C_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         M_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         Y_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         K_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
+         C_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         C_Full : Jpeglib.Streams.Byte_Array renames C_Full_Room.Data.all;
+         M_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         M_Full : Jpeglib.Streams.Byte_Array renames M_Full_Room.Data.all;
+         Y_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Y_Full : Jpeglib.Streams.Byte_Array renames Y_Full_Room.Data.all;
+         K_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         K_Full : Jpeglib.Streams.Byte_Array renames K_Full_Room.Data.all;
+         C_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         C_Padded : Jpeglib.Streams.Byte_Array renames C_Padded_Room.Data.all;
+         M_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         M_Padded : Jpeglib.Streams.Byte_Array renames M_Padded_Room.Data.all;
+         Y_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         Y_Padded : Jpeglib.Streams.Byte_Array renames Y_Padded_Room.Data.all;
+         K_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         K_Padded : Jpeglib.Streams.Byte_Array renames K_Padded_Room.Data.all;
          C_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
          C_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames C_Blocks_Room.Data.all;
          M_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
@@ -3910,14 +3967,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         C_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         M_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Y_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         K_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         C_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         M_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         Y_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
-         K_Padded : Streams.Byte_Array (1 .. Positive (Padded_Count)) := [others => 0];
+         C_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         C_Full : Jpeglib.Streams.Byte_Array renames C_Full_Room.Data.all;
+         M_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         M_Full : Jpeglib.Streams.Byte_Array renames M_Full_Room.Data.all;
+         Y_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Y_Full : Jpeglib.Streams.Byte_Array renames Y_Full_Room.Data.all;
+         K_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         K_Full : Jpeglib.Streams.Byte_Array renames K_Full_Room.Data.all;
+         C_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         C_Padded : Jpeglib.Streams.Byte_Array renames C_Padded_Room.Data.all;
+         M_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         M_Padded : Jpeglib.Streams.Byte_Array renames M_Padded_Room.Data.all;
+         Y_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         Y_Padded : Jpeglib.Streams.Byte_Array renames Y_Padded_Room.Data.all;
+         K_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Padded_Count), 0);
+         K_Padded : Jpeglib.Streams.Byte_Array renames K_Padded_Room.Data.all;
          C_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
          C_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames C_Blocks_Room.Data.all;
          M_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Block_Total));
@@ -4115,14 +4180,22 @@ package body Jpeglib.Internal.Baseline_Encoder is
       end if;
 
       declare
-         Y_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cb_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cr_Full : Streams.Byte_Array (1 .. Positive (Full_Count)) := [others => 0];
-         Cb_Actual : Streams.Byte_Array (1 .. Positive (Chroma_Actual_Count)) := [others => 0];
-         Cr_Actual : Streams.Byte_Array (1 .. Positive (Chroma_Actual_Count)) := [others => 0];
-         Y_Padded : Streams.Byte_Array (1 .. Positive (Y_Padded_Count)) := [others => 0];
-         Cb_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
-         Cr_Padded : Streams.Byte_Array (1 .. Positive (Chroma_Padded_Count)) := [others => 0];
+         Y_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Y_Full : Jpeglib.Streams.Byte_Array renames Y_Full_Room.Data.all;
+         Cb_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Cb_Full : Jpeglib.Streams.Byte_Array renames Cb_Full_Room.Data.all;
+         Cr_Full_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Full_Count), 0);
+         Cr_Full : Jpeglib.Streams.Byte_Array renames Cr_Full_Room.Data.all;
+         Cb_Actual_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Actual_Count), 0);
+         Cb_Actual : Jpeglib.Streams.Byte_Array renames Cb_Actual_Room.Data.all;
+         Cr_Actual_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Actual_Count), 0);
+         Cr_Actual : Jpeglib.Streams.Byte_Array renames Cr_Actual_Room.Data.all;
+         Y_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Y_Padded_Count), 0);
+         Y_Padded : Jpeglib.Streams.Byte_Array renames Y_Padded_Room.Data.all;
+         Cb_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Padded_Count), 0);
+         Cb_Padded : Jpeglib.Streams.Byte_Array renames Cb_Padded_Room.Data.all;
+         Cr_Padded_Room : Jpeglib.Internal.Plane_Heap.Holder (Positive (Chroma_Padded_Count), 0);
+         Cr_Padded : Jpeglib.Streams.Byte_Array renames Cr_Padded_Room.Data.all;
          Y_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Y_Block_Total));
          Y_Blocks : Jpeglib.Coefficients.DCT_Block_Array renames Y_Blocks_Room.Data.all;
          Cb_Blocks_Room : Jpeglib.Internal.Block_Heap.Holder (Positive (Chroma_Block_Total));

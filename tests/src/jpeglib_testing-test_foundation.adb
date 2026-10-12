@@ -39409,8 +39409,9 @@ package body Jpeglib_Testing.Test_Foundation is
 
    --  A picture's coefficients and planes are held on the heap: a 2560 by
    --  1440 picture in full colour -- 44 MB of coefficients, 11 MB of planes
-   --  -- decodes on a task with an eight-megabyte stack, as a 3840 by 2160
-   --  wallpaper did not on any stack a caller would think to give it.
+   --  -- encodes and decodes on tasks with an eight-megabyte stack, as a
+   --  3840 by 2160 wallpaper did not on any stack a caller would think to
+   --  give it.
    procedure Large_Picture_Decodes_On_A_Small_Stack (T : in out AUnit.Test_Cases.Test_Case'Class) is
       pragma Unreferenced (T);
 
@@ -39441,7 +39442,7 @@ package body Jpeglib_Testing.Test_Foundation is
 
       declare
          task Encoding_Task is
-            pragma Storage_Size (256 * 1024 * 1024);
+            pragma Storage_Size (8 * 1024 * 1024);
          end Encoding_Task;
 
          task body Encoding_Task is

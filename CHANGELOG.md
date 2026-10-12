@@ -2,6 +2,10 @@
 
 ## 0.1.0-dev
 
+- The baseline encoder's component planes are held on the heap as well --
+  the padded, full and actual planes of every layout, gray, alpha and CMYK
+  among them -- so a large picture encodes on an ordinary stack too; the
+  suite's 2560x1440 picture now encodes on an 8 MB task stack as it decodes.
 - A picture's coefficient blocks and component planes are held on the heap
   rather than the stack (`Jpeglib.Internal.Block_Heap`, `Plane_Heap`): a
   block is 256 bytes for every 64 samples of every component, so a 3840x2160
