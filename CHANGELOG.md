@@ -2,6 +2,10 @@
 
 ## 0.1.0-dev
 
+- A lossless Huffman scan's compiled tables are held on the heap
+  (`Jpeglib.Internal.Huffman_Heap`): a table is about 190 KB and the scan held
+  one for each component in its frame, 775 KB for four -- a third of a task's
+  default stack. Both decoders' frames went from 775 KB to under 30 KB.
 - The baseline encoder's component planes are held on the heap as well --
   the padded, full and actual planes of every layout, gray, alpha and CMYK
   among them -- so a large picture encodes on an ordinary stack too; the

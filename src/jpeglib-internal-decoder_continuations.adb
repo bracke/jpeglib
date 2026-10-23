@@ -7,6 +7,7 @@ with Jpeglib.Internal.Markers;
 with Jpeglib.Internal.Restarts;
 with Jpeglib.Internal.Scans;
 with Jpeglib.Internal.Segments;
+with Jpeglib.Internal.Huffman_Heap;
 
 package body Jpeglib.Internal.Decoder_Continuations is
    use type Internal.Frames.Sampling_Factor;
@@ -20,7 +21,6 @@ package body Jpeglib.Internal.Decoder_Continuations is
       use type Internal.Bit_Streams.Entropy_Byte_Kind;
       use type Internal.Bit_Streams.Entropy_Bits;
 
-      type Compiled_Array is array (Component_Index range <>) of Internal.Huffman.Compiled_Huffman;
       type Context_Array is array (Component_Index range <>) of Internal.Arithmetic.DC_Context_Index;
       type DC_Bin_Set_Array is array (Component_Index range <>) of
         Internal.Arithmetic.Probability_Bin_Array (0 .. 63);
@@ -243,7 +243,8 @@ package body Jpeglib.Internal.Decoder_Continuations is
          Total : constant Natural := Scan_Width * Scan_Height;
          Entropy : aliased Internal.Bit_Streams.Entropy_Reader (Input);
          Bits : Internal.Bit_Streams.Bit_Reader (Entropy'Access);
-         Tables : Compiled_Array (1 .. Component_Total);
+         Tables_Heap : Internal.Huffman_Heap.Holder (Natural (Component_Total));
+         Tables : Internal.Huffman_Heap.Compiled_Array renames Tables_Heap.Data.all;
          Compile : Internal.Huffman.Compile_Result;
          Symbol : Internal.Huffman.Decode_Result;
          Extended : Internal.Bit_Streams.Sign_Extend_Result;
