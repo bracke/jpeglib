@@ -39776,6 +39776,38 @@ package body Jpeglib_Testing.Test_Foundation is
       Assert (Outcome.First_Error.Code = Jpeglib.Errors.Pixel_Count_Exceeded
               and then Outcome.First_Error.Context.Detail = 4,
               "a frame over Max_MCUs was not refused with its MCUs");
+
+      --  A frame whose height a DNL marker gives is held to the same limits once the height is known.
+      declare
+         Length : constant Natural := Natural (Destination.Offset);
+         Patched : Jpeglib.Streams.Byte_Array := Encoded (1 .. Length);
+         Source : aliased Jpeglib.Streams.Memory_Source;
+         Decoder : Jpeglib.Decoding.Decoder;
+         Output_Storage : aliased Jpeglib.Streams.Byte_Array := [1 .. 16 * 16 => 0];
+         Output : Jpeglib.Images.Mutable_Image_View :=
+           (Descriptor => (Width => 16, Height => 16, Format => Jpeglib.Images.Gray_8, Stride => 16,
+                           Accessible_Bytes => 16 * 16),
+            Storage => Output_Storage'Unchecked_Access);
+      begin
+         for Index in Patched'First .. Patched'Last - 6 loop
+            if Patched (Index) = 16#FF# and then Patched (Index + 1) = 16#C0# then
+               Patched (Index + 5) := 0;
+               Patched (Index + 6) := 0;
+               exit;
+            end if;
+         end loop;
+         Jpeglib.Streams.Open
+           (Source,
+            new Jpeglib.Streams.Byte_Array'
+              (Patched (1 .. Length - 2) & [16#FF#, 16#DC#, 0, 4, 0, 16] & Patched (Length - 1 .. Length)));
+         Jpeglib.Decoding.Initialize
+           (Decoder, Source'Unchecked_Access, Decode_Limits => (Max_Pixels => 255, others => <>));
+         Outcome := Jpeglib.Decoding.Decode_Image (Decoder, Output);
+         Jpeglib.Decoding.Finalize (Decoder);
+         Assert (Outcome.First_Error.Code = Jpeglib.Errors.Pixel_Count_Exceeded,
+                 "a frame whose DNL height passes Max_Pixels decoded: "
+                 & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
+      end;
    end Frame_Pixel_And_MCU_Limits;
 
 end Jpeglib_Testing.Test_Foundation;

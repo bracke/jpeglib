@@ -50,6 +50,13 @@ package Jpeglib.Internal.Frames is
    --  @param Height See package contract for this parameter.
    --  @return Operation result.
    function Define_Height (Item : in out Frame; Height : Image_Height) return Results.Result;
+   --  Limit: the pixels and MCUs the frame may hold, checked now and again whenever a height given later --
+   --  by a DNL marker or a caller's output -- is defined.
+   --  @param Item Frame, parsed.
+   --  @param Max_Pixels Most pixels.
+   --  @param Max_MCUs Most MCUs.
+   --  @return Success, or Pixel_Count_Exceeded with the pixels or MCUs as its detail.
+   function Limit (Item : in out Frame; Max_Pixels : Pixel_Count; Max_MCUs : MCU_Count) return Results.Result;
    --  Precision.
    --  @param Item See package contract for this parameter.
    --  @return Operation result.
@@ -119,5 +126,7 @@ private
       MCU_C : MCU_Column := 0;
       MCU_R : MCU_Row := 0;
       Component_Items : Component_Array := [others => (others => <>)];
+      Max_Pixels : Pixel_Count := Pixel_Count'Last;
+      Max_MCUs : MCU_Count := MCU_Count'Last;
    end record;
 end Jpeglib.Internal.Frames;

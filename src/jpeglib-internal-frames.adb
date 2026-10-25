@@ -232,6 +232,32 @@ package body Jpeglib.Internal.Frames is
       return Item.Image_H_Defined;
    end Height_Defined;
 
+   --  The frame against its limits, once its height is known.
+   function Within_Limits (Item : Frame) return Results.Result is
+   begin
+      if not Item.Image_H_Defined then
+         return Results.Success;
+      elsif Pixel_Count (Item.Image_W) * Pixel_Count (Item.Image_H) > Item.Max_Pixels then
+         return Results.Failure
+           (Errors.Make
+              (Errors.Pixel_Count_Exceeded,
+               (Detail => Long_Long_Integer (Item.Image_W) * Long_Long_Integer (Item.Image_H), others => <>)));
+      elsif MCU_Count (Item.MCU_C) * MCU_Count (Item.MCU_R) > Item.Max_MCUs then
+         return Results.Failure
+           (Errors.Make
+              (Errors.Pixel_Count_Exceeded,
+               (Detail => Long_Long_Integer (Item.MCU_C) * Long_Long_Integer (Item.MCU_R), others => <>)));
+      end if;
+      return Results.Success;
+   end Within_Limits;
+
+   function Limit (Item : in out Frame; Max_Pixels : Pixel_Count; Max_MCUs : MCU_Count) return Results.Result is
+   begin
+      Item.Max_Pixels := Max_Pixels;
+      Item.Max_MCUs := Max_MCUs;
+      return Within_Limits (Item);
+   end Limit;
+
    function Define_Height (Item : in out Frame; Height : Image_Height) return Results.Result is
    begin
       if not Results.Succeeded (Item.Outcome) then
@@ -247,7 +273,7 @@ package body Jpeglib.Internal.Frames is
       Item.Image_H := Height;
       Item.Image_H_Defined := True;
       Derive_Height_Geometry (Item);
-      return Results.Success;
+      return Within_Limits (Item);
    exception
       when Constraint_Error =>
          Item.Outcome := Results.Failure (Errors.Internal_Invariant_Failed);
