@@ -39804,8 +39804,9 @@ package body Jpeglib_Testing.Test_Foundation is
            (Decoder, Source'Unchecked_Access, Decode_Limits => (Max_Pixels => 255, others => <>));
          Outcome := Jpeglib.Decoding.Decode_Image (Decoder, Output);
          Jpeglib.Decoding.Finalize (Decoder);
-         Assert (Outcome.First_Error.Code = Jpeglib.Errors.Pixel_Count_Exceeded,
-                 "a frame whose DNL height passes Max_Pixels decoded: "
+         Assert (Outcome.First_Error.Code = Jpeglib.Errors.Pixel_Count_Exceeded
+                 and then Outcome.First_Error.Context.Detail = 256,
+                 "a frame whose DNL height passes Max_Pixels was not refused with its pixels: "
                  & Jpeglib.Errors.Error_Code'Image (Outcome.First_Error.Code));
       end;
    end Frame_Pixel_And_MCU_Limits;

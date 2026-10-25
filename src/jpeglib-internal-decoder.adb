@@ -117,13 +117,18 @@ package body Jpeglib.Internal.Decoder is
             Define_Outcome : constant Results.Result := Frames.Define_Height (Frame, Image_Height (Lines));
          begin
             if not Results.Succeeded (Define_Outcome) then
+               --  A limit names the pixels or MCUs it counted, as the frame header's check does; anything else
+               --  names the lines the marker gave.
                return
                  Results.Failure
                    (Errors.Make
                       (Define_Outcome.First_Error.Code,
                        (Source => High.Source,
                         Marker => Markers.DNL,
-                        Detail => Long_Long_Integer (Lines),
+                        Detail =>
+                          (if Errors."=" (Define_Outcome.First_Error.Code, Errors.Pixel_Count_Exceeded)
+                           then Define_Outcome.First_Error.Context.Detail
+                           else Long_Long_Integer (Lines)),
                         others => <>)));
             end if;
          end;

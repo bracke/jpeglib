@@ -9,7 +9,8 @@
 - `Max_Pixels` and `Max_MCUs` are checked when a frame header is read, before
   anything is set aside for the frame, and again when a height a DNL marker
   or the caller's output gives later is defined; they fail with
-  `Pixel_Count_Exceeded`. The decoder used to check neither.
+  `Pixel_Count_Exceeded` with the pixels or MCUs as the detail, whichever
+  path defined the height. The decoder used to check neither.
 - A lossless Huffman scan's compiled tables are held on the heap
   (`Jpeglib.Internal.Huffman_Heap`): a table is about 190 KB and the scan held
   one for each component in its frame, 775 KB for four -- a third of a task's
