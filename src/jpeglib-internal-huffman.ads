@@ -128,9 +128,16 @@ private
 
    type Compiled_Entries is array (Symbol_Index) of Compiled_Entry;
 
+   type Per_Length is array (Code_Length) of Natural;
+
+   --  Canonical codes of one length are consecutive and their entries adjacent, so a code is found from its
+   --  length's first code, first entry and count without searching.
    type Compiled_Huffman is record
       Entries : Compiled_Entries := [others => (others => <>)];
       Total : Symbol_Count := 0;
+      First_Code : Per_Length := [others => 0];
+      First_Position : Per_Length := [others => 1];
+      Count : Per_Length := [others => 0];
    end record;
 
    type Presence_By_Index is array (Huffman_Table_Index) of Boolean;

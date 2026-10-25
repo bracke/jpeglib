@@ -1034,6 +1034,7 @@ package body Jpeglib_Testing.Test_Foundation is
    procedure Public_Encoder_Finish_Without_Input_Fails (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Cancel_Is_Terminal (T : in out AUnit.Test_Cases.Test_Case'Class);
    procedure Public_Encoder_Finalize_Is_Terminal (T : in out AUnit.Test_Cases.Test_Case'Class);
+   procedure Frame_Pixel_And_MCU_Limits (T : in out AUnit.Test_Cases.Test_Case'Class);
 
    overriding function Name (T : Test) return AUnit.Message_String is
       pragma Unreferenced (T);
@@ -1885,6 +1886,7 @@ package body Jpeglib_Testing.Test_Foundation is
          "foundation.encoder.finish_without_input");
       Register_Routine (T, Public_Encoder_Cancel_Is_Terminal'Access, "foundation.encoder.cancel_terminal");
       Register_Routine (T, Public_Encoder_Finalize_Is_Terminal'Access, "foundation.encoder.finalize_terminal");
+      Register_Routine (T, Frame_Pixel_And_MCU_Limits'Access, "foundation.decoder.frame_pixel_and_mcu_limits");
    end Register_Tests;
 
 
@@ -39728,5 +39730,52 @@ package body Jpeglib_Testing.Test_Foundation is
          "finalized encoder used wrong error");
       Assert (Jpeglib.Encoding.State (Encoder) = Jpeglib.Encoding.Failed, "finalized encoder terminal state mismatch");
    end Public_Encoder_Finalize_Is_Terminal;
+
+   --  A frame's pixels and MCUs are held to Max_Pixels and Max_MCUs when its header is read.
+   procedure Frame_Pixel_And_MCU_Limits (T : in out AUnit.Test_Cases.Test_Case'Class) is
+      pragma Unreferenced (T);
+      Pixels : aliased Jpeglib.Streams.Byte_Array := [1 .. 16 * 16 => 16#80#];
+      Encoded : aliased Jpeglib.Streams.Byte_Array := [1 .. 4_096 => 0];
+      Destination : aliased Jpeglib.Streams.Fixed_Buffer_Destination;
+      Encoder : Jpeglib.Encoding.Encoder;
+      Outcome : Jpeglib.Results.Result;
+
+      --  Read the 16 x 16 picture's header under Limits.
+      function Header_Under (Limits : Jpeglib.Limits.Limit_Set) return Jpeglib.Results.Result is
+         Source : aliased Jpeglib.Streams.Memory_Source;
+         Decoder : Jpeglib.Decoding.Decoder;
+         Result : Jpeglib.Results.Result;
+      begin
+         Jpeglib.Streams.Open
+           (Source, new Jpeglib.Streams.Byte_Array'(Encoded (1 .. Natural (Destination.Offset))));
+         Jpeglib.Decoding.Initialize (Decoder, Source'Unchecked_Access, Decode_Limits => Limits);
+         Result := Jpeglib.Decoding.Read_Header (Decoder);
+         Jpeglib.Decoding.Finalize (Decoder);
+         return Result;
+      end Header_Under;
+   begin
+      Jpeglib.Streams.Open (Destination, Encoded'Unchecked_Access);
+      Jpeglib.Encoding.Initialize (Encoder, Destination'Access);
+      Outcome := Jpeglib.Encoding.Encode_Image
+        (Encoder,
+         (Descriptor => (Width => 16, Height => 16, Format => Jpeglib.Images.Gray_8, Stride => 16,
+                         Accessible_Bytes => 16 * 16),
+          Storage => Pixels'Unchecked_Access));
+      if Jpeglib.Results.Succeeded (Outcome) then
+         Outcome := Jpeglib.Encoding.Finish (Encoder);
+      end if;
+      Assert (Jpeglib.Results.Succeeded (Outcome), "the 16 x 16 picture did not encode");
+
+      Assert (Jpeglib.Results.Succeeded (Header_Under ((Max_Pixels => 256, others => <>))),
+              "a frame of exactly Max_Pixels was refused");
+      Outcome := Header_Under ((Max_Pixels => 255, others => <>));
+      Assert (Outcome.First_Error.Code = Jpeglib.Errors.Pixel_Count_Exceeded
+              and then Outcome.First_Error.Context.Detail = 256,
+              "a frame over Max_Pixels was not refused with its pixels");
+      Outcome := Header_Under ((Max_MCUs => 3, others => <>));
+      Assert (Outcome.First_Error.Code = Jpeglib.Errors.Pixel_Count_Exceeded
+              and then Outcome.First_Error.Context.Detail = 4,
+              "a frame over Max_MCUs was not refused with its MCUs");
+   end Frame_Pixel_And_MCU_Limits;
 
 end Jpeglib_Testing.Test_Foundation;

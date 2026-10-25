@@ -793,6 +793,37 @@ package body Jpeglib.Internal.Decoder is
                               Marker => Marker.Marker,
                               Detail => Long_Long_Integer (Frames.Components (Result.Frame)),
                               others => <>)));
+                  elsif Results.Succeeded (Result.Outcome)
+                    and then Frames.Height_Defined (Result.Frame)
+                    and then Pixel_Count (Frames.Width (Result.Frame)) * Pixel_Count (Frames.Height (Result.Frame))
+                             > Decode_Limits.Max_Pixels
+                  then
+                     --  The frame's pixels, before anything is set aside for them.
+                     Result.Outcome :=
+                       Results.Failure
+                         (Errors.Make
+                            (Errors.Pixel_Count_Exceeded,
+                             (Source => Marker.Source,
+                              Marker => Marker.Marker,
+                              Detail =>
+                                Long_Long_Integer (Frames.Width (Result.Frame))
+                                * Long_Long_Integer (Frames.Height (Result.Frame)),
+                              others => <>)));
+                  elsif Results.Succeeded (Result.Outcome)
+                    and then Frames.Height_Defined (Result.Frame)
+                    and then MCU_Count (Frames.MCU_Columns (Result.Frame)) * MCU_Count (Frames.MCU_Rows (Result.Frame))
+                             > Decode_Limits.Max_MCUs
+                  then
+                     Result.Outcome :=
+                       Results.Failure
+                         (Errors.Make
+                            (Errors.Pixel_Count_Exceeded,
+                             (Source => Marker.Source,
+                              Marker => Marker.Marker,
+                              Detail =>
+                                Long_Long_Integer (Frames.MCU_Columns (Result.Frame))
+                                * Long_Long_Integer (Frames.MCU_Rows (Result.Frame)),
+                              others => <>)));
                   end if;
                   Have_Frame := Results.Succeeded (Result.Outcome);
                   if Have_Frame then

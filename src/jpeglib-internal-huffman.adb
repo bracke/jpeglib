@@ -476,6 +476,9 @@ package body Jpeglib.Internal.Huffman is
 
       for Length in Code_Length loop
          Count_At_Length := Natural (Definition.Lengths (Length));
+         Result.Table.First_Code (Length) := Code;
+         Result.Table.First_Position (Length) := Position;
+         Result.Table.Count (Length) := Count_At_Length;
          for Offset in 1 .. Count_At_Length loop
             if Position > Natural (Definition.Total) then
                return Invalid_Compile (Long_Long_Integer (Position));
@@ -515,16 +518,16 @@ package body Jpeglib.Internal.Huffman is
          end if;
 
          Code := Code * 2 + Natural (Bit.Value);
-         for Index in Symbol_Index range 1 .. Symbol_Index (Table.Total) loop
-            if Table.Entries (Index).Length = Length
-              and then Natural (Table.Entries (Index).Code) = Code
-            then
-               return
-                 (Outcome => Results.Success,
-                  Source => Bit.Source,
-                  Symbol => Table.Entries (Index).Symbol);
-            end if;
-         end loop;
+         --  The codes of this length run from First_Code, one entry each from First_Position: one comparison
+         --  per bit, however large the table.
+         if Code >= Table.First_Code (Length) and then Code - Table.First_Code (Length) < Table.Count (Length) then
+            return
+              (Outcome => Results.Success,
+               Source => Bit.Source,
+               Symbol =>
+                 Table.Entries (Symbol_Index (Table.First_Position (Length) + Code - Table.First_Code (Length)))
+                   .Symbol);
+         end if;
       end loop;
 
       return
